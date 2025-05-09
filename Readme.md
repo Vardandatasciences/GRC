@@ -36,13 +36,7 @@ GRC_SETUP/
    pip install -r requirements.txt
    ```
 
-3. Run migrations:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-4. Start the development server:
+. Start the development server:
    ```bash
    python manage.py runserver
    ```
