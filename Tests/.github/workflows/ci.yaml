@@ -1,0 +1,76 @@
+name: CI Pipeline
+
+# Trigger the workflow on push or pull requests to the main branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job for testing the project
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Set up Python for the backend
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Install dependencies for Python
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      # Install frontend dependencies (npm)
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      # Run Linting on backend code
+      - name: Lint Backend Code
+        run: |
+          pip install flake8
+          flake8 backend/src  # Assuming backend/src for Python files
+
+      # Run Unit Tests for Backend
+      - name: Run Backend Unit Tests
+        run: |
+          pip install pytest
+          pytest backend/tests  # Assuming tests are in backend/tests
+
+      # Run Unit Tests for Frontend (if React/Vue/Angular)
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npm run test  # Adjust according to your frontend testing setup
+
+      # Run Snyk Security Scan for Dependencies
+      - name: Run Snyk Dependency Scan
+        run: |
+          snyk auth ${{ secrets.SNYK_TOKEN }}  # Authenticate with Snyk
+          snyk test  # Test dependencies for vulnerabilities
+
+  # Job for deployment (can be added if needed)
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Build and deploy project (this is just an example)
+      - name: Deploy to Production (Example)
+        run: |
+          echo "Deploying to production..."
+          # You can add commands here to deploy your code (e.g., docker, AWS CLI, etc.)
+
