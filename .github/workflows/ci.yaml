@@ -62,17 +62,3 @@ jobs:
           snyk auth ${{ secrets.SNYK_TOKEN }}  # Authenticate with Snyk
           snyk test  # Test dependencies for vulnerabilities
 
-  # Job for deployment (can be added if needed)
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      # Checkout the repository
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      # Build and deploy project (this is just an example)
-      - name: Deploy to Production (Example)
-        run: |
-          echo "Deploying to production..."
-          # You can add commands here to deploy your code (e.g., docker, AWS CLI, etc.)
-
