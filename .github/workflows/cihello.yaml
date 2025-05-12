@@ -1,38 +1,62 @@
-name: Python CI
+name: CI Pipeline
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger this workflow for push events to the 'main' branch
       - CI/CD-Pipeline
   pull_request:
     branches:
-      - main
+      - main  # Trigger this workflow for pull requests to the 'main' branch
       - CI/CD-Pipeline
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
+  test:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest  # Install pytest for testing
+      # Install dependencies for backend and frontend
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Install dependencies listed in requirements.txt
 
-    - name: Run Hello World test
-      run: |
-        echo "print('Hello, World!')" > hello_world.py  # Creating the hello world file
-        python hello_world.py  # Running the python file
+      # Run Linting for Python code (flask8 for backend code)
+      - name: Lint Python Code
+        run: |
+          pip install flake8
+          flake8 src  # Run linting on the 'src' folder
 
-    - name: Run unit tests
-      run: |
-        pytest hello_world.py  # Running pytest to ensure everything works
+      # Run Unit Tests for Python (from 'tests' folder)
+      - name: Run Unit Tests
+        run: |
+          pip install pytest  # Install pytest if not already installed
+          pytest tests  # Run all tests in the 'tests' directory
+
+      # Run Snyk Dependency Scan (check for vulnerabilities)
+      - name: Run Snyk Dependency Scan
+        uses: snyk/actions/python@master
+        with:
+          args: --file=requirements.txt
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Use the Snyk token stored in GitHub Secrets
+
+      # Install Snyk CLI for Static Code Analysis
+      - name: Install Snyk CLI for Code Scan
+        uses: snyk/actions/setup@master
+
+      # Run Snyk Code Scan for vulnerabilities in code
+      - name: Run Snyk Code Scan
+        run: snyk code test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Use the Snyk token from GitHub Secrets
