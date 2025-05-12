@@ -33,3 +33,8 @@ jobs:
           pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
 
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install  # Install Frontend dependencies
+
