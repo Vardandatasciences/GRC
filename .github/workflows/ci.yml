@@ -1,6 +1,6 @@
 name: CI Pipeline
 
-# Trigger on push or pull requests to main and CI/CD-Pipeline branches1
+# Trigger on push or pull requests to main and CI/CD-Pipeline branches
 on:
   push:
     branches:
@@ -32,14 +32,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
-
+      # Install Frontend Dependencies (if applicable)
       - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm install  # Install Frontend dependencies
-         
+          npm install  # Install Frontend dependencies if applicable
+
+      # Linting: Check Python files
       - name: Lint Backend Code
         run: |
           pip install flake8
           flake8 backend  # Make sure the src directory exists or change the path to where your files are
 
+      # Run Unit Tests for Backend
+      - name: Run Backend Unit Tests
+        run: |
+          pip install pytest
+          pytest backend  # Ensure the test files exist under backend
+
+      # Run Unit Tests for Frontend (if applicable)
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npm run test  # Adjust according to your frontend testing setup
+
+      # Run Snyk Security Scan for Dependencies
+      - name: Run Snyk Dependency Scan
+        run: |
+          snyk auth ${{ secrets.SNYK_TOKEN }}  # Authenticate with Snyk
+          snyk test  # Test dependencies for vulnerabilities
