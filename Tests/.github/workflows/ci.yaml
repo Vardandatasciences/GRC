@@ -1,6 +1,6 @@
 name: CI Pipeline
 
-# Trigger the workflow on push or pull requests to the main branch
+# Trigger the workflow on push or pull requests to the main branchq1
 on:
   push:
     branches:
