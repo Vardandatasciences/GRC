@@ -32,9 +32,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
-      # Install Frontend Dependencies
-      - name: Install Frontend Dependencies
+      - name: Lint Code
         run: |
-          cd frontend  # Navigate to the frontend folder
-          npm install  # Install npm packages for the frontend
+          pip install flake8
+          flake8 src  # Adjusted to check Python files
+
 
