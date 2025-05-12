@@ -1,6 +1,6 @@
 name: CI Pipeline
 
-# Trigger on push or pull requests to main and CI/CD-Pipeline branches
+# Trigger on push or pull requests to main and CI/CD-Pipeline branches1
 on:
   push:
     branches:
