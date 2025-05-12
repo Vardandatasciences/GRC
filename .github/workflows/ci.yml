@@ -41,5 +41,5 @@ jobs:
       - name: Lint Code
         run: |
           pip install flake8
-          flake8 src  # Assuming src is the correct directory in the root of your project
+          flake8 src  # Assuming1 src is the correct directory in the root of your project
 
