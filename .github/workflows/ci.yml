@@ -37,4 +37,9 @@ jobs:
         run: |
           cd frontend
           npm install  # Install Frontend dependencies
+         
+      - name: Lint Code
+        run: |
+          pip install flake8
+          flake8 src  # Assuming src is the correct directory in the root of your project
 
