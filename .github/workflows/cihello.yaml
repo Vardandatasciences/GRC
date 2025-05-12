@@ -3,11 +3,11 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - main  # Trigger this workflow for push events to the 'main' branch
+      - main
       - CI/CD-Pipeline
   pull_request:
     branches:
-      - main  # Trigger this workflow for pull requests to the 'main' branch
+      - main
       - CI/CD-Pipeline
 
 jobs:
@@ -25,38 +25,44 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Install dependencies for backend and frontend
-      - name: Install Dependencies
+      # Install Backend Dependencies (ensure the correct path to requirements.txt)
+      - name: Install Backend Dependencies
         run: |
+          cd backend  # Navigate to the 'backend' directory if required
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Install dependencies listed in requirements.txt
+          pip install -r requirements.txt
 
-      # Run Linting for Python code (flask8 for backend code)
+      # Install Frontend Dependencies (if necessary)
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend  # If the frontend dependencies are in 'frontend/package.json'
+          npm install
+
+      # Run Linting for Python Code
       - name: Lint Python Code
         run: |
           pip install flake8
-          flake8 src  # Run linting on the 'src' folder
+          flake8 src  # Assuming your backend Python code is in the 'src' directory
 
       # Run Unit Tests for Python (from 'tests' folder)
       - name: Run Unit Tests
         run: |
-          pip install pytest  # Install pytest if not already installed
+          pip install pytest  # Install pytest
           pytest tests  # Run all tests in the 'tests' directory
 
-      # Run Snyk Dependency Scan (check for vulnerabilities)
+      # Run Snyk Dependency Scan
       - name: Run Snyk Dependency Scan
         uses: snyk/actions/python@master
         with:
-          args: --file=requirements.txt
+          args: --file=backend/requirements.txt  # Ensure correct path
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Use the Snyk token stored in GitHub Secrets
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Install Snyk CLI for Static Code Analysis
+      # Install and run Snyk Code Scan
       - name: Install Snyk CLI for Code Scan
         uses: snyk/actions/setup@master
 
-      # Run Snyk Code Scan for vulnerabilities in code
       - name: Run Snyk Code Scan
         run: snyk code test
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Use the Snyk token from GitHub Secrets
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
