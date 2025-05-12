@@ -15,15 +15,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    steps:
-      # Checkout the repository
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Install Dependencies
+      - name: Install Backend Dependencies
         run: |
-            pip install -r requirements.txt  # Backend
-            npm install  # Frontend (if applicable)
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
 
      
