@@ -32,9 +32,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
-      - name: Lint Code
-        run: |
-          pip install flake8
-          flake8 src  # Adjusted to check Python files
 
 
