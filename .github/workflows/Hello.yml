@@ -34,5 +34,5 @@ jobs:
       # Run Unit Tests using pytest
       - name: Run Tests
         run: |
-          pytest SRC/hello.py  # Run the test for the hello.py file
+          pytest tests/SRC  # Run the test for the hello.py file
 
