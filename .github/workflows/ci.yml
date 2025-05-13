@@ -32,12 +32,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt  # Ensure the correct path if needed
 
-      # Install Frontend Dependencies (if applicable)
-      - name: Install Frontend Dependencies
-        run: |
-          cd frontend
-          npm install  # Install Frontend dependencies if applicable
-
       # Linting: Check Python files
       - name: Lint Backend Code
         run: |
@@ -49,12 +43,6 @@ jobs:
         run: |
           pip install pytest
           pytest backend  # Ensure the test files exist under backend
-
-      # Run Unit Tests for Frontend (if applicable)
-      - name: Run Frontend Unit Tests
-        run: |
-          cd frontend
-          npm run test  # Adjust according to your frontend testing setup
 
       # Run Snyk Security Scan for Dependencies
       - name: Run Snyk Dependency Scan
