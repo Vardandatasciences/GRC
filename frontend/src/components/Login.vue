@@ -52,8 +52,8 @@ export default {
           // Store user info in localStorage
           localStorage.setItem('user', JSON.stringify(response.data.user));
           
-          // Emit login successful event
-          this.$emit('login-success');
+          // Redirect to incidents page/component
+          this.$router.push('/incidents');
         } else {
           this.error = response.data.message;
         }

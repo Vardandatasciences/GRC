@@ -1,40 +1,12 @@
 <template>
   <div id="app">
-    <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
-    <LoginSuccess v-else @logout="handleLogout" />
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
-import Login from './components/Login.vue'
-import LoginSuccess from './components/LoginSuccess.vue'
-
 export default {
-  name: 'App',
-  components: {
-    Login,
-    LoginSuccess
-  },
-  data() {
-    return {
-      isLoggedIn: false
-    }
-  },
-  created() {
-    // Check if user is already logged in
-    const user = localStorage.getItem('user');
-    if (user) {
-      this.isLoggedIn = true;
-    }
-  },
-  methods: {
-    handleLoginSuccess() {
-      this.isLoggedIn = true;
-    },
-    handleLogout() {
-      this.isLoggedIn = false;
-    }
-  }
+  name: 'App'
 }
 </script>
 
