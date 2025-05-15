@@ -5,9 +5,11 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
+      
   push:
     branches:
       - main
+      - test_suresh
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
