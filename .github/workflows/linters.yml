@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-       - test_suresh
+      - test_suresh
     paths-ignore:
       - 'docs/**'
 
