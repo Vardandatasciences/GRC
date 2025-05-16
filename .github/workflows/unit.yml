@@ -24,10 +24,8 @@ jobs:
           python-version: '3.8'  # Set Python version for your Django backend
 
       - name: Install dependencies for backend
-        run: |
-          cd backend  # Navigate to the backend directory
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt  # Install backend dependencies
+        run: pip install -r backend/requirements.txt  # Install backend dependencies
+        working-directory: ./ 
 
       - name: Run unit tests for Django (backend)
         run: |
