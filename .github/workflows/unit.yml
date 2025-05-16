@@ -56,9 +56,4 @@ jobs:
           cd frontend  # Make sure you're in the frontend directory
           npm run test  # Run Jest tests (assuming "test" script is defined in package.json)
 
-  # Optional: Run tests for both frontend and backend concurrently
-  # You can enable this if you want both jobs to run at the same time.
-  # If you prefer to run them sequentially, the above configuration works as is.
-  concurrency:
-    group: 'unit-test-group'
-    cancel-in-progress: true
+ 
