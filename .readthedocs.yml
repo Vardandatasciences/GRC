@@ -1,4 +1,4 @@
-# Configuration for the Read The Docs (RTD) builds of the documentation1.
+# Configuration for the Read The Docs (RTD) builds of the documentatio.
 # Ref: https://docs.readthedocs.io/en/stable/config-file/v2.html
 # The python.install.requirements pins the version of Sphinx used.
 version: 2
