@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main  # Runs on push to 'main' branch
+      - Test
   pull_request:
     branches:
       - main  # Runs on pull request targeting 'main' branch
+      - Test
 
 jobs:
   backend:
