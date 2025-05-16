@@ -1,7 +1,32 @@
 # Configuration for the Read The Docs (RTD) builds of the documentatio.
 # Ref: https://docs.readthedocs.io/en/stable/config-file/v2.html
 # The python.install.requirements pins the version of Sphinx used.
-version: 2
+
+name: Docs
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+      
+  push:
+    branches:
+      - main
+      - test2_suresh
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
 
 build:
   os: ubuntu-24.04
