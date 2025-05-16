@@ -3,55 +3,66 @@ name: Run Unit Tests for GRC Project
 on:
   push:
     branches:
-      - main  # Runs on push to 'main' branch
+      - main
       - Test
   pull_request:
     branches:
-      - main  # Runs on pull request targeting 'main' branch
+      - main
       - Test
 
 jobs:
   backend:
-    runs-on: ubuntu-latest  # This job will run on an Ubuntu environment
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2  # Checkout the code from the repository
+        uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'  # Set Python version for your Django backend
+          python-version: '3.8'
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies for backend
-        run: pip install -r backend/requirements.txt  # Install backend dependencies
-        working-directory: ./ 
+        run: pip install -r requirements.txt
+        working-directory: backend
 
       - name: Run unit tests for Django (backend)
-        run: |
-          cd backend  # Make sure you're in the backend directory
-          pytest grc/ --maxfail=1 --disable-warnings -v  # Run pytest on the backend
+        run: pytest grc/ --maxfail=1 --disable-warnings -v
+        working-directory: backend
 
   frontend:
-    runs-on: ubuntu-latest  # This job will also run on an Ubuntu environment
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2  # Checkout the code from the repository
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'  # Set Node.js version for your Vue.js frontend
+          node-version: '18'  # Use LTS or your preferred version
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies for frontend
-        run: |
-          cd frontend  # Navigate to the frontend directory
-          npm install  # Install frontend dependencies defined in package.json
+        run: npm install
+        working-directory: frontend
 
       - name: Run unit tests for Vue.js (frontend)
-        run: |
-          cd frontend  # Make sure you're in the frontend directory
-          npm run test  # Run Jest tests (assuming "test" script is defined in package.json)
-
- 
+        run: npm run test
+        working-directory: frontend
