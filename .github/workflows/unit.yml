@@ -16,23 +16,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2  # Checkout the code from the repository
+        uses: actions/checkout@v3  # Checkout the code from the repository
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'  # Set Python version for your Django backend
 
-      - name: Install dependencies for backend
-        run: |
-          cd backend  # Navigate to the backend directory
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt  # Install backend dependencies
+      - name: Install Dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
 
-      - name: Run unit tests for Django (backend)
-        run: |
-          cd backend  # Make sure you're in the backend directory
-          pytest grc/ --maxfail=1 --disable-warnings -v  # Run pytest on the backend
+      - name: Run Tests
+        working-directory: backend
+        run: pytest
 
   frontend:
     runs-on: ubuntu-latest  # This job will also run on an Ubuntu environment
