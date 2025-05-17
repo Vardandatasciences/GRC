@@ -1,0 +1,26 @@
+name: UI Tests
+
+on:
+  push:
+    branches:
+      - main  # Runs on push to the 'main' branch
+      - Test  # Runs on push to the 'Test' branch (you can add any other branches)
+  pull_request:
+    branches:
+      - main  # Runs on pull requests targeting the 'main' branch
+      - Test  # Runs on pull requests targeting the 'Test' branch
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - run: npm ci
+    - run: npx playwright install
+    - run: npx playwright test
