@@ -1,4 +1,4 @@
-name: Unit Tests   #ubit tests
+name: Unit Tests
 
 on:
   push:
@@ -29,5 +29,4 @@ jobs:
         pip install pytest
 
     - name: Run unit tests
-      run: |
-        pytest test_add.py
+      run: pytest backend/tests --maxfail=1 --disable-warnings -v
