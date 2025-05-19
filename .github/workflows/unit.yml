@@ -29,7 +29,7 @@ jobs:
 
       - name: Run Tests
         working-directory: backend
-        run: pytest
+        run: pytest add.py test
 
   frontend:
     runs-on: ubuntu-latest  # This job will also run on an Ubuntu environment
