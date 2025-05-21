@@ -43,9 +43,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -77,12 +77,37 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'grc_test',  # Database name
+#         'USER': 'Akhilesh',  # Your MySQL username
+#         'PASSWORD': 'Vardaa#123',  # Your MySQL password
+#         'HOST': '202.53.78.150',  # Database host (use 'localhost' if running locally)
+#         'PORT': '3306',  # Default MySQL port
+#     }
+# }
+
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'grc_test',  # Database name
+        'USER': 'root',  # Your MySQL username
+        'PASSWORD': 'root',  # Your MySQL password
+        'HOST': 'localhost',  # Database host (use 'localhost' if running locally)
+        'PORT': '3306',  # Default MySQL port
     }
 }
+
 
 
 # Password validation
