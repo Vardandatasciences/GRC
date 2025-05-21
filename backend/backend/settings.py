@@ -85,18 +85,6 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # }
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'grc_test',  # Database name
-#         'USER': 'Akhilesh',  # Your MySQL username
-#         'PASSWORD': 'Vardaa#123',  # Your MySQL password
-#         'HOST': '202.53.78.150',  # Database host (use 'localhost' if running locally)
-#         'PORT': '3306',  # Default MySQL port
-#     }
-# }
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',

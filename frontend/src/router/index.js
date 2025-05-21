@@ -10,10 +10,13 @@ import IncidentDashboard from '../components/Incident/IncidentDashboard.vue'
 import CreateCompliance from '../components/Compliance/CreateCompliance.vue'
 import CrudCompliance from '../components/Compliance/CrudCompliance.vue'
 import ComplianceVersioning from '../components/Compliance/ComplianceVersioning.vue'
+import CreateRisk from '../components/Risk/CreateRisk.vue'
 import RiskRegister from '../components/Risk/RiskRegister.vue'
 import RiskDashboard from '../components/Risk/RiskDashboard.vue'
 import RiskInstances from '../components/Risk/RiskInstances.vue'
 import ApprovalAndHandling from '../components/Risk/ApprovalAndHandling.vue'
+import Notifications from '../components/Risk/Notifications.vue'
+import UserTasks from '../components/Risk/UserTasks.vue'
 
 const routes = [
   {
@@ -76,10 +79,26 @@ const routes = [
     component: ComplianceVersioning
   },
   {
-    path: '/risk/riskregister',
-    name: 'RiskRegister',
-    component: RiskRegister
+    path: '/risk/create',
+    name: 'CreateRisk',
+    component: CreateRisk
   },
+
+{
+
+  path: '/risk/riskregister',
+  name: 'RiskRegister',
+  component: RiskRegister
+},
+
+{
+  path: '/risk/ApprovalAndHandling',
+  name: 'ApprovalAndHandling',
+  component: ApprovalAndHandling
+
+},
+
+
   {
     path: '/risk/riskdashboard',
     name: 'RiskDashboard',
@@ -91,9 +110,20 @@ const routes = [
     component: RiskInstances
   },
   {
-    path: '/risk/ApprovalAndHandling',
-    name: 'ApprovalAndHandling',
-    component: ApprovalAndHandling
+    path: '/risk/notifications',
+    name: 'RiskNotifications',
+    component: Notifications
+  },
+  {
+    path: '/risk/workflow',
+    name: 'RiskWorkflow',
+    component: () => import('../components/Risk/Workflow.vue')
+  },
+  {
+    path: '/risk/user-tasks',
+    name: 'UserTasks',
+    component: UserTasks
+
   }
 ]
 

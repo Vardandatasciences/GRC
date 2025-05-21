@@ -89,14 +89,4 @@
     cursor: pointer;
     gap: 20px;
 }
-
-/* Add these new styles for the nested submenu structure */
-.nested-submenu {
-  padding-left: 2.5rem;
-}
-
-.sub-header {
-  font-weight: 600;
-  color: #dde4f0;
-}
   

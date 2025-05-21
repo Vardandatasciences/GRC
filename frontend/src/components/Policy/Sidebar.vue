@@ -58,32 +58,29 @@
         <span v-if="!isCollapsed">Risk</span>
       </div>
       <div v-if="!isCollapsed && openMenus.risk" class="submenu">
+        <div class="menu-item" @click="navigate('/risk/riskdashboard')">
+          <i class="fas fa-th-large icon"></i>
+          <span>Dashboard</span>
+        </div>
         <div class="menu-item" @click="navigate('/risk/riskregister')">
           <i class="fas fa-plus icon"></i>
           <span>Risk Register</span>
         </div>
-        
-        <!-- New Risk Incidents Sub-Heading -->
-        <div @click="toggleSubmenu('riskIncidents')" class="menu-item sub-header">
+        <div class="menu-item" @click="navigate('/risk/riskinstances')">
           <i class="fas fa-th-list icon"></i>
-          <span>Risk Incidents</span>
+          <span>Instances</span>
         </div>
-        
-        <!-- Risk Incidents Sub-Items -->
-        <div v-if="openMenus.riskIncidents" class="nested-submenu">
-          <div class="menu-item" @click="navigate('/risk/ApprovalAndHandling')">
-            <i class="fas fa-bell icon"></i>
-            <span>Approval and Handling</span>
-          </div>
-          <div class="menu-item" @click="navigate('/risk/riskinstances')">
-            <i class="fas fa-clipboard-list icon"></i>
-            <span>Risk Instances</span>
-          </div>
+        <div class="menu-item" @click="navigate('/risk/notifications')">
+          <i class="fas fa-bell icon"></i>
+          <span>Notifications</span>
         </div>
-        
-        <div class="menu-item" @click="navigate('/risk/riskdashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>Dashboard</span>
+        <div class="menu-item" @click="navigate('/risk/workflow')">
+          <i class="fas fa-tasks icon"></i>
+          <span>Risk Workflow</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/user-tasks')">
+          <i class="fas fa-user-check icon"></i>
+          <span>User Tasks</span>
         </div>
       </div>
 
@@ -147,7 +144,6 @@ export default {
       policy: false,
       compliance: false,
       risk: false,
-      riskIncidents: false,
       auditor: false,
       incident: false
     })

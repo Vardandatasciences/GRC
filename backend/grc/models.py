@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Risk(models.Model):
     RiskId = models.AutoField(primary_key=True)  # Primary Key
@@ -70,20 +71,44 @@ class RiskInstance(models.Model):
     Category = models.CharField(max_length=100, null=True)
     Appetite = models.CharField(max_length=100, null=True)
     RiskDescription = models.TextField(null=True)
-    RiskLikelihood = models.FloatField(null=True)
-    RiskImpact = models.FloatField(null=True)
-    RiskExposureRating = models.FloatField(null=True)
+    RiskLikelihood = models.CharField(max_length=50, null=True)
+    RiskImpact = models.CharField(max_length=50, null=True)
+    RiskExposureRating = models.CharField(max_length=50, null=True)
     RiskPriority = models.CharField(max_length=50, null=True)
     RiskResponseType = models.CharField(max_length=100, null=True)
     RiskResponseDescription = models.TextField(null=True)
-    RiskMitigation = models.TextField(null=True)
+    RiskMitigation = models.JSONField(null=True, blank=True)
     RiskOwner = models.CharField(max_length=255, null=True)
     RiskStatus = models.CharField(max_length=50, null=True)
     UserId = models.IntegerField(null=True)
-    Date = models.DateField(null=True)
+    Date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'risk_instance'  # Ensure Django uses the correct table name in the database
 
     def __str__(self):
         return f"Risk Instance {self.RiskInstanceId}"
+
+
+class RiskAssignment(models.Model):
+    risk = models.ForeignKey('Risk', on_delete=models.CASCADE, related_name='assignments')
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE)
+    assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='risk_assignments_created')
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Risk {self.risk.id} assigned to {self.assigned_to.username}"
+
+
+class RiskApproval(models.Model):
+    RiskInstanceId = models.IntegerField()
+    version = models.CharField(max_length=45)
+    ExtractedInfo = models.JSONField(null=True)
+    UserId = models.CharField(max_length=45, null=True)
+    ApproverId = models.CharField(max_length=45, null=True)
+    ApprovedRejected = models.CharField(max_length=45, null=True)
+    Date = models.DateTimeField(null=True, auto_now_add=True)
+    
+    class Meta:
+        db_table = 'grc_test.risk_approval'
+        managed = False  # Since we're connecting to an existing table
