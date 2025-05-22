@@ -317,11 +317,10 @@
 /* Form Popup Styling */
 .form-popup {
     position: fixed;
-    top: 0;
-    left: 210px;
+    left: 240px;
     right: 0;
     bottom: 0;
-    width: calc(95% - 190px);
+    width: calc(95% - 240px);
     height: 95vh;
     background-color: #fff;
     border: 1px solid #bbbbbb;
@@ -329,7 +328,10 @@
     font-size: 11px;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 90vh;
+    padding-left: 16px;
 }
 
 .form-container.form-scrollable {
@@ -1175,4 +1177,418 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 .extraction-step .tab-close:hover {
   color: #d00;
+}
+
+/* Tree View Popup Styles */
+.tree-popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.10);
+  z-index: 3000;
+  display: flex;
+  align-items: flex-start;
+}
+.tree-popup {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  width: 600px;
+  min-width: 420px;
+  max-width: 700px;
+  min-height: 400px;
+  max-height: 90vh;
+  margin-left: 190px;
+  margin-top: 48px;
+  position: relative;
+  border: 2px solid #222;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tree-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 12px 24px;
+  background: #f4f4f4;
+  border-bottom: 1px solid #e0e0e0;
+}
+.tree-popup-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #222;
+  cursor: pointer;
+  margin-left: 18px;
+  margin-top: -4px;
+}
+.tree-framework-select {
+  font-size: 1.1rem;
+  padding: 6px 18px 6px 10px;
+  border-radius: 0;
+  border: 2px solid #111;
+  background: #fff;
+  min-width: 180px;
+  margin-right: 18px;
+}
+.tree-expand-btn {
+  font-size: 1.1rem;
+  padding: 4px 24px;
+  border: 2px solid #111;
+  background: #fff;
+  color: #111;
+  border-radius: 0;
+  cursor: pointer;
+  margin-left: 24px;
+  transition: background 0.2s;
+}
+.tree-expand-btn:hover {
+  background: #f0f0f0;
+}
+.tree-list-root {
+  padding: 32px 32px 24px 32px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: 60vh;
+}
+.tree-arrow-down {
+  text-align: center;
+  font-size: 2.2rem;
+  color: #222;
+  margin-bottom: 18px;
+}
+.tree-policy-list {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  justify-content: flex-start;
+}
+.tree-policy-node {
+  background: #f8f9fa;
+  border: 2px solid #222;
+  border-radius: 8px;
+  min-width: 200px;
+  max-width: 240px;
+  padding: 12px 10px 10px 10px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.tree-node-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.tree-toggle {
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: #222;
+  margin-right: 2px;
+  display: flex;
+  align-items: center;
+}
+.tree-node-label {
+  font-size: 1.05rem;
+  color: #222;
+  font-weight: 500;
+}
+.tree-subpolicy-list {
+  margin-left: 18px;
+  margin-top: 6px;
+  border-left: 2px solid #bbb;
+  padding-left: 10px;
+}
+.tree-subpolicy-node {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  padding: 8px 8px 6px 8px;
+  font-size: 0.98rem;
+}
+.tree-subpolicy-children {
+  margin-left: 18px;
+  margin-top: 4px;
+  border-left: 2px dashed #bbb;
+  padding-left: 10px;
+}
+.tree-child-node {
+  background: #f4f8ff;
+  border: 1px solid #cce5ff;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+}
+/* Animations */
+.tree-fade-enter-active, .tree-fade-leave-active {
+  transition: opacity 0.25s;
+}
+.tree-fade-enter-from, .tree-fade-leave-to {
+  opacity: 0;
+}
+.tree-expand-enter-active, .tree-expand-leave-active {
+  transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  overflow: hidden;
+}
+.tree-expand-enter-from, .tree-expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+.tree-expand-enter-to, .tree-expand-leave-from {
+  max-height: 500px;
+  opacity: 1;
+}
+
+/* Org Chart Tree Styles */
+.tree-popup-static {
+  min-width: 900px;
+  max-width: 1200px;
+  width: fit-content;
+  margin-left: 190px;
+  background: #ddd;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  border: 2px solid #222;
+  border-radius: 0;
+}
+.org-tree-root {
+  width: 100%;
+  min-height: 500px;
+  padding: 32px 24px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #ddd;
+}
+.org-tree-center {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.org-tree-framework-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0px;
+  position: relative;
+  z-index: 2;
+  height: 70px;
+}
+.org-tree-framework-node {
+  background: #fff;
+  border: 3px solid #111;
+  border-radius: 0;
+  min-width: 220px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 0px;
+  position: relative;
+  box-shadow: none;
+  padding: 8px 0;
+  z-index: 3;
+}
+.org-tree-arrow-down {
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+  margin: 0 auto;
+  display: block;
+  text-align: center;
+  font-size: 1.3rem;
+  color: #007bff;
+  position: relative;
+  z-index: 4;
+}
+.org-tree-horizontal-line {
+  width: 80%;
+  height: 0;
+  border-top: 3px solid #111;
+  margin: 0 0 24px 0;
+  position: relative;
+  left: 0;
+}
+.org-tree-policies-row {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 120px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+.org-tree-policy-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.org-tree-policy-node {
+  background: #fff;
+  border: 3px solid #111;
+  border-radius: 0;
+  min-width: 180px;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  position: relative;
+  box-shadow: none;
+  padding: 6px 0;
+  z-index: 3;
+}
+.org-tree-svg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  top: 70px;
+  z-index: 1;
+  pointer-events: none;
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+.org-tree-svg-sub {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 48px;
+  z-index: 1;
+  pointer-events: none;
+  width: 260px;
+  height: 50px;
+  display: block;
+}
+.org-tree-subpolicies-row {
+  position: relative;
+  z-index: 2;
+}
+.org-tree-subpolicies-blocks {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  margin-top: 0px;
+  justify-content: center;
+}
+.org-tree-subpolicy-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.org-tree-subpolicy-node {
+  background: #fff;
+  border: 3px solid #111;
+  border-radius: 0;
+  min-width: 160px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 0px;
+  box-shadow: none;
+  padding: 4px 0;
+  z-index: 3;
+}
+/* Remove expand/collapse animation styles for org chart */
+.tree-fade-enter-active, .tree-fade-leave-active,
+.tree-expand-enter-active, .tree-expand-leave-active,
+.tree-fade-enter-from, .tree-fade-leave-to,
+.tree-expand-enter-from, .tree-expand-leave-to,
+.tree-expand-enter-to, .tree-expand-leave-from {
+  transition: none !important;
+  opacity: 1 !important;
+  max-height: none !important;
+}
+
+.tree-policy-select {
+  display: none !important;
+}
+.org-tree-policy-node {
+  margin-bottom: 8px;
+}
+.org-tree-policy-block {
+  margin-bottom: 0;
+}
+
+/* Down arrow clickable style */
+.org-tree-arrow-down.clickable {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  font-size: 1.3rem;
+  color: #007bff;
+  transition: color 0.2s;
+}
+.org-tree-arrow-down.clickable:hover {
+  color: #0056b3;
+  background: #e6f7ff;
+  border-radius: 50%;
+}
+
+/* Animation for fade/slide in */
+.fade-slide-enter-active, .fade-slide-leave-active {
+  transition: all 0.45s cubic-bezier(0.4,0,0.2,1);
+}
+.fade-slide-enter-from, .fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-32px) scale(0.98);
+}
+.fade-slide-enter-to, .fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.org-tree-svg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  top: 70px;
+  z-index: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+.org-tree-svg-sub {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 60px;
+  z-index: 0;
+  pointer-events: none;
+  width: 260px;
+  height: 50px;
+  display: block;
+}
+.org-tree-framework-row,
+.org-tree-policies-row,
+.org-tree-subpolicies-row {
+  position: relative;
+  z-index: 2;
+}
+.org-tree-policies-row {
+  margin-top: 40px;
+}
+.org-tree-policy-block {
+  position: relative;
 }

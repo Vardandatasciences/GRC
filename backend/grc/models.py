@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+
  
 # Users model (Django built-in User model is used)
 class Users(models.Model):
@@ -174,43 +175,7 @@ class Incident(models.Model):
         db_table = 'incidents'
  
 # Risk model
-class Risk(models.Model):
-    RiskId = models.AutoField(primary_key=True)
-    ComplianceId = models.ForeignKey(Compliance, on_delete=models.CASCADE)
-    RiskCategory = models.CharField(max_length=100)
-    RiskDescription = models.TextField()
-    RiskLikelihood = models.FloatField()
-    RiskImpact = models.FloatField()
-    RiskExposureRating = models.FloatField()
-    RiskPriority = models.CharField(max_length=100)
-    RiskMitigation = models.TextField()
- 
-    class Meta:
-        db_table = 'risk'
- 
-# RiskInstance model
-class RiskInstance(models.Model):
-    RiskInstanceId = models.AutoField(primary_key=True)
-    RiskId = models.ForeignKey(Risk, on_delete=models.CASCADE)
-    Criticality = models.IntegerField()
-    PossibleDamage = models.TextField()
-    Category = models.CharField(max_length=45)
-    Appetite = models.TextField()
-    RiskDescription = models.TextField()
-    RiskLikelihood = models.FloatField()
-    RiskImpact = models.FloatField()
-    RiskExposureRating = models.FloatField()
-    RiskPriority = models.CharField(max_length=100)
-    RiskResponseType = models.CharField(max_length=100)
-    RiskResponseDescription = models.TextField()
-    RiskOwner = models.CharField(max_length=45)
-    RiskStatus = models.CharField(max_length=45)
-    UserId = models.ForeignKey(Users, on_delete=models.CASCADE)
-    Date = models.DateTimeField()
- 
-    class Meta:
-        db_table = 'risk_instance'
- 
+
 # Workflow model
 class Workflow(models.Model):
     Id = models.AutoField(primary_key=True)
@@ -249,3 +214,74 @@ class PolicyApproval(models.Model):
 
     class Meta:
         db_table = 'policyapproval'
+
+
+class Risk(models.Model):
+    RiskId = models.AutoField(primary_key=True)  # Primary Key
+    ComplianceId = models.IntegerField(null=True)
+    Criticality = models.CharField(max_length=100, null=True)
+    PossibleDamage = models.TextField(null=True)
+    Category = models.CharField(max_length=100, null=True)
+    RiskDescription = models.TextField(null=True)
+    RiskLikelihood = models.CharField(max_length=50, null=True)
+    RiskImpact = models.CharField(max_length=50, null=True)
+    RiskExposureRating = models.CharField(max_length=50, null=True)
+    RiskPriority = models.CharField(max_length=50, null=True)
+    RiskMitigation = models.CharField(max_length=100, null=True)
+
+    class Meta:
+        db_table = 'risk'  # Ensure Django uses the correct table in the database
+
+    def __str__(self):
+        return f"Risk {self.RiskId}"
+
+class RiskInstance(models.Model):
+    RiskInstanceId = models.AutoField(primary_key=True)
+    RiskId = models.IntegerField(null=True)
+    IncidentId = models.IntegerField(null=True)
+    Criticality = models.CharField(max_length=100, null=True)
+    PossibleDamage = models.TextField(null=True)
+    Category = models.CharField(max_length=100, null=True)
+    Appetite = models.CharField(max_length=100, null=True)
+    RiskDescription = models.TextField(null=True)
+    RiskLikelihood = models.CharField(max_length=50, null=True)
+    RiskImpact = models.CharField(max_length=50, null=True)
+    RiskExposureRating = models.CharField(max_length=50, null=True)
+    RiskPriority = models.CharField(max_length=50, null=True)
+    RiskResponseType = models.CharField(max_length=100, null=True)
+    RiskResponseDescription = models.TextField(null=True)
+    RiskMitigation = models.JSONField(null=True, blank=True)
+    RiskOwner = models.CharField(max_length=255, null=True)
+    RiskStatus = models.CharField(max_length=50, null=True)
+    UserId = models.IntegerField(null=True)
+    Date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'risk_instance'  # Ensure Django uses the correct table name in the database
+
+    def __str__(self):
+        return f"Risk Instance {self.RiskInstanceId}"
+
+
+class RiskAssignment(models.Model):
+    risk = models.ForeignKey('Risk', on_delete=models.CASCADE, related_name='assignments')
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE)
+    assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='risk_assignments_created')
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Risk {self.risk.id} assigned to {self.assigned_to.username}"
+
+
+class RiskApproval(models.Model):
+    RiskInstanceId = models.IntegerField()
+    version = models.CharField(max_length=45)
+    ExtractedInfo = models.JSONField(null=True)
+    UserId = models.CharField(max_length=45, null=True)
+    ApproverId = models.CharField(max_length=45, null=True)
+    ApprovedRejected = models.CharField(max_length=45, null=True)
+    Date = models.DateTimeField(null=True, auto_now_add=True)
+    
+    class Meta:
+        db_table = 'grc_test.risk_approval'
+        managed = False  # Since we're connecting to an existing table

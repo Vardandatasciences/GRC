@@ -129,9 +129,29 @@
         <span v-if="!isCollapsed">Risk</span>
       </div>
       <div v-if="!isCollapsed && openMenus.risk" class="submenu">
-        <div class="menu-item">
+        <div class="menu-item" @click="navigate('/risk/riskdashboard')">
           <i class="fas fa-th-large icon"></i>
           <span>Dashboard</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/riskregister')">
+          <i class="fas fa-plus icon"></i>
+          <span>Risk Register</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/riskinstances')">
+          <i class="fas fa-th-list icon"></i>
+          <span>Instances</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/notifications')">
+          <i class="fas fa-bell icon"></i>
+          <span>Notifications</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/workflow')">
+          <i class="fas fa-tasks icon"></i>
+          <span>Risk Workflow</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/user-tasks')">
+          <i class="fas fa-user-check icon"></i>
+          <span>User Tasks</span>
         </div>
       </div>
 
@@ -202,6 +222,7 @@
 </template>
 
 <script>
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '../../assets/grc_logo1.png'
