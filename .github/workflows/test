@@ -1,0 +1,65 @@
+name: Cypress Frontend Tests
+
+on:
+  push:
+    branches:
+      - SRILAKSHMI
+  pull_request:
+    branches:
+      - SRILAKSHMI
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start frontend server
+        run: npm run serve &
+
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for frontend to be ready..."
+          for i in {1..60}; do
+            if curl -s http://localhost:8080 > /dev/null; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Waiting..."
+            sleep 1
+          done
+          if ! curl -s http://localhost:8080 > /dev/null; then
+            echo "Frontend did not become ready in time."
+            exit 1
+          fi
+
+      - name: Run Cypress tests
+        run: npx cypress run
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
+
+      - name: Upload Cypress screenshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots 
+

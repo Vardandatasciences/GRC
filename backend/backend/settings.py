@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-%@4hoxv^4aj(ul6t3=i_iu%)*il^l&tc!38jrqb%g(td^lls$k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','606a-2401-4900-659a-4eb8-f88c-bf4e-1683-aa01.ngrok-free.app']
 
 
 # Application definition
@@ -58,7 +58,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -79,8 +79,15 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": 'mysql.connector.django',
+        "NAME": "grc",
+        "USER": "root",
+        "PASSWORD": "root",
+        "HOST": "localhost",
+        "PORT": "3306",
+        # "OPTIONS": {
+        #     "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
+        # }
     }
 }
 
@@ -138,3 +145,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8080',
+]

@@ -1,0 +1,186 @@
+.assign-audit-container {
+  margin-left: 180px;
+  padding: 32px;
+  background: #fff;
+  min-height: 100vh;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  max-width: calc(100vw - 180px);
+}
+
+.assign-audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.assign-audit-header h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.assign-audit-btn {
+  background: #4f7cff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.assign-audit-btn:hover {
+  background: #365bb3;
+}
+
+.assign-audit-search {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+  position: relative;
+  width: 260px;
+}
+
+.assign-audit-search input {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  font-size: 1rem;
+  outline: none;
+}
+.search-icon {
+  position: absolute;
+  right: 10px;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.assign-audit-table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.assign-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  table-layout: fixed;
+}
+.assign-audit-table th, .assign-audit-table td {
+  border: 2px solid #222;
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.assign-audit-table th {
+  background: #f5f5f5;
+  font-weight: bold;
+  width: auto;
+}
+.assign-audit-table td {
+  background: #fff;
+}
+
+/* Set specific column widths */
+.assign-audit-table th:nth-child(1), 
+.assign-audit-table td:nth-child(1) { width: 10%; } /* Framework */
+.assign-audit-table th:nth-child(2), 
+.assign-audit-table td:nth-child(2) { width: 12%; } /* Policy */
+.assign-audit-table th:nth-child(3), 
+.assign-audit-table td:nth-child(3) { width: 12%; } /* Subpolicy */
+.assign-audit-table th:nth-child(4), 
+.assign-audit-table td:nth-child(4) { width: 10%; } /* Auditor */
+.assign-audit-table th:nth-child(5), 
+.assign-audit-table td:nth-child(5) { width: 10%; } /* Duedate */
+.assign-audit-table th:nth-child(6), 
+.assign-audit-table td:nth-child(6) { width: 10%; } /* frequency */
+.assign-audit-table th:nth-child(7), 
+.assign-audit-table td:nth-child(7) { width: 10%; } /* Review */
+.assign-audit-table th:nth-child(8), 
+.assign-audit-table td:nth-child(8) { width: 10%; } /* Audit Type */
+.assign-audit-table th:nth-child(9), 
+.assign-audit-table td:nth-child(9) { width: 8%; } /* Status */
+.assign-audit-table th:nth-child(10), 
+.assign-audit-table td:nth-child(10) { width: 8%; } /* Report */
+
+.assign-audit-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.assign-audit-modal-content {
+  background: #fff;
+  padding: 32px 28px 24px 28px;
+  border-radius: 10px;
+  min-width: 340px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.assign-audit-modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+.assign-audit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.assign-audit-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
+  gap: 4px;
+}
+.assign-audit-form input,
+.assign-audit-form select {
+  padding: 7px 10px;
+  border: 1.5px solid #bbb;
+  border-radius: 5px;
+  font-size: 1rem;
+  margin-top: 2px;
+}
+.assign-audit-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.assign-audit-form-actions button {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4f7cff;
+  color: #fff;
+  transition: background 0.2s;
+}
+.assign-audit-form-actions button[type="button"] {
+  background: #bbb;
+  color: #222;
+}
+.assign-audit-form-actions button:hover {
+  background: #365bb3;
+}
+.assign-audit-form-actions button[type="button"]:hover {
+  background: #888;
+} 
