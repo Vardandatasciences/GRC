@@ -33,6 +33,14 @@ jobs:
       # Step 4: Install dependencies
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+    
+      - name: Build project
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Start Server
+        run: npm run serve
+        working-directory: ./frontend
 
       # Step 5: Check Node and npm versions for debugging
       - name: Check Node and npm versions
