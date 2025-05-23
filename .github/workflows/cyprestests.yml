@@ -47,4 +47,18 @@ jobs:
             exit 1
           fi
 
-      
+      # After running Cypress tests
+      - name: Run Cypress tests
+        run: npm run test:ci
+
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
