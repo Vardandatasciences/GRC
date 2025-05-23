@@ -46,8 +46,6 @@ jobs:
             echo "Frontend did not become ready in time."
             exit 1
           fi
-
-      # After running Cypress tests
       - name: Run Cypress tests
         run: npm run test:ci
 
