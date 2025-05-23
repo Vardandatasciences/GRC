@@ -20,20 +20,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js (using v3 for node setup)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # Step 3: Install dependencies
+      # Step 3: Install dependencies (using --legacy-peer-deps flag for compatibility)
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       # Step 4: Start the frontend server in the background
       - name: Start frontend server
         run: npm run serve &
-        
+
       # Step 5: Wait for frontend to be ready
       - name: Wait for frontend to be ready
         run: |
@@ -57,14 +57,18 @@ jobs:
 
       # Step 7: Upload Cypress screenshots as an artifact
       - name: Upload Cypress screenshots
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cypress-screenshots
-          path: frontend/cypress/screenshots
+          path: frontend/cypress/screenshots/
 
       # Step 8: Upload Cypress videos as an artifact
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cypress-videos
-          path: frontend/cypress/videos
+          path: frontend/cypress/videos/
+
+      # Step 9: List files in the frontend folder to debug if necessary
+      - name: List files in frontend folder
+        run: ls -alh ./frontend
