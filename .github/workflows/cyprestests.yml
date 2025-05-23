@@ -20,21 +20,31 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js (Using v2 for stability)
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '18'
 
-      # Step 3: Install dependencies
+      # Step 3: Clear npm cache before installation (to ensure no conflicts)
+      - name: Clear npm cache
+        run: npm cache clean --force
+
+      # Step 4: Install dependencies
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      # Step 4: Start the frontend server in the background
+      # Step 5: Check Node and npm versions for debugging
+      - name: Check Node and npm versions
+        run: |
+          node -v
+          npm -v
+
+      # Step 6: Start frontend server in the background
       - name: Start frontend server
         run: npm run serve &
-        
-      # Step 5: Wait for frontend to be ready
+
+      # Step 7: Wait for frontend to be ready (check if localhost is responding)
       - name: Wait for frontend to be ready
         run: |
           echo "Waiting for frontend to be ready..."
@@ -51,20 +61,24 @@ jobs:
             exit 1
           fi
 
-      # Step 6: Run Cypress tests
+      # Step 8: Run Cypress tests
       - name: Run Cypress tests
         run: npm run test -- --headless
 
-      # Step 7: Upload Cypress screenshots as an artifact
+      # Step 9: Upload Cypress screenshots as an artifact
       - name: Upload Cypress screenshots
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v1
         with:
           name: cypress-screenshots
           path: frontend/cypress/screenshots
 
-      # Step 8: Upload Cypress videos as an artifact
+      # Step 10: Upload Cypress videos as an artifact
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v1
         with:
           name: cypress-videos
           path: frontend/cypress/videos
+
+      # Step 11: List files in the frontend folder to check if package.json exists
+      - name: List files in frontend folder
+        run: ls -alh ./frontend
