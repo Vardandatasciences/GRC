@@ -27,7 +27,7 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-      - name: Install serve (static server)
+      - name: Install serve globally
         run: npm install -g serve
 
       - name: Start static server in background
