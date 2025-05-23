@@ -30,19 +30,19 @@ jobs:
       - name: Install serve globally
         run: npm install -g serve
 
-      - name: Start static server in background
-        run: serve -s ./frontend/dist -l 5000 &
-        working-directory: .
+   - name: Start static server in background
+  run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
+  working-directory: .
 
-      - name: Wait for server to be ready
-        uses: jakejarvis/wait-action@v0.1.2
-        with:
-          url: http://localhost:5000
-          timeout: 60
+- name: Wait for server to be ready
+  uses: jakejarvis/wait-action@v0.1.2
+  with:
+    url: http://localhost:5000
+    timeout: 120
 
-      - name: Run Cypress tests
-        run: npx cypress run --config baseUrl=http://localhost:5000
-        working-directory: ./frontend
+- name: Run Cypress tests
+  run: npx cypress run --config baseUrl=http://localhost:5000
+  working-directory: ./frontend
 
       - name: Upload Cypress Screenshots
         uses: actions/upload-artifact@v4
