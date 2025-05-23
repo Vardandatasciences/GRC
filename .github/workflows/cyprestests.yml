@@ -18,11 +18,11 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 2: Set up Node.js (Using v2 for stability)
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -75,14 +75,14 @@ jobs:
 
       # Step 9: Upload Cypress screenshots as an artifact
       - name: Upload Cypress screenshots
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-screenshots
           path: frontend/cypress/screenshots
 
       # Step 10: Upload Cypress videos as an artifact
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-videos
           path: frontend/cypress/videos
