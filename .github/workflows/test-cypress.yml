@@ -1,0 +1,49 @@
+name: Copy Loukya to SRILAKSHMI and Run Cypress Tests
+
+on:
+  workflow_dispatch:   # manual trigger; change if you want automatic triggers
+
+jobs:
+  copy_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout loukya branch (source)
+      - name: Checkout loukya branch
+        uses: actions/checkout@v3
+        with:
+          ref: loukya
+
+      # Configure git user for push
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Force push current content to SRILAKSHMI branch
+      - name: Push to SRILAKSHMI branch
+        run: |
+          git checkout -B SRILAKSHMI
+          git push origin SRILAKSHMI --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Checkout SRILAKSHMI branch again to run tests on it
+      - name: Checkout SRILAKSHMI for testing
+        uses: actions/checkout@v3
+        with:
+          ref: SRILAKSHMI
+
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'   # Change if needed
+
+      # Install dependencies (including Cypress)
+      - name: Install dependencies
+        run: npm install
+
+      # Run Cypress tests
+      - name: Run Cypress tests
+        run: npx cypress run
