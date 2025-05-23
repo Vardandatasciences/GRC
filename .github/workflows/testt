@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -27,12 +27,18 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
-      - name: Install serve (static file server)
+      - name: Install serve (static server)
         run: npm install -g serve
 
       - name: Start static server in background
         run: serve -s ./frontend/dist -l 5000 &
         working-directory: .
+
+      - name: Wait for server to be ready
+        uses: jakejarvis/wait-action@v0.1.2
+        with:
+          url: http://localhost:5000
+          timeout: 60
 
       - name: Run Cypress tests
         run: npx cypress run --config baseUrl=http://localhost:5000
