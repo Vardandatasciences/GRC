@@ -1,0 +1,70 @@
+name: Cypress Frontend Tests
+
+on:
+  push:
+    branches:
+      - SRILAKSHMI
+  pull_request:
+    branches:
+      - SRILAKSHMI
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Start the frontend server in the background
+      - name: Start frontend server
+        run: npm run serve &
+        
+      # Step 5: Wait for frontend to be ready
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for frontend to be ready..."
+          for i in {1..60}; do
+            if curl -s http://localhost:8080 > /dev/null; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Waiting..."
+            sleep 1
+          done
+          if ! curl -s http://localhost:8080 > /dev/null; then
+            echo "Frontend did not become ready in time."
+            exit 1
+          fi
+
+      # Step 6: Run Cypress tests
+      - name: Run Cypress tests
+        run: npm run test -- --headless
+
+      # Step 7: Upload Cypress screenshots as an artifact
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+
+      # Step 8: Upload Cypress videos as an artifact
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
