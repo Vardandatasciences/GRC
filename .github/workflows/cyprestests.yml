@@ -1,4 +1,4 @@
-name: Frontend CI with Cypress Tests
+name: Frontend CI with Cypress Tests (manual server start)
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -31,16 +31,16 @@ jobs:
         run: npm install -g serve
 
       - name: Start static server in background
-        run: serve -s ./frontend/dist -l 5000 &
+        run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
         working-directory: .
 
       - name: Wait for server to be ready
         uses: jakejarvis/wait-action@v0.1.2
         with:
           url: http://localhost:5000
-          timeout: 60
+          timeout: 120
 
-      - name: Run Cypress tests
+      - name: Run Cypress tests manually
         run: npx cypress run --config baseUrl=http://localhost:5000
         working-directory: ./frontend
 
