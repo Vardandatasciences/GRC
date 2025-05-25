@@ -1,10 +1,10 @@
-name: Frontend CI with Cypress Tests (manual server start)
+name: Frontend CI with Cypress Tests
 
 on:
   push:
-    branches: [ SRILAKSHMI ]
+    branches: [ loukya ]    # <-- Set your actual branch here
   pull_request:
-    branches: [ SRILAKSHMI ]
+    branches: [ loukya ]
 
 jobs:
   test:
@@ -31,14 +31,21 @@ jobs:
         run: npm install -g serve
 
       - name: Start static server in background
-        run: serve -s ./frontend/dist -l 5000 &
+        run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
         working-directory: .
 
       - name: Wait for server to be ready
         uses: jakejarvis/wait-action@v0.1.2
         with:
           url: http://localhost:5000
-          timeout: 60
+          timeout: 120
+
+      - name: Check server is up
+        run: curl -I http://localhost:5000
+
+      - name: Install Cypress
+        run: npm install cypress
+        working-directory: ./frontend
 
       - name: Run Cypress tests
         run: npx cypress run --config baseUrl=http://localhost:5000
