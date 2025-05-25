@@ -1,0 +1,514 @@
+/* IncidentDashboard.css - Modern styling for GRC Incident Dashboard */
+
+:root {
+    --primary: #4f46e5;
+    --primary-light: #6366f1;
+    --primary-dark: #3730a3;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --gray: #94a3b8;
+    --purple: #8b5cf6;
+    --card-bg: #ffffff;
+    --body-bg: #f1f5f9;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.05);
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --sidebar-width: 230px;
+    --border-radius: 12px;
+    --card-border: 1px solid rgba(0, 0, 0, 0.05);
+    --severity-color-high: #e63946;
+    --severity-color-medium: #f8961e;
+    --severity-color-low: #90be6d;
+    --type-color-primary: #4a89dc;
+    --type-color-secondary: #5d9cec;
+    --type-color-tertiary: #7eb0ef;
+    --source-color-primary: #8b5cf6;
+    --source-color-secondary: #a78bfa;
+    --source-color-tertiary: #c4b5fd;
+    --timeline-color-primary: #10b981;
+    --timeline-color-secondary: #34d399;
+}
+
+.incident-dashboard-wrapper {
+    padding: 1.5rem 2rem;
+    background-color: var(--body-bg);
+    font-family: var(--font-primary);
+    color: var(--dark);
+    max-width: 100%;
+}
+
+h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--dark);
+    position: relative;
+    padding-left: 0.5rem;
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -0.5rem;
+    height: 3px;
+    width: 3rem;
+    background: linear-gradient(to right, var(--primary), var(--primary-light));
+    border-radius: 3px;
+}
+
+h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--dark);
+}
+
+/* KPI Metrics Cards */
+.metrics-cards {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    flex: 1;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: var(--card-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary-light), var(--primary));
+    opacity: 0.8;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+/* Charts Grid */
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-md);
+    border: var(--card-border);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.pie-chart-container, 
+.bar-chart-container, 
+.line-chart-container {
+    height: 240px;
+    position: relative;
+    margin-top: 0.5rem;
+}
+
+.pie-chart,
+.bar-chart,
+.line-chart {
+    height: 100%;
+    width: 100%;
+}
+
+/* Chart Legends */
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.legend-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Table Styles */
+.incidents-table-section {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: var(--card-border);
+}
+
+.incidents-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.incidents-table th,
+.incidents-table td {
+    padding: 0.85rem 1rem;
+    text-align: left;
+}
+
+.incidents-table th {
+    font-weight: 600;
+    color: var(--dark);
+    background-color: rgba(241, 245, 249, 0.5);
+    position: relative;
+}
+
+.incidents-table th:first-child {
+    border-top-left-radius: 0.5rem;
+}
+
+.incidents-table th:last-child {
+    border-top-right-radius: 0.5rem;
+}
+
+.incidents-table tr:last-child td:first-child {
+    border-bottom-left-radius: 0.5rem;
+}
+
+.incidents-table tr:last-child td:last-child {
+    border-bottom-right-radius: 0.5rem;
+}
+
+.incidents-table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.incidents-table tbody tr:hover {
+    background-color: rgba(241, 245, 249, 0.5);
+}
+
+/* Priority Colors */
+.priority-high {
+    padding: 0.35rem 0.75rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+.priority-medium {
+    padding: 0.35rem 0.75rem;
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+.priority-low {
+    padding: 0.35rem 0.75rem;
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+/* Status Summary Cards */
+.incident-status-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.status-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-top: 4px solid var(--gray);
+    min-width: 120px;
+    border: var(--card-border);
+}
+
+.status-card:nth-child(1) {
+    border-top-color: var(--warning);
+}
+
+.status-card:nth-child(2) {
+    border-top-color: var(--danger);
+}
+
+.status-card:nth-child(3) {
+    border-top-color: var(--info);
+}
+
+.status-card:nth-child(4) {
+    border-top-color: var(--primary);
+}
+
+.status-card:nth-child(5) {
+    border-top-color: var(--purple);
+}
+
+.status-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.status-card.active-filter {
+    background: linear-gradient(to bottom right, var(--primary-light), var(--primary));
+    color: white;
+}
+
+.status-card.active-filter .status-count,
+.status-card.active-filter .status-label {
+    color: white;
+}
+
+.status-count {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: var(--gray);
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Popup */
+.incident-popup-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+}
+
+.incident-popup-modal {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 2rem;
+    min-width: 320px;
+    max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: modalAppear 0.3s ease forwards;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.incident-popup-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray);
+    transition: color 0.2s;
+    height: 32px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.incident-popup-close:hover {
+    color: var(--dark);
+    background: #f1f5f9;
+}
+
+.incident-popup-message {
+    font-size: 1.25rem;
+    color: var(--dark);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .incident-dashboard-wrapper {
+        padding: 1.5rem;
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-card:nth-child(3) {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .incident-dashboard-wrapper {
+        padding: 1rem;
+    }
+    
+    .metrics-cards {
+        flex-wrap: wrap;
+    }
+    
+    .metric-card {
+        flex: 1 0 45%;
+        margin-bottom: 1rem;
+    }
+    
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-card:nth-child(3) {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .metric-card {
+        flex: 1 0 100%;
+    }
+}
+
+/* Fix for UI with sidebar */
+@media (min-width: 1400px) {
+    .incident-dashboard-wrapper {
+        max-width: calc(100% - var(--sidebar-width));
+        margin-left: var(--sidebar-width);
+        padding-left: 2rem;
+    }
+}
+
+/* Enhance chart selector styling */
+.chart-type-selector {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 5;
+}
+
+.chart-type-selector button {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #64748b;
+}
+
+.chart-type-selector button:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.chart-type-selector button.active {
+    background: var(--primary, #4a89dc);
+    color: white;
+    border-color: var(--primary-dark, #3a7bcf);
+}
+
+/* Chart type selector - add new chart type icons */
+.chart-type-selector button i.fa-circle-dot:before {
+    content: "\f192";
+}
+
+.chart-type-selector button i.fa-layer-group:before {
+    content: "\f5fd";
+} 
