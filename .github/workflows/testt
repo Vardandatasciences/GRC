@@ -1,4 +1,4 @@
-name: Frontend CI with Cypress Tests
+name: Frontend CI with Cypress Tests (auto start server)
 
 on:
   push:
@@ -30,13 +30,13 @@ jobs:
       - name: Install serve globally
         run: npm install -g serve
 
-            - name: Start static server in background
-        run: nohup serve -s ./dist -l 5000 > serve.log 2>&1 &
-        working-directory: ./frontend
-
+      - name: Start static server in background
+        # Start serve to serve the built app on port 5000, redirect logs, run in background
+        run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
+        working-directory: .
 
       - name: Wait for server to be ready
-        uses: jakejarvis/wait-action@v0.1.2
+        uses: fjogeleit/wait-for-url-action@v1
         with:
           url: http://localhost:5000
           timeout: 120
