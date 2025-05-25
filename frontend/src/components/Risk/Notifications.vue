@@ -306,7 +306,10 @@
           
           <div class="form-group">
             <label>Risk Appetite</label>
-            <select v-model="riskInstanceForm.Appetite">
+            <select 
+              v-model="riskInstanceForm.Appetite" 
+              :disabled="rejectedIncident && showRiskInstanceForm"
+              :class="{'readonly-field': rejectedIncident && showRiskInstanceForm}">
               <option value="">Select Appetite</option>
               <option value="Yes">Yes</option>
               <option value="No">No</option>
@@ -1055,6 +1058,7 @@ export default {
       this.riskInstanceForm.Category = this.rejectedIncident.RiskCategory || '';
       this.riskInstanceForm.RiskDescription = this.rejectedIncident.Description || '';
       this.riskInstanceForm.Date = new Date().toISOString().split('T')[0];
+      this.riskInstanceForm.Appetite = 'No';  // Set default to No for rejected incidents
       
       // Show the risk instance form
       this.showRiskInstanceForm = true;

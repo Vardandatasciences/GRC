@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/user-risks/<int:user_id>/', views.get_user_risks, name='user-risks'),
     path('api/risk-update-status/', views.update_risk_status, name='risk-update-status'),
     path('api/risk-mitigations/<int:risk_id>/', views.get_risk_mitigations, name='risk-mitigations'),
-    path('api/update-mitigation-status/', views.update_mitigation_approval, name='update-mitigation-status'),
+    path('api/update-mitigation-status/', views.update_mitigation_status, name='update-mitigation-status'),
     path('api/assign-reviewer/', views.assign_reviewer, name='assign-reviewer'),
     path('api/reviewer-tasks/<int:user_id>/', views.get_reviewer_tasks, name='reviewer-tasks'),
     # path('api/update-mitigation-approval/', views.update_mitigation_approval, name='update-mitigation-approval'),
@@ -36,5 +36,7 @@ urlpatterns = [
     path('api/latest-review/<int:risk_id>/', views.get_latest_review, name='latest-review'),
     path('api/get-assigned-reviewer/<int:risk_id>/', views.get_assigned_reviewer, name='get-assigned-reviewer'),
     path('api/risk-update-mitigation/<int:risk_id>/', views.update_risk_mitigation, name='risk-update-mitigation'),
-
+    path('api/risk-form-details/<int:risk_id>/', views.get_risk_form_details, name='risk-form-details'),
+    path('api/logs/', views.GRCLogList.as_view(), name='log-list'),
+    path('api/logs/<int:pk>/', views.GRCLogDetail.as_view(), name='log-detail'),
 ]

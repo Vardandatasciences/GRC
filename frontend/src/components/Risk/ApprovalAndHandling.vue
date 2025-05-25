@@ -2,7 +2,7 @@
   <div class="notifications-container">
     <div class="notifications-header-row">
       <h1 class="notifications-title">
-        Notifications
+        Notifications fuck
         <i class="fas fa-bell notifications-bell"></i>
       </h1>
     </div>

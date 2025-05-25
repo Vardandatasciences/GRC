@@ -1,0 +1,47 @@
+2025-05-25T06:01:31.506Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 1 [Risk viewed or clicked] 
+2025-05-25T06:02:00.960Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 2 [Risk viewed or clicked] 
+2025-05-25T06:09:25.317Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:09:37.984Z [INFO] [INCIDENT] Incident Module - Action: LIST on Incident | Details: Viewing all incidents 
+2025-05-25T06:14:09.546Z [INFO] [INCIDENT] Incident Module - Action: LIST on Incident | Details: Viewing all incidents 
+2025-05-25T06:14:14.583Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:16:46.490Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskMitigation | Details: Viewing mitigations for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:17:39.997Z [INFO] [RISK] Risk Module - Action: ASSIGN on RiskInstance | Details: Assigning risk 8 to user 5 
+2025-05-25T06:17:40.044Z [INFO] [RISK] Risk Module - Action: ASSIGN on RiskInstance | Details: Successfully assigned risk 8 to user 5 
+2025-05-25T06:18:04.813Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:18:07.541Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 5 [Risk viewed or clicked] 
+2025-05-25T06:18:07.545Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 5 [Risk viewed or clicked] 
+2025-05-25T06:18:14.058Z [INFO] [RISK] Risk Module - Action: UPDATE on RiskMitigation | Details: Updating mitigation status for risk 8 to Work In Progress [Risk updated] 
+2025-05-25T06:25:59.788Z [INFO] [INCIDENT] Incident Module - Action: LIST on Incident | Details: Viewing all incidents 
+2025-05-25T06:26:01.581Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:26:05.378Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:26:55.877Z [INFO] [INCIDENT] Incident Module - Action: LIST on Incident | Details: Viewing all incidents 
+2025-05-25T06:27:00.436Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:27:03.625Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 2 [Risk viewed or clicked] 
+2025-05-25T06:27:03.628Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 2 [Risk viewed or clicked] 
+2025-05-25T06:27:07.534Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 3 [Risk viewed or clicked] 
+2025-05-25T06:27:07.536Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 3 [Risk viewed or clicked] 
+2025-05-25T06:27:12.733Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:27:57.203Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskMitigation | Details: Viewing mitigations for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:28:41.160Z [INFO] [RISK] Risk Module - Action: ASSIGN on RiskInstance | Details: Assigning risk 8 to user 5 
+2025-05-25T06:28:41.199Z [INFO] [RISK] Risk Module - Action: ASSIGN on RiskInstance | Details: Successfully assigned risk 8 to user 5 
+2025-05-25T06:28:50.943Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 
+2025-05-25T06:28:54.966Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 5 [Risk viewed or clicked] 
+2025-05-25T06:28:54.968Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 5 [Risk viewed or clicked] 
+2025-05-25T06:29:06.176Z [INFO] [RISK] Risk Module - Action: UPDATE on RiskMitigation | Details: Updating mitigation status for risk 8 to Work In Progress [Risk updated] 
+2025-05-25T06:29:10.483Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskMitigation | Details: Viewing mitigations for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:29:10.545Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing latest review for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:29:10.563Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing assigned reviewer for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:30:28.949Z [INFO] [RISK] Risk Module - Action: UPDATE on RiskMitigation | Details: Updating mitigation status for risk 8 to Revision Required by Reviewer [Risk updated] 
+2025-05-25T06:32:17.611Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 2 [Risk viewed or clicked] 
+2025-05-25T06:32:17.615Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 2 [Risk viewed or clicked] 
+2025-05-25T06:36:04.871Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 5 [Risk viewed or clicked] 
+2025-05-25T06:36:04.874Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 5 [Risk viewed or clicked] 
+2025-05-25T06:36:16.993Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskMitigation | Details: Viewing mitigations for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:36:17.069Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing latest review for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:36:17.139Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing assigned reviewer for risk 8 [Risk viewed or clicked] 
+2025-05-25T06:37:09.538Z [INFO] [RISK] Risk Module - Action: UPDATE on RiskMitigation | Details: Updating mitigation status for risk 8 to Revision Required by Reviewer [Risk updated] 
+2025-05-25T06:37:30.988Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 2 [Risk viewed or clicked] 
+2025-05-25T06:37:30.991Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 2 [Risk viewed or clicked] 
+2025-05-25T06:38:05.668Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskInstance | Details: Viewing risks assigned to user 5 [Risk viewed or clicked] 
+2025-05-25T06:38:05.672Z [DEBUG] [RISK] Risk Module - Action: VIEW on RiskReview | Details: Viewing reviewer tasks for user 5 [Risk viewed or clicked] 
+2025-05-25T06:38:13.662Z [INFO] [USER] User Module - Action: VIEW on CustomUser | Details: Viewing custom users 

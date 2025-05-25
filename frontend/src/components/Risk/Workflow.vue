@@ -26,6 +26,7 @@
             <th>Priority</th>
             <th>Status</th>
             <th>Assigned To</th>
+            <th>Review Count</th>
           </tr>
         </thead>
         <tbody>
@@ -52,6 +53,7 @@
                 <button @click="openMitigationModal(risk)" class="assign-btn" :disabled="!selectedUsers[risk.RiskInstanceId]">Assign</button>
               </div>
             </td>
+            <td>{{ risk.ReviewerCount || 0 }}</td>
           </tr>
         </tbody>
       </table>
@@ -117,15 +119,75 @@
                 </button>
               </div>
               
+              <!-- Due Date Input -->
+              <div class="due-date-section">
+                <h4>Due Date for Mitigation Completion</h4>
+                <input 
+                  type="date" 
+                  v-model="mitigationDueDate" 
+                  class="due-date-input" 
+                  :min="getTodayDate()"
+                />
+              </div>
+              
+              <!-- Risk Form Section -->
+              <div class="risk-form-section">
+                <h4>Risk Mitigation Questionnaire</h4>
+                <p class="form-note">Please complete these details about the risk mitigation:</p>
+                
+                <div class="form-field">
+                  <label for="cost-input">What is the cost for this mitigation?</label>
+                  <textarea 
+                    id="cost-input" 
+                    v-model="riskFormDetails.cost" 
+                    placeholder="Describe the cost..."
+                    class="form-textarea"
+                  ></textarea>
+                </div>
+                
+                <div class="form-field">
+                  <label for="impact-input">What is the impact for this mitigation?</label>
+                  <textarea 
+                    id="impact-input" 
+                    v-model="riskFormDetails.impact" 
+                    placeholder="Describe the impact..."
+                    class="form-textarea"
+                  ></textarea>
+                </div>
+                
+                <div class="form-field">
+                  <label for="financial-impact-input">What is the financial impact for this mitigation?</label>
+                  <textarea 
+                    id="financial-impact-input" 
+                    v-model="riskFormDetails.financialImpact" 
+                    placeholder="Describe the financial impact..."
+                    class="form-textarea"
+                  ></textarea>
+                </div>
+                
+                <div class="form-field">
+                  <label for="reputational-impact-input">What is the reputational impact for this mitigation?</label>
+                  <textarea 
+                    id="reputational-impact-input" 
+                    v-model="riskFormDetails.reputationalImpact" 
+                    placeholder="Describe the reputational impact..."
+                    class="form-textarea"
+                  ></textarea>
+                </div>
+              </div>
+              
               <!-- Submit Section -->
               <div class="mitigation-actions">
                 <button 
                   @click="assignRiskWithMitigations" 
                   class="submit-mitigations-btn"
-                  :disabled="mitigationSteps.length === 0"
+                  :disabled="mitigationSteps.length === 0 || !mitigationDueDate || !isFormComplete()"
                 >
                   <i class="fas fa-user-plus"></i> Assign with Mitigations
                 </button>
+                <div v-if="!isFormComplete()" class="form-warning">
+                  <i class="fas fa-exclamation-circle"></i> Please complete all questionnaire fields
+                </div>
               </div>
             </div>
           </div>
@@ -152,7 +214,14 @@ export default {
       selectedRisk: {},
       mitigationSteps: [],
       newMitigationStep: '',
-      loadingMitigations: false
+      loadingMitigations: false,
+      mitigationDueDate: '',
+      riskFormDetails: {
+        cost: '',
+        impact: '',
+        financialImpact: '',
+        reputationalImpact: ''
+      }
     }
   },
   mounted() {
@@ -210,6 +279,13 @@ export default {
       this.selectedRisk = {};
       this.mitigationSteps = [];
       this.newMitigationStep = '';
+      this.mitigationDueDate = '';
+      this.riskFormDetails = {
+        cost: '',
+        impact: '',
+        financialImpact: '',
+        reputationalImpact: ''
+      };
     },
     parseMitigations(data) {
       // Convert different mitigation formats to our standard format
@@ -273,7 +349,7 @@ export default {
       const riskId = this.selectedRisk.RiskInstanceId;
       const userId = this.selectedUsers[riskId];
       
-      if (!userId || this.mitigationSteps.length === 0) return;
+      if (!userId || this.mitigationSteps.length === 0 || !this.mitigationDueDate || !this.isFormComplete()) return;
       
       this.loading = true;
       
@@ -284,16 +360,16 @@ export default {
         mitigationsJson[index + 1] = step.description;
       });
       
-      // Convert to JSON string for storage in database
-      const mitigationsJsonString = JSON.stringify(mitigationsJson);
+      console.log('Sending mitigation data:', mitigationsJson);
+      console.log('Sending form details:', this.riskFormDetails);
       
-      console.log('Sending mitigation data:', mitigationsJsonString);
-      
-      // Assign the risk to the user with mitigations
+      // Assign the risk to the user with mitigations and form details
       axios.post('http://localhost:8000/api/risk-assign/', {
         risk_id: riskId,
         user_id: userId,
-        mitigations: mitigationsJsonString
+        mitigations: mitigationsJson,
+        due_date: this.mitigationDueDate,
+        risk_form_details: this.riskFormDetails
       })
       .then(response => {
         console.log('Assignment response:', response.data);
@@ -305,14 +381,17 @@ export default {
           this.risks[index].RiskOwner = assignedUser.user_name;
           this.risks[index].RiskStatus = 'Assigned';
           this.risks[index].UserId = userId;
-          this.risks[index].RiskMitigation = mitigationsJsonString;
+          this.risks[index].RiskMitigation = mitigationsJson;
+          this.risks[index].MitigationDueDate = this.mitigationDueDate;
+          this.risks[index].MitigationStatus = 'Yet to Start';
+          this.risks[index].RiskFormDetails = this.riskFormDetails;
         }
         
         this.loading = false;
         this.closeMitigationModal();
         
         // Show success message
-        alert('Risk assigned successfully with mitigation steps!');
+        alert('Risk assigned successfully with mitigation steps and details!');
       })
       .catch(error => {
         console.error('Error assigning risk:', error);
@@ -354,6 +433,21 @@ export default {
       if (statusLower.includes('approved')) return 'row-approved';
       if (statusLower.includes('review')) return 'row-review';
       return '';
+    },
+    getTodayDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
+    isFormComplete() {
+      return (
+        this.riskFormDetails.cost.trim() !== '' &&
+        this.riskFormDetails.impact.trim() !== '' &&
+        this.riskFormDetails.financialImpact.trim() !== '' &&
+        this.riskFormDetails.reputationalImpact.trim() !== ''
+      );
     }
   }
 }
@@ -916,6 +1010,7 @@ h1 {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  opacity: 0.7;
 }
 
 .assign-btn {
@@ -927,5 +1022,100 @@ h1 {
 .assign-btn:hover:not(:disabled) {
   background-color: #40a9ff;
   transform: translateY(-1px);
+}
+
+.due-date-section {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #f9f9fa;
+  border-radius: 8px;
+  border: 1px solid #eaecef;
+}
+
+.due-date-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.due-date-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.due-date-input:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.risk-form-section {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #f9f9fa;
+  border-radius: 8px;
+  border: 1px solid #eaecef;
+}
+
+.risk-form-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.form-note {
+  margin-bottom: 20px;
+  color: #606266;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.form-field {
+  margin-bottom: 16px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  transition: all 0.3s;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.form-warning {
+  margin-top: 10px;
+  color: #fa8c16;
+  font-size: 14px;
+  text-align: center;
+}
+
+.form-warning i {
+  margin-right: 6px;
 }
 </style> 

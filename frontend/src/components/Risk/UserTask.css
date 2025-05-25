@@ -1500,7 +1500,7 @@ h3 {
 }
 
 .complete-btn:hover {
-  background-color: #6ad02d;
+  background-color: #73d13d;
   transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
@@ -1715,4 +1715,344 @@ h3 {
   padding: 40px;
   color: #606266;
   font-style: italic;
+}
+
+/* Due Date Styling */
+.due-status {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.due-status.overdue {
+  background-color: #fff1f0;
+  color: var(--danger-color);
+  border: 1px solid #ffa39e;
+}
+
+.due-status.urgent {
+  background-color: #fff7e6;
+  color: #fa8c16;
+  border: 1px solid #ffd591;
+}
+
+.due-status.warning {
+  background-color: #fffbe6;
+  color: var(--warning-color);
+  border: 1px solid #ffe58f;
+}
+
+.due-status.on-track {
+  background-color: #f6ffed;
+  color: var(--success-color);
+  border: 1px solid #b7eb8f;
+}
+
+.mitigation-status {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+/* Status styles for risk status */
+.status-approved {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.status-assigned {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.status-rejected {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+.status-not-assigned {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Mitigation status badges */
+.mitigation-status {
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.mitigation-status.status-completed {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.mitigation-status.status-progress {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.mitigation-status.status-revision {
+  background-color: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.mitigation-status.status-not-started {
+  background-color: #f5f5f5;
+  color: #8c8c8c;
+  border: 1px solid #d9d9d9;
+}
+
+.complete-btn {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.complete-btn:hover {
+  background-color: #73d13d;
+}
+
+.disabled-btn {
+  background-color: #f5f5f5 !important;
+  color: #bfbfbf !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  border: 1px solid #d9d9d9 !important;
+  opacity: 0.7;
+}
+
+.disabled-btn:hover {
+  background-color: #f5f5f5 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Also apply to review-btn when disabled */
+.review-btn.disabled-btn {
+  background-color: #f5f5f5 !important;
+  color: #bfbfbf !important;
+}
+
+/* Questionnaire styling */
+.mitigation-questionnaire {
+  margin-top: 30px;
+  padding: 25px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  border: 1px solid #e6ebf1;
+}
+
+.mitigation-questionnaire h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.questionnaire-note {
+  color: #606266;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.questionnaire-note:before {
+  content: '\f05a'; /* Info icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+  color: #1890ff;
+}
+
+.question-group {
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.question-group.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.question-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.question-group textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px 15px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.question-group textarea:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.question-group textarea::placeholder {
+  color: #bfbfbf;
+}
+
+.question-group textarea:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Update the submission area to show when questionnaire is complete */
+.submission-area.ready {
+  transform: translateY(-10px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Add these styles for the form details review */
+.form-details-review {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  border: 1px solid #eaecef;
+}
+
+.form-details-review h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eaecef;
+}
+
+.form-review-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #eaecef;
+}
+
+.form-review-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-review-item h5 {
+  margin: 0 0 8px 0;
+  color: #606266;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-review-item p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: white;
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
+}
+
+/* Add these styles for questionnaire approval */
+.questionnaire-approval {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eaecef;
+}
+
+.approval-status {
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.approval-status.approved {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.approval-status.rejected {
+  background-color: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.approval-warning {
+  color: #fa8c16;
+  font-size: 14px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.approval-warning i {
+  font-size: 16px;
+}
+
+.questionnaire-feedback {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff2f0;
+  border-radius: 6px;
+  border-left: 4px solid #ff4d4f;
+}
+
+.questionnaire-feedback h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #ff4d4f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.questionnaire-feedback p {
+  margin: 0;
+  font-size: 14px;
+  color: #434343;
+  line-height: 1.5;
 }

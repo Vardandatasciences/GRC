@@ -66,7 +66,23 @@
             <p><strong>ID:</strong> {{ risk.RiskInstanceId }}</p>
             <p><strong>Category:</strong> {{ risk.Category }}</p>
             <p><strong>Criticality:</strong> {{ risk.Criticality }}</p>
-            <p><strong>Status:</strong> <span :class="'status-' + risk.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">{{ risk.RiskStatus || 'Not Started' }}</span></p>
+            <p><strong>Due Date:</strong> 
+              <template v-if="risk.MitigationDueDate">
+                {{ formatDate(risk.MitigationDueDate) }}
+                <span class="due-status" :class="getDueStatusClass(risk.MitigationDueDate)">
+                  {{ getDueStatusText(risk.MitigationDueDate) }}
+                </span>
+              </template>
+              <template v-else>Not set</template>
+            </p>
+            <p><strong>Status:</strong> 
+              <span :class="'status-' + risk.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">
+                {{ risk.RiskStatus || 'Not Assigned' }}
+              </span>
+              <span class="mitigation-status" :class="getMitigationStatusClass(risk.MitigationStatus)">
+                {{ risk.MitigationStatus || 'Yet to Start' }}
+              </span>
+            </p>
             <p><strong>Priority:</strong> {{ risk.RiskPriority }}</p>
             <p><strong>Assigned To:</strong> {{ getUserName(risk.UserId) }}</p>
             
@@ -91,18 +107,28 @@
           
           <div class="action-buttons">
             <button 
-              v-if="risk.RiskStatus === 'Revision Required'" 
+              v-if="risk.MitigationStatus === 'Revision Required by User'" 
               @click="startWork(risk.RiskInstanceId)" 
               class="start-btn">
               Start Revision
             </button>
             <button 
-              v-else-if="risk.RiskStatus !== 'Work In Progress'" 
+              v-else-if="risk.MitigationStatus !== 'Work In Progress' && risk.MitigationStatus !== 'Completed'" 
               @click="startWork(risk.RiskInstanceId)" 
               class="start-btn">
               Start Work
             </button>
-            <button @click="viewMitigations(risk.RiskInstanceId)" class="view-btn">
+            <button 
+              v-if="risk.MitigationStatus === 'Work In Progress'" 
+              @click="completeMitigation(risk.RiskInstanceId)" 
+              class="complete-btn">
+              Mark as Completed
+            </button>
+            <button 
+              @click="viewMitigations(risk.RiskInstanceId)" 
+              class="view-btn"
+              :disabled="risk.MitigationStatus === 'Yet to Start'"
+              :class="{'disabled-btn': risk.MitigationStatus === 'Yet to Start'}">
               <i class="fas fa-eye"></i> View Mitigations
             </button>
           </div>
@@ -137,13 +163,31 @@
             <p><strong>ID:</strong> {{ task.RiskInstanceId }}</p>
             <p><strong>Category:</strong> {{ task.Category }}</p>
             <p><strong>Criticality:</strong> {{ task.Criticality }}</p>
-            <p><strong>Status:</strong> <span :class="'status-' + task.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">{{ task.RiskStatus || 'Under Review' }}</span></p>
+            <p><strong>Due Date:</strong> 
+              <template v-if="task.MitigationDueDate">
+                {{ formatDate(task.MitigationDueDate) }}
+                <span class="due-status" :class="getDueStatusClass(task.MitigationDueDate)">
+                  {{ getDueStatusText(task.MitigationDueDate) }}
+                </span>
+              </template>
+              <template v-else>Not set</template>
+            </p>
+            <p><strong>Status:</strong> 
+              <span :class="'status-' + task.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">
+                {{ task.RiskStatus || 'Not Started' }}
+              </span>
+              <span class="mitigation-status">{{ task.MitigationStatus || 'Yet to Start' }}</span>
+            </p>
             <p><strong>Priority:</strong> {{ task.RiskPriority }}</p>
             <p><strong>Submitted By:</strong> {{ getUserName(task.UserId) }}</p>
           </div>
           
           <div class="action-buttons">
-            <button @click="reviewMitigations(task)" class="review-btn">
+            <button 
+              @click="reviewMitigations(task)" 
+              class="review-btn"
+              :disabled="!hasApprovalVersion(task)"
+              :class="{'disabled-btn': !hasApprovalVersion(task)}">
               <i class="fas fa-tasks"></i> {{ task.RiskStatus === 'Under Review' ? 'Review Mitigations' : 'View Mitigations' }}
             </button>
           </div>
@@ -276,7 +320,63 @@
               </div>
             </div>
             
-            <!-- Simplified submission section -->
+            <!-- Add this after the timeline and before the submission area -->
+            <div class="mitigation-questionnaire" v-if="allStepsCompleted">
+              <h3>Risk Mitigation Questionnaire</h3>
+              <p class="questionnaire-note">Please complete all fields to proceed with submission</p>
+              
+              <div class="question-group">
+                <label for="cost-input">What is the cost for this mitigation?</label>
+                <textarea 
+                  id="cost-input" 
+                  v-model="formDetails.cost" 
+                  placeholder="Describe the cost..."
+                  :disabled="!allStepsCompleted"
+                  @input="validateQuestionnaire"
+                ></textarea>
+              </div>
+              
+              <div class="question-group" :class="{ 'disabled': !formDetails.cost }">
+                <label for="impact-input">What is the impact for this mitigation?</label>
+                <textarea 
+                  id="impact-input" 
+                  v-model="formDetails.impact" 
+                  placeholder="Describe the impact..."
+                  :disabled="!formDetails.cost"
+                  @input="validateQuestionnaire"
+                ></textarea>
+              </div>
+              
+              <div class="question-group" :class="{ 'disabled': !formDetails.impact }">
+                <label for="financial-impact-input">What is the financial impact for this mitigation?</label>
+                <textarea 
+                  id="financial-impact-input" 
+                  v-model="formDetails.financialImpact" 
+                  placeholder="Describe the financial impact..."
+                  :disabled="!formDetails.impact"
+                  @input="validateQuestionnaire"
+                ></textarea>
+              </div>
+              
+              <div class="question-group" :class="{ 'disabled': !formDetails.financialImpact }">
+                <label for="reputational-impact-input">What is the reputational impact for this mitigation?</label>
+                <textarea 
+                  id="reputational-impact-input" 
+                  v-model="formDetails.reputationalImpact" 
+                  placeholder="Describe the reputational impact..."
+                  :disabled="!formDetails.financialImpact"
+                  @input="validateQuestionnaire"
+                ></textarea>
+              </div>
+            </div>
+            
+            <!-- Add to the mitigation-questionnaire div, after the questionnaire fields -->
+            <div v-if="questionnaireRejected" class="questionnaire-feedback">
+              <h4><i class="fas fa-exclamation-circle"></i> Reviewer Feedback</h4>
+              <p>{{ questionnaireRemarks }}</p>
+            </div>
+            
+            <!-- Update the submission-area div to check for questionnaire completion -->
             <div class="submission-area" :class="{ 'ready': canSubmit }">
               <h3>Review Assignment</h3>
               
@@ -418,6 +518,74 @@
               </div>
             </div>
             
+            <!-- Update the form details review section in the reviewer modal -->
+            <div class="form-details-review">
+              <h4>Risk Mitigation Questionnaire</h4>
+              
+              <div class="form-review-item">
+                <h5>Cost for Mitigation:</h5>
+                <p>{{ formDetails.cost || 'Not specified' }}</p>
+              </div>
+              
+              <div class="form-review-item">
+                <h5>Impact for Mitigation:</h5>
+                <p>{{ formDetails.impact || 'Not specified' }}</p>
+              </div>
+              
+              <div class="form-review-item">
+                <h5>Financial Impact:</h5>
+                <p>{{ formDetails.financialImpact || 'Not specified' }}</p>
+              </div>
+              
+              <div class="form-review-item">
+                <h5>Reputational Impact:</h5>
+                <p>{{ formDetails.reputationalImpact || 'Not specified' }}</p>
+              </div>
+              
+              <!-- Add questionnaire approval controls -->
+              <div class="questionnaire-approval">
+                <div v-if="formDetails.approved === undefined" class="approval-buttons">
+                  <button @click="approveQuestionnaire(true)" class="approve-btn">
+                    <i class="fas fa-check"></i> Approve Questionnaire
+                  </button>
+                  <button @click="approveQuestionnaire(false)" class="reject-btn">
+                    <i class="fas fa-times"></i> Request Revisions
+                  </button>
+                </div>
+                
+                <div v-if="formDetails.approved === true" class="approval-status approved">
+                  <i class="fas fa-check-circle"></i> Questionnaire Approved
+                  <button @click="approveQuestionnaire(false)" class="change-decision-btn">
+                    <i class="fas fa-exchange-alt"></i> Change to Reject
+                  </button>
+                </div>
+                
+                <div v-if="formDetails.approved === false" class="approval-status rejected">
+                  <i class="fas fa-times-circle"></i> Revisions Requested
+                  
+                  <div class="remarks-field">
+                    <label for="questionnaire-remarks">Feedback (required):</label>
+                    <textarea 
+                      id="questionnaire-remarks" 
+                      v-model="formDetails.remarks" 
+                      class="remarks-input" 
+                      placeholder="Provide feedback on the questionnaire..."
+                    ></textarea>
+                    
+                    <div class="approval-actions">
+                      <button @click="saveQuestionnaireRemarks" class="save-remarks-btn">
+                        <i class="fas fa-save"></i> Save Feedback
+                      </button>
+                      
+                      <button @click="approveQuestionnaire(true)" class="change-decision-btn">
+                        <i class="fas fa-exchange-alt"></i> Change to Approve
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div class="review-actions">
               <button 
                 class="submit-review-btn" 
@@ -475,7 +643,14 @@ export default {
       currentReviewTask: null,
       userNotifications: [],
       reviewCompleted: false,
-      reviewApproved: false
+      reviewApproved: false,
+      formDetails: {
+        cost: '',
+        impact: '',
+        financialImpact: '',
+        reputationalImpact: ''
+      },
+      latestReview: null
     }
   },
   computed: {
@@ -486,12 +661,33 @@ export default {
     },
     canSubmit() {
       const hasRejectedOrNewSteps = this.mitigationSteps.some(step => Boolean(step.approved) !== true);
-      return this.allStepsCompleted && this.selectedReviewer && hasRejectedOrNewSteps;
+      const formCompleted = this.isQuestionnaireComplete();
+      return this.allStepsCompleted && this.selectedReviewer && hasRejectedOrNewSteps && formCompleted;
     },
     canSubmitReview() {
-      return Object.values(this.mitigationReviewData).every(m => 
+      const allMitigationsReviewed = Object.values(this.mitigationReviewData).every(m => 
         m.approved === true || (m.approved === false && m.remarks && m.remarks.trim() !== '')
       );
+      
+      // Also require the questionnaire to be reviewed
+      const questionnaireReviewed = 
+        this.formDetails.approved === true || 
+        (this.formDetails.approved === false && this.formDetails.remarks && this.formDetails.remarks.trim() !== '');
+      
+      return allMitigationsReviewed && questionnaireReviewed;
+    },
+    questionnaireRejected() {
+      return this.latestReview && 
+             this.latestReview.risk_form_details && 
+             this.latestReview.risk_form_details.approved === false;
+    },
+    questionnaireRemarks() {
+      if (this.latestReview && 
+          this.latestReview.risk_form_details && 
+          this.latestReview.risk_form_details.remarks) {
+        return this.latestReview.risk_form_details.remarks;
+      }
+      return '';
     }
   },
   mounted() {
@@ -529,6 +725,8 @@ export default {
         this.userRisks = userResponse.data;
         this.reviewerTasks = reviewerResponse.data;
         
+        console.log('User risks:', this.userRisks); // Log to verify data
+        
         // Add notification icons based on risk status directly
         this.userRisks.forEach(risk => {
           if (risk.RiskStatus === 'Revision Required') {
@@ -555,18 +753,50 @@ export default {
     },
     startWork(riskId) {
       this.loading = true;
-      axios.post('http://localhost:8000/api/risk-update-status/', {
+      console.log(`Starting work on risk ID: ${riskId}`);
+      
+      // Ensure we're sending the correct data format
+      const requestData = {
         risk_id: riskId,
         status: 'Work In Progress'
+      };
+      
+      console.log('Sending request data:', requestData);
+      
+      // Update mitigation status instead of risk status
+      axios.post('http://localhost:8000/api/update-mitigation-status/', requestData)
+        .then(response => {
+          console.log('Status updated:', response.data);
+          // Update the local risk status
+          const index = this.userRisks.findIndex(r => r.RiskInstanceId === riskId);
+          if (index !== -1) {
+            this.userRisks[index].MitigationStatus = 'Work In Progress';
+          }
+          this.loading = false;
+        })
+        .catch(error => {
+          console.error('Error updating status:', error);
+          console.error('Error response:', error.response ? error.response.data : 'No response data');
+          this.error = `Failed to update status: ${error.message}`;
+          this.loading = false;
+        });
+    },
+    completeMitigation(riskId) {
+      this.loading = true;
+      axios.post('http://localhost:8000/api/update-mitigation-status/', {
+        risk_id: riskId,
+        status: 'Completed'
       })
       .then(response => {
         console.log('Status updated:', response.data);
         // Update the local risk status
         const index = this.userRisks.findIndex(r => r.RiskInstanceId === riskId);
         if (index !== -1) {
-          this.userRisks[index].RiskStatus = 'Work In Progress';
+          this.userRisks[index].MitigationStatus = 'Completed';
+          this.userRisks[index].RiskStatus = 'Approved'; // Also update risk status
         }
         this.loading = false;
+        alert('Mitigation marked as completed!');
       })
       .catch(error => {
         console.error('Error updating status:', error);
@@ -585,70 +815,79 @@ export default {
           console.log('Mitigations received:', response.data);
           this.mitigationSteps = this.parseMitigations(response.data);
           
-          // Get the latest R version from risk_approval table to get approval status
-          axios.get(`http://localhost:8000/api/latest-review/${riskId}/`)
-            .then(reviewResponse => {
-              const reviewData = reviewResponse.data;
-              console.log('Latest review data:', reviewData);
+          // Get the risk form details
+          axios.get(`http://localhost:8000/api/risk-form-details/${riskId}/`)
+            .then(formResponse => {
+              console.log('Form details received:', formResponse.data);
+              this.formDetails = formResponse.data;
               
-              if (reviewData && reviewData.mitigations) {
-                // Create new steps array with proper boolean values for approved
-                const updatedSteps = [];
-                
-                // Process each mitigation from the review data
-                Object.keys(reviewData.mitigations).forEach(stepId => {
-                  const mitigation = reviewData.mitigations[stepId];
+              // Get the latest R version from risk_approval table to get approval status
+              axios.get(`http://localhost:8000/api/latest-review/${riskId}/`)
+                .then(reviewResponse => {
+                  const reviewData = reviewResponse.data;
+                  console.log('Latest review data:', reviewData);
                   
-                  // Ensure approved is a proper boolean value if it exists, otherwise leave it undefined
-                  let isApproved = undefined;
-                  if ('approved' in mitigation) {
-                    isApproved = mitigation.approved === true || mitigation.approved === "true";
+                  // Store the latest review
+                  this.latestReview = reviewData;
+                  
+                  if (reviewData && reviewData.mitigations) {
+                    // Create new steps array with proper boolean values for approved
+                    const updatedSteps = [];
+                    
+                    // Process each mitigation from the review data
+                    Object.keys(reviewData.mitigations).forEach(stepId => {
+                      const mitigation = reviewData.mitigations[stepId];
+                      
+                      // Ensure approved is a proper boolean value if it exists, otherwise leave it undefined
+                      let isApproved = undefined;
+                      if ('approved' in mitigation) {
+                        isApproved = mitigation.approved === true || mitigation.approved === "true";
+                      }
+                      
+                      updatedSteps.push({
+                        title: `Step ${stepId}`,
+                        description: mitigation.description,
+                        status: mitigation.status || 'Completed',
+                        approved: isApproved,  // This could be undefined, true, or false
+                        remarks: mitigation.remarks || '',
+                        comments: mitigation.comments || '',
+                        fileData: mitigation.fileData,
+                        fileName: mitigation.fileName
+                      });
+                    });
+                    
+                    // Replace the mitigation steps with the properly formatted data
+                    this.mitigationSteps = updatedSteps;
                   }
                   
-                  updatedSteps.push({
-                    title: `Step ${stepId}`,
-                    description: mitigation.description,
-                    status: mitigation.status || 'Completed',
-                    approved: isApproved,  // This could be undefined, true, or false
-                    remarks: mitigation.remarks || '',
-                    comments: mitigation.comments || '',
-                    fileData: mitigation.fileData,
-                    fileName: mitigation.fileName
-                  });
-                });
-                
-                // Replace the mitigation steps with the properly formatted data
-                this.mitigationSteps = updatedSteps;
-              }
-              
-              // Check if a reviewer is already assigned
-              axios.get(`http://localhost:8000/api/get-assigned-reviewer/${riskId}/`)
-                .then(reviewerResponse => {
-                  if (reviewerResponse.data && reviewerResponse.data.reviewer_id) {
-                    this.selectedReviewer = reviewerResponse.data.reviewer_id;
-                  }
-                  this.loadingMitigations = false;
+                  // Check if a reviewer is already assigned
+                  axios.get(`http://localhost:8000/api/get-assigned-reviewer/${riskId}/`)
+                    .then(reviewerResponse => {
+                      if (reviewerResponse.data && reviewerResponse.data.reviewer_id) {
+                        this.selectedReviewer = reviewerResponse.data.reviewer_id;
+                      }
+                      this.loadingMitigations = false;
+                    })
+                    .catch(error => {
+                      console.error('Error fetching assigned reviewer:', error);
+                      this.loadingMitigations = false;
+                    });
                 })
                 .catch(error => {
-                  console.error('Error fetching assigned reviewer:', error);
+                  console.error('Error fetching latest review:', error);
                   this.loadingMitigations = false;
                 });
             })
             .catch(error => {
-              console.error('Error fetching latest review:', error);
-              
-              // Try to get assigned reviewer even if review data fails
-              axios.get(`http://localhost:8000/api/get-assigned-reviewer/${riskId}/`)
-                .then(reviewerResponse => {
-                  if (reviewerResponse.data && reviewerResponse.data.reviewer_id) {
-                    this.selectedReviewer = reviewerResponse.data.reviewer_id;
-                  }
-                  this.loadingMitigations = false;
-                })
-                .catch(error => {
-                  console.error('Error fetching assigned reviewer:', error);
-                  this.loadingMitigations = false;
-                });
+              console.error('Error fetching form details:', error);
+              // Continue with default empty form details
+              this.formDetails = {
+                cost: '',
+                impact: '',
+                financialImpact: '',
+                reputationalImpact: ''
+              };
+              this.loadingMitigations = false;
             });
         })
         .catch(error => {
@@ -760,7 +999,7 @@ export default {
       
       this.loading = true;
       
-      // Prepare the mitigation data - only include rejected or not-yet-reviewed steps
+      // Prepare the mitigation data
       const mitigationData = {};
       this.mitigationSteps.forEach((step, index) => {
         // Extract step number from title or use index+1
@@ -802,22 +1041,24 @@ export default {
         risk_id: this.selectedRiskId,
         reviewer_id: this.selectedReviewer,
         user_id: this.selectedUserId,
-        mitigations: mitigationData
+        mitigations: mitigationData,
+        risk_form_details: this.formDetails  // Add the form details here
       })
       .then(response => {
         console.log('Reviewer assigned:', response.data);
-        // Update the risk status to indicate it's under review
-        return axios.post('http://localhost:8000/api/risk-update-status/', {
+        // Update the risk mitigation status to indicate it's under review
+        return axios.post('http://localhost:8000/api/update-mitigation-status/', {
           risk_id: this.selectedRiskId,
-          status: 'Under Review'
+          status: 'Revision Required by Reviewer'
         });
       })
       .then(response => {
-        console.log('Status updated to Under Review:', response.data);
+        console.log('Status updated to under review:', response.data);
         // Update the local risk data to show the new status
         const index = this.userRisks.findIndex(r => r.RiskInstanceId === this.selectedRiskId);
         if (index !== -1) {
-          this.userRisks[index].RiskStatus = 'Under Review';
+          this.userRisks[index].MitigationStatus = 'Revision Required by Reviewer';
+          // Keep RiskStatus as 'Assigned'
         }
         this.loading = false;
         // Close the modal
@@ -830,36 +1071,6 @@ export default {
         this.loading = false;
         alert('Failed to submit for review. Please try again.');
       });
-    },
-    reviewMitigations(task) {
-      this.currentReviewTask = task;  // Store the entire task object for reference
-      this.selectedRiskId = task.RiskInstanceId;
-      this.loadingMitigations = true;
-      this.showReviewerModal = true;
-      
-      try {
-        // Extract the mitigations from the ExtractedInfo JSON
-        const extractedInfo = JSON.parse(task.ExtractedInfo);
-        console.log('Extracted info:', extractedInfo);
-        
-        if (extractedInfo && extractedInfo.mitigations) {
-          this.mitigationReviewData = extractedInfo.mitigations;
-          
-          // Add task status info for completed tasks
-          const isCompleted = task.RiskStatus === 'Approved' || task.RiskStatus === 'Revision Required';
-          this.reviewCompleted = isCompleted;
-          this.reviewApproved = task.RiskStatus === 'Approved';
-        } else {
-          this.mitigationReviewData = {};
-          console.error('No mitigations found in ExtractedInfo');
-        }
-        
-        this.loadingMitigations = false;
-      } catch (error) {
-        console.error('Error parsing ExtractedInfo:', error);
-        this.mitigationReviewData = {};
-        this.loadingMitigations = false;
-      }
     },
     closeReviewerModal() {
       this.showReviewerModal = false;
@@ -893,22 +1104,30 @@ export default {
       }
     },
     submitReview(approved) {
-      if (!this.canSubmitReview) return;
+      if (!this.canSubmitReview) {
+        alert('Please complete the review of all mitigations and the questionnaire');
+        return;
+      }
       
       this.loading = true;
       
-      // Prepare the final data with all mitigations
+      // Prepare the final data with all mitigations and questionnaire
       const reviewData = {
         approval_id: this.currentReviewTask.RiskInstanceId,
         risk_id: this.currentReviewTask.RiskInstanceId,
         approved: approved,
-        mitigations: this.mitigationReviewData
+        mitigations: this.mitigationReviewData,
+        risk_form_details: {
+          ...this.formDetails,
+          approved: this.formDetails.approved,
+          remarks: this.formDetails.remarks || ''
+        }
       };
       
       // Print the complete review data for debugging
       console.log('SUBMITTING REVIEW DATA:', JSON.stringify(reviewData, null, 2));
       
-      // Send the complete review with all mitigations in one request
+      // Send the complete review with all mitigations and questionnaire in one request
       axios.post('http://localhost:8000/api/complete-review/', reviewData)
         .then(response => {
           console.log('Review completed:', response.data);
@@ -1062,6 +1281,156 @@ export default {
       }
       
       return false;
+    },
+    formatDate(dateString) {
+      if (!dateString) return 'Not set';
+      
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    },
+    getDueStatusClass(dateString) {
+      if (!dateString) return '';
+      
+      const dueDate = new Date(dateString);
+      const today = new Date();
+      
+      // Reset the time part for accurate day comparison
+      dueDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+      
+      if (daysLeft < 0) return 'overdue';
+      if (daysLeft <= 3) return 'urgent';
+      if (daysLeft <= 7) return 'warning';
+      return 'on-track';
+    },
+    getDueStatusText(dateString) {
+      if (!dateString) return '';
+      
+      const dueDate = new Date(dateString);
+      const today = new Date();
+      
+      // Reset the time part for accurate day comparison
+      dueDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+      
+      if (daysLeft < 0) return `(Delayed by ${Math.abs(daysLeft)} days)`;
+      if (daysLeft === 0) return '(Due today)';
+      if (daysLeft === 1) return '(Due tomorrow)';
+      return `(${daysLeft} days left)`;
+    },
+    getMitigationStatusClass(status) {
+      if (!status) return '';
+      
+      const statusLower = status.toLowerCase();
+      if (statusLower.includes('completed')) return 'status-completed';
+      if (statusLower.includes('progress')) return 'status-progress';
+      if (statusLower.includes('revision')) return 'status-revision';
+      if (statusLower.includes('yet to start')) return 'status-not-started';
+      return '';
+    },
+    hasApprovalVersion(task) {
+      // Check if we have extracted info, which means there's a version
+      try {
+        if (task.ExtractedInfo) {
+          const extractedInfo = JSON.parse(task.ExtractedInfo);
+          return extractedInfo && extractedInfo.version;
+        }
+      } catch (error) {
+        console.error('Error checking approval version:', error);
+      }
+      return false;
+    },
+    isQuestionnaireComplete() {
+      return (
+        this.formDetails.cost.trim() !== '' &&
+        this.formDetails.impact.trim() !== '' &&
+        this.formDetails.financialImpact.trim() !== '' &&
+        this.formDetails.reputationalImpact.trim() !== ''
+      );
+    },
+    validateQuestionnaire() {
+      // This will be called on each input to ensure sequential completion
+    },
+    reviewMitigations(task) {
+      this.currentReviewTask = task;
+      this.selectedRiskId = task.RiskInstanceId;
+      this.loadingMitigations = true;
+      this.showReviewerModal = true;
+      
+      try {
+        // Extract the mitigations from the ExtractedInfo JSON
+        const extractedInfo = JSON.parse(task.ExtractedInfo);
+        console.log('Extracted info:', extractedInfo);
+        
+        if (extractedInfo && extractedInfo.mitigations) {
+          this.mitigationReviewData = extractedInfo.mitigations;
+          
+          // Also get form details if available
+          if (extractedInfo.risk_form_details) {
+            // Preserve approval status and remarks if they exist
+            this.formDetails = {
+              cost: extractedInfo.risk_form_details.cost || '',
+              impact: extractedInfo.risk_form_details.impact || '',
+              financialImpact: extractedInfo.risk_form_details.financialImpact || '',
+              reputationalImpact: extractedInfo.risk_form_details.reputationalImpact || '',
+              approved: extractedInfo.risk_form_details.approved,
+              remarks: extractedInfo.risk_form_details.remarks || ''
+            };
+          } else {
+            // Reset form details to empty
+            this.formDetails = {
+              cost: '',
+              impact: '',
+              financialImpact: '',
+              reputationalImpact: '',
+              approved: undefined,
+              remarks: ''
+            };
+          }
+          
+          // Add task status info for completed tasks
+          const isCompleted = task.RiskStatus === 'Approved' || task.RiskStatus === 'Revision Required';
+          this.reviewCompleted = isCompleted;
+          this.reviewApproved = task.RiskStatus === 'Approved';
+        } else {
+          this.mitigationReviewData = {};
+          console.error('No mitigations found in ExtractedInfo');
+        }
+        
+        this.loadingMitigations = false;
+      } catch (error) {
+        console.error('Error parsing ExtractedInfo:', error);
+        this.mitigationReviewData = {};
+        this.loadingMitigations = false;
+      }
+    },
+    approveQuestionnaire(approved) {
+      // Don't use this.$set directly, just update the property
+      this.formDetails.approved = approved;
+      
+      // If rejecting, ensure there's a remarks field
+      if (!approved && !this.formDetails.remarks) {
+        this.formDetails.remarks = '';
+      }
+      
+      // If approving, clear any remarks
+      if (approved) {
+        this.formDetails.remarks = '';
+      }
+    },
+    saveQuestionnaireRemarks() {
+      // Validate that remarks are provided when rejecting
+      if (this.formDetails.approved === false && !this.formDetails.remarks.trim()) {
+        alert('Please provide feedback for the questionnaire');
+        return;
+      }
+      
+      // Show confirmation to the user
+      alert('Questionnaire feedback saved');
     }
   }
 }
@@ -1069,5 +1438,90 @@ export default {
 
 <style>
 @import './UserTask.css';
+
+/* Update due status styling to be more visible */
+.due-status {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.due-status.overdue {
+  background-color: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.due-status.urgent {
+  background-color: #fff7e6;
+  color: #fa8c16;
+  border: 1px solid #ffd591;
+}
+
+.due-status.warning {
+  background-color: #fffbe6;
+  color: #faad14;
+  border: 1px solid #ffe58f;
+}
+
+.due-status.on-track {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.mitigation-status {
+  margin-left: 10px;
+  font-size: 12px;
+  color: #606266;
+  padding: 2px 8px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+/* Add styles for mitigation status badges */
+.mitigation-status.status-completed {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.mitigation-status.status-progress {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.mitigation-status.status-revision {
+  background-color: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.mitigation-status.status-not-started {
+  background-color: #f5f5f5;
+  color: #8c8c8c;
+  border: 1px solid #d9d9d9;
+}
+
+.complete-btn {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.complete-btn:hover {
+  background-color: #73d13d;
+}
 </style>
 

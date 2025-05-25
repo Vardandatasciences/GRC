@@ -79,9 +79,46 @@ class RiskInstance(models.Model):
     RiskResponseDescription = models.TextField(null=True)
     RiskMitigation = models.JSONField(null=True, blank=True)
     RiskOwner = models.CharField(max_length=255, null=True)
-    RiskStatus = models.CharField(max_length=50, null=True)
+    
+    # Define choices for RiskStatus
+    STATUS_NOT_ASSIGNED = 'Not Assigned'
+    STATUS_ASSIGNED = 'Assigned'
+    STATUS_APPROVED = 'Approved'
+    STATUS_REJECTED = 'Rejected'
+    
+    RISK_STATUS_CHOICES = [
+        (STATUS_NOT_ASSIGNED, 'Not Assigned'),
+        (STATUS_ASSIGNED, 'Assigned'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+    
+    # Define choices for MitigationStatus
+    MITIGATION_YET_TO_START = 'Yet to Start'
+    MITIGATION_IN_PROGRESS = 'Work In Progress'
+    MITIGATION_REVISION_REVIEWER = 'Revision Required by Reviewer'
+    MITIGATION_REVISION_USER = 'Revision Required by User'
+    MITIGATION_COMPLETED = 'Completed'
+    
+    MITIGATION_STATUS_CHOICES = [
+        (MITIGATION_YET_TO_START, 'Yet to Start'),
+        (MITIGATION_IN_PROGRESS, 'Work In Progress'),
+        (MITIGATION_REVISION_REVIEWER, 'Revision Required by Reviewer'),
+        (MITIGATION_REVISION_USER, 'Revision Required by User'),
+        (MITIGATION_COMPLETED, 'Completed'),
+    ]
+    
+    # Update the field definitions to use choices
+    RiskStatus = models.CharField(max_length=50, choices=RISK_STATUS_CHOICES, default=STATUS_NOT_ASSIGNED, null=True)
+    MitigationStatus = models.CharField(max_length=50, choices=MITIGATION_STATUS_CHOICES, default=MITIGATION_YET_TO_START, null=True)
+    
     UserId = models.IntegerField(null=True)
     Date = models.DateTimeField(null=True)
+    MitigationDueDate = models.DateField(null=True)
+    MitigationCompletedDate = models.DateTimeField(null=True)
+    ModifiedMitigations = models.JSONField(null=True)
+    ReviewerCount = models.IntegerField(null=True)
+    RiskFormDetails = models.JSONField(null=True, blank=True)
 
     class Meta:
         db_table = 'risk_instance'  # Ensure Django uses the correct table name in the database
@@ -112,3 +149,24 @@ class RiskApproval(models.Model):
     class Meta:
         db_table = 'grc_test.risk_approval'
         managed = False  # Since we're connecting to an existing table
+
+
+class GRCLog(models.Model):
+    LogId = models.AutoField(primary_key=True)
+    Timestamp = models.DateTimeField(auto_now_add=True)
+    UserId = models.CharField(max_length=50, null=True)
+    UserName = models.CharField(max_length=100, null=True)
+    Module = models.CharField(max_length=100, null=True)
+    ActionType = models.CharField(max_length=50, null=True)
+    EntityId = models.CharField(max_length=50, null=True)
+    EntityType = models.CharField(max_length=50, null=True)
+    LogLevel = models.CharField(max_length=20, default='INFO')
+    Description = models.TextField(null=True)
+    IPAddress = models.CharField(max_length=45, null=True)
+    AdditionalInfo = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'grc_logs'
+
+    def __str__(self):
+        return f"Log {self.LogId}: {self.ActionType} on {self.Module}"

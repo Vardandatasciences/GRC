@@ -5,6 +5,7 @@ from .models import Incident
 from .models import Compliance
 from .models import RiskInstance
 from .models import RiskAssignment
+from .models import GRCLog
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -84,3 +85,9 @@ class RiskWorkflowSerializer(serializers.ModelSerializer):
         if assignment:
             return assignment.assigned_to.username
         return None
+
+
+class GRCLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GRCLog
+        fields = '__all__'
