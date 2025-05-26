@@ -34,11 +34,11 @@ jobs:
       - name: Start frontend server in background
         run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
 
-      - name: Wait for server to be ready
-        uses: jakejarvis/wait-action@v0.1.2
+      - uses: softprops/wait-on@v1.1.0
         with:
           url: http://localhost:5000
-          timeout: 120
+          timeout: '120000'  # timeout in milliseconds
+
 
       - name: Run Cypress tests
         run: npm run cypress:run
