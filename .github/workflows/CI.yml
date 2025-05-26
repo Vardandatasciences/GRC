@@ -1,0 +1,70 @@
+name: Frontend CI with Cypress Tests
+
+# Trigger the workflow on push or pull request to the Risk_test1 branch
+on:
+  push:
+    branches: 
+      - Risk_test1
+  pull_request:
+    branches: 
+      - Risk_test1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
+    steps:
+      # Step 1: Checkout the code from the repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # Specify Node.js version
+
+      # Step 3: Install frontend dependencies using npm ci for clean install
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      # Step 4: Build the frontend project
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+
+      # Step 5: Install the 'serve' package globally to serve static files
+      - name: Install serve globally
+        run: npm install -g serve
+
+      # Step 6: Start the static frontend server in the background on port 5000
+      - name: Start static server in background
+        run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
+        working-directory: .
+
+      # Step 7: Wait for the server to become available before running tests
+      - name: Wait for server to be ready
+        uses: jakejarvis/wait-action@v0.1.2
+        with:
+          url: http://localhost:5000
+          timeout: 120  # Wait up to 2 minutes
+
+      # Step 8: Run Cypress end-to-end tests pointing to the static server
+      - name: Run Cypress tests manually
+        run: npx cypress run --config baseUrl=http://localhost:5000
+        working-directory: ./frontend
+
+      # Step 9: Upload Cypress screenshots as artifacts (in case of test failures)
+      - name: Upload Cypress Screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+
+      # Step 10: Upload Cypress videos as artifacts (test run recordings)
+      - name: Upload Cypress Videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
