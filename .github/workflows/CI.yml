@@ -1,36 +1,82 @@
-name: Frontend CI with Cypress Tests
+name: CI - Cypress End-to-End Tests
 
-# Trigger the workflow on push or pull request to the Risk_test1 branch
 on:
   push:
-    branches: 
+    branches:
       - Risk_test1
   pull_request:
-    branches: 
+    branches:
       - Risk_test1
 
 jobs:
-  test:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      # Example for starting a backend service with Docker (adjust accordingly)
+      backend:
+        image: node:16 # or your backend Docker image
+        ports:
+          - 4000:4000
+        options: >-
+          --health-cmd="curl --fail http://localhost:4000/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        # Command to start your backend server (adjust this)
+        command: bash -c "npm install && npm start"
 
     steps:
-      # Step 1: Checkout the code from the repository
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js environment
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'  # Specify Node.js version
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
 
-      # Step 3: Install frontend dependencies using npm ci for clean install
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./frontend
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm install
 
-      # Step 4: Build the frontend project
-      - name: Build frontend
-        run: npm run build
-        working-directory: ./frontend
+    - name: Start backend server in background
+      run: |
+        cd backend
+        npm start &
+      env:
+        NODE_ENV: test
+
+    - name: Wait for backend to be ready
+      run: |
+        npx wait-on http://localhost:4000/health
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm install
+
+    - name: Start frontend server in background
+      run: |
+        cd frontend
+        npm start &
+      
+    - name: Wait for frontend to be ready
+      run: |
+        npx wait-on http://localhost:3000
+
+    - name: Run Cypress tests
+      uses: cypress-io/github-action@v5
+      with:
+        start: npm start
+        wait-on: 'http://localhost:3000'
+        wait-on-timeout: 60
+        browser: chrome
+      working-directory: ./frontend
+
+    - name: Upload Cypress test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: cypress-results
+        path: frontend/src/components/Risk/cypress/results
 
