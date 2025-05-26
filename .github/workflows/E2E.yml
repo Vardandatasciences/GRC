@@ -35,12 +35,19 @@ jobs:
         run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
 
       - name: Wait for server to be ready
-        uses: softprops/wait-on@v1.1.0
-        with:
-          url: http://localhost:5000
-          timeout: '120000'
-
-
+        run: |
+          echo "Waiting for http://localhost:5000 to be ready..."
+          for i in {1..24}; do
+            if curl --silent --fail http://localhost:5000; then
+              echo "Server is up!"
+              exit 0
+            else
+              echo "Server not ready yet, waiting 5 seconds..."
+              sleep 5
+            fi
+          done
+          echo "Server did not start within 2 minutes."
+          exit 1
 
       - name: Run Cypress tests
         run: npm run cypress:run
