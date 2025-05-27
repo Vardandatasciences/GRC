@@ -1,4 +1,4 @@
-name: E2E Test
+name: E2E Tests
 
 on:
   push:
@@ -8,50 +8,45 @@ on:
     branches:
       - Risk_test1
 
+
 jobs:
-  e2e-tests:
+  e2e:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies
+      - name: Install Dependencies
         run: npm ci
         working-directory: ./frontend
 
-      - name: Build frontend
+      - name: Build Frontend
         run: npm run build
         working-directory: ./frontend
 
-      - name: Install serve globally
+      - name: Install serve CLI
         run: npm install -g serve
 
-      - name: Start frontend server in background
-        run: nohup serve -s ./frontend/dist -l 5000 > serve.log 2>&1 &
-
-      - name: Wait for server to be ready
-        run: |
-          echo "Waiting for http://localhost:5000 to be ready..."
-          for i in {1..24}; do
-            if curl --silent --fail http://localhost:5000; then
-              echo "Server is up!"
-              exit 0
-            else
-              echo "Server not ready yet, waiting 5 seconds..."
-              sleep 5
-            fi
-          done
-          echo "Server did not start within 2 minutes."
-          exit 1
-
-      - name: Run Cypress tests
-        run: npx cypress run
+      - name: Start Static Server
+        run: nohup serve -s dist -l 5000 > serve.log 2>&1 &
         working-directory: ./frontend
 
+      - name: Wait for Server to be Ready
+        uses: jakejarvis/wait-action@v0.1.2
+        with:
+          url: http://localhost:5000
+          timeout: 120
 
-      # Upload artifact step removed due to runner limitations
+      - name: Install Cypress (if not cached)
+        run: npx cypress install
+        working-directory: ./frontend
+
+      - name: Run Cypress Tests
+        run: npx cypress run --spec "cypress/e2e/**/*.cy.js" --config baseUrl=http://localhost:5000
+        working-directory: ./frontend
