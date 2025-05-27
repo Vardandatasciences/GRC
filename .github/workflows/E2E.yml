@@ -38,10 +38,11 @@ jobs:
         working-directory: ./frontend
 
       - name: Wait for Server to be Ready
-        uses: jakejarvis/wait-action@v0.1.2
+        uses: cycjimmy/wait-on-action@v1
         with:
-          url: http://localhost:5000
-          timeout: 120
+          resource: http://localhost:5000
+          timeout: 120000
+
 
       - name: Install Cypress (if not cached)
         run: npx cypress install
