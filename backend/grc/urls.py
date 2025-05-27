@@ -3,9 +3,15 @@ from django.http import HttpResponse
 from . import views
 from rest_framework.routers import DefaultRouter
 from .views import create_workflow, create_incident_from_audit_finding, RiskViewSet, IncidentViewSet, ComplianceViewSet, RiskInstanceViewSet, add_compliance_to_audit, get_assign_data, load_review_data, save_review_progress
-from .views import framework_list, framework_detail, copy_framework, create_framework_version, export_policies_to_excel, policy_list, policy_detail, copy_policy, subpolicy_detail, create_policy_version, get_policies_by_framework, get_subpolicies_by_policy,get_subpolicies_by_policy
+from .views import framework_list, framework_detail, copy_framework, create_framework_version, export_policies_to_excel, copy_policy, create_policy_version
+# Import policy-related functions from routes
+from .routes.policy import (
+    get_policies_by_framework, get_subpolicies_by_policy, policy_detail, policy_list,
+    add_policy_to_framework, subpolicy_detail, submit_subpolicy_review, resubmit_subpolicy,
+    get_policy_version, get_subpolicy_version, get_latest_policy_approval, get_latest_policy_approval_by_role,
+    get_latest_reviewer_version, submit_policy_approval_review, get_policy_version_history
+)
 from .incident_counters import get_incident_counts as get_counts
-# from .policy_views import get_policies_by_framework, get_subpolicies_by_policy
 
 router = DefaultRouter()
 router.register(r'risks', views.RiskViewSet)
@@ -36,15 +42,15 @@ urlpatterns = [
     path('frameworks/<int:pk>/copy/', views.copy_framework, name='copy-framework'),
     path('frameworks/<int:pk>/create-version/', views.create_framework_version, name='create-framework-version'),
     path('frameworks/<int:framework_id>/export/', views.export_policies_to_excel, name='export-framework-policies'),
-    path('policies/', views.policy_list, name='policy-list'),
-    path('policies/<int:pk>/', views.policy_detail, name='policy-detail'),
+    path('policies/', policy_list, name='policy-list'),
+    path('policies/<int:pk>/', policy_detail, name='policy-detail'),
     path('policies/<int:pk>/copy/', views.copy_policy, name='copy-policy'),
     path('policies/<int:pk>/create-version/', create_policy_version, name='create-policy-version'),
     path('subpolicies/<int:pk>/', subpolicy_detail, name='subpolicy-detail'),
     path('api/subpolicies/<int:pk>/', subpolicy_detail, name='api-subpolicy-detail'),
-    path('api/subpolicies/<int:pk>/review/', views.submit_subpolicy_review, name='submit-subpolicy-review'),
-    path('api/subpolicies/<int:pk>/resubmit/', views.resubmit_subpolicy, name='resubmit-subpolicy'),
-    path('api/frameworks/<int:framework_id>/policies/', views.add_policy_to_framework, name='add-policy-to-framework'),
+    path('api/subpolicies/<int:pk>/review/', submit_subpolicy_review, name='submit-subpolicy-review'),
+    path('api/subpolicies/<int:pk>/resubmit/', resubmit_subpolicy, name='resubmit-subpolicy'),
+    path('api/frameworks/<int:framework_id>/policies/', add_policy_to_framework, name='add-policy-to-framework'),
     path('api/frameworks/<int:framework_id>/get-policies/', get_policies_by_framework, name='get-policies-by-framework'),
     path('api/policies/<int:policy_id>/get-subpolicies/', get_subpolicies_by_policy, name='get-subpolicies-by-policy'),
     path('api/policy-approvals/reviewer/', views.list_policy_approvals_for_reviewer, name='policy-approvals-for-reviewer'),
@@ -55,8 +61,8 @@ urlpatterns = [
     path('api/policy-approvals/resubmit/<int:approval_id>/', views.resubmit_policy_approval),
     path('api/frameworks/', views.framework_list, name='api-frameworks'),
     path('api/frameworks/<int:pk>/', views.framework_detail, name='api-framework-detail'),
-    path('api/policies/', views.policy_list, name='policy-list-with-status'),
-    path('api/frameworks/<int:framework_id>/policies/', views.add_policy_to_framework, name='add-policy-to-framework'),
+    path('api/policies/', policy_list, name='policy-list-with-status'),
+    path('api/frameworks/<int:framework_id>/policies/', add_policy_to_framework, name='add-policy-to-framework'),
     path('api/frameworks/<int:framework_id>/subpolicies/', views.get_subpolicies, name='get-subpolicies'),
     path('compliance/create/', views.create_compliance, name='create-compliance'),
     path('compliance/<int:compliance_id>/edit/', views.edit_compliance, name='edit-compliance'),
@@ -119,10 +125,17 @@ urlpatterns = [
     path('api/incident/repeat-rate/', views.repeat_rate, name='repeat-rate'),
     path('api/incident/metrics/', views.incident_metrics, name='incident-metrics'),
     path('api/incidents/counts/', views.get_incident_counts, name='incident-counts'),
+    # Policy routes moved to policy.py
     path('api/frameworks/<int:framework_id>/get-policies/', get_policies_by_framework, name='get-policies-by-framework'),
     path('api/policies/<int:policy_id>/get-subpolicies/', get_subpolicies_by_policy, name='get-subpolicies-by-policy'),
-    path('api/policy-approvals/latest/<int:policy_id>/', views.get_latest_policy_approval, name='get-latest-policy-approval'),
-    path('api/policy-approvals/latest-by-role/<int:policy_id>/<str:role>/', views.get_latest_policy_approval_by_role, name='get-latest-policy-approval-by-role'),
+    path('api/policy-approvals/latest/<int:policy_id>/', get_latest_policy_approval, name='get-latest-policy-approval'),
+    path('api/policy-approvals/latest-by-role/<int:policy_id>/<str:role>/', get_latest_policy_approval_by_role, name='get-latest-policy-approval-by-role'),
+    path('api/policies/<int:policy_id>/version/', get_policy_version, name='get-policy-version'),
+    path('api/subpolicies/<int:subpolicy_id>/version/', get_subpolicy_version, name='get-subpolicy-version'),
+    path('api/policies/<int:policy_id>/reviewer-version/', get_latest_reviewer_version, name='get-policy-reviewer-version'),
+    path('api/subpolicies/<int:subpolicy_id>/reviewer-version/', get_latest_reviewer_version, name='get-subpolicy-reviewer-version'),
+    path('api/policies/<int:policy_id>/submit-review/', submit_policy_approval_review, name='submit-policy-approval-review'),
+    path('api/policies/<int:policy_id>/version-history/', get_policy_version_history, name='get-policy-version-history'),
 ]
 
 

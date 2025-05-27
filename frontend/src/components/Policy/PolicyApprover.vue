@@ -81,10 +81,31 @@
             {{ isComplianceApproval ? 'Compliance' : 'Policy' }}
           </span> 
           Details: {{ getPolicyId(selectedApproval) }}
+          <span class="version-pill">Version: {{ selectedApproval.version || 'u1' }}</span>
           <span v-if="selectedApproval.showingApprovedOnly" class="approved-only-badge">
             Showing Approved Only
           </span>
         </h3>
+        
+        <!-- Add version history section -->
+        <div class="version-history" v-if="selectedApproval.ExtractedData">
+          <div class="version-info">
+            <div class="version-label">Current Version:</div>
+            <div class="version-value">{{ selectedApproval.version || 'u1' }}</div>
+          </div>
+          <div v-if="selectedApproval.ExtractedData.subpolicies && selectedApproval.ExtractedData.subpolicies.length > 0" 
+               class="subpolicies-versions">
+            <h4>Subpolicies Versions:</h4>
+            <ul class="version-list">
+              <li v-for="sub in selectedApproval.ExtractedData.subpolicies" :key="sub.SubPolicyId">
+                <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
+                <span class="version-tag">v{{ sub.version || 'u1' }}</span>
+                <span v-if="sub.resubmitted" class="resubmitted-tag">Resubmitted</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
         <button class="close-btn" @click="closeApprovalDetails">Close</button>
         
         <!-- Policy/Compliance Approval Section -->
@@ -106,7 +127,7 @@
           </div>
           
           <div class="policy-actions">
-            <button class="submit-btn" @click="submitReview()" :disabled="isComplianceApproval ? false : hasUnreviewedSubpolicies">
+            <button class="submit-btn" @click="submitReview()" data-action="submit-policy-review">
               <i class="fas fa-paper-plane"></i> Submit Review
             </button>
           </div>
@@ -294,19 +315,22 @@
               {{ policy.is_compliance ? 'Compliance' : 
                  (policy.main_policy_rejected ? 'Policy' : 'Subpolicy') }}
             </span>
-            <span v-if="policy.is_compliance" class="badge rejected">Rejected</span>
-            <span v-else-if="policy.main_policy_rejected" class="badge rejected">Rejected</span>
-            <span v-else class="badge rejected">Rejected</span>
+            <span class="badge rejected">Rejected</span>
             
             <!-- Show item description -->
             <div v-if="policy.is_compliance">
               - {{ policy.ExtractedData.ComplianceItemDescription || 'No Description' }}
-              <div v-if="policy.rejection_reason">
-                <strong>Reason:</strong> {{ policy.rejection_reason }}
-              </div>
             </div>
             <div v-else>
               - {{ policy.ExtractedData.Scope || 'No Scope' }}
+            </div>
+            
+            <!-- Add this section to show rejection reason -->
+            <div v-if="policy.ExtractedData?.policy_approval?.remarks" class="policy-rejection-reason">
+              <strong>Rejection Reason:</strong> {{ policy.ExtractedData.policy_approval.remarks }}
+            </div>
+            <div v-else-if="policy.rejection_reason" class="policy-rejection-reason">
+              <strong>Rejection Reason:</strong> {{ policy.rejection_reason }}
             </div>
           </div>
         </li>
@@ -410,28 +434,40 @@
     <div v-if="showEditSubpolicyModal" class="modal">
       <div class="modal-content edit-modal">
         <span class="close" @click="closeEditSubpolicyModal">&times;</span>
-        <h2>Edit Rejected Subpolicy</h2>
+        <h2>Edit Rejected Subpolicy
+          <span v-if="editingSubpolicy && (editingSubpolicy.Status === 'Rejected' || editingSubpolicy.approval?.approved === false)" 
+                class="version-tag reviewer-version">
+            Version: {{ editingSubpolicy.reviewerVersion || 'R1' }}
+          </span>
+        </h2>
         <div v-if="editingSubpolicy">
           <div class="form-group">
             <label>Subpolicy Name:</label>
             <input type="text" v-model="editingSubpolicy.SubPolicyName" disabled />
-        </div>
+          </div>
           <div class="form-group">
             <label>Identifier:</label>
             <input type="text" v-model="editingSubpolicy.Identifier" disabled />
           </div>
+          
+          <!-- Add this prominent rejection reason section -->
+          <div v-if="editingSubpolicy.approval && editingSubpolicy.approval.remarks" class="rejection-reason-container">
+            <div class="rejection-reason-header">
+              <i class="fas fa-exclamation-triangle"></i> Rejection Reason
+            </div>
+            <div class="rejection-reason-content">
+              {{ editingSubpolicy.approval.remarks }}
+            </div>
+          </div>
+          
           <div class="form-group">
-          <label>Description:</label>
+            <label>Description:</label>
             <textarea v-model="editingSubpolicy.Description" @input="trackChanges"></textarea>
-        </div>
+          </div>
           <div class="form-group">
-          <label>Control:</label>
+            <label>Control:</label>
             <textarea v-model="editingSubpolicy.Control" @input="trackChanges"></textarea>
-        </div>
-          <div class="form-group">
-            <label>Rejection Reason:</label>
-            <p class="rejection-reason">{{ editingSubpolicy.approval?.remarks || 'No reason provided' }}</p>
-        </div>
+          </div>
           
           <div v-if="hasChanges" class="changes-summary">
             <div class="changes-header">
@@ -467,39 +503,32 @@
         <h3>
           <span v-if="isReviewer">Subpolicies for {{ getPolicyId(selectedPolicyForSubpolicies) }}</span>
           <span v-else>Edit Rejected Subpolicies for {{ getPolicyId(selectedPolicyForSubpolicies) }}</span>
+          
+          <!-- Show appropriate version based on status -->
+          <span v-if="selectedPolicyForSubpolicies.ApprovedNot === false || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Rejected'"
+                class="version-pill reviewer-version">
+            Version: {{ selectedPolicyForSubpolicies.reviewerVersion || 'R1' }}
+          </span>
+          <span v-else class="version-pill">
+            Version: {{ selectedPolicyForSubpolicies.version || 'u1' }}
+          </span>
         </h3>
         <button class="close-btn" @click="closeSubpoliciesModal">Close</button>
         
         <!-- Filter to only show rejected subpolicies in user mode -->
         <div v-for="sub in filteredSubpolicies" :key="sub.Identifier" class="subpolicy-status" :class="{'resubmitted-item': sub.resubmitted}">
           <div class="subpolicy-header">
-          <div>
-            <span class="subpolicy-id">{{ sub.Identifier }}</span> :
+            <span class="subpolicy-id">{{ sub.Identifier }}</span>
             <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
-            </div>
-            <span
-              class="badge"
-              :class="{
-                approved: sub.approval?.approved === true || (selectedPolicyForSubpolicies.ApprovedNot === true || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Approved'),
-                rejected: sub.approval?.approved === false && !(selectedPolicyForSubpolicies.ApprovedNot === true || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Approved'),
-                pending: sub.approval?.approved === null && !sub.resubmitted && !(selectedPolicyForSubpolicies.ApprovedNot === true || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Approved'),
-                resubmitted: sub.approval?.approved === null && sub.resubmitted && !(selectedPolicyForSubpolicies.ApprovedNot === true || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Approved')
-              }"
-            >
-              {{
-                (sub.approval?.approved === true || (selectedPolicyForSubpolicies.ApprovedNot === true || selectedPolicyForSubpolicies.ExtractedData?.Status === 'Approved'))
-                  ? 'Approved'
-                  : sub.approval?.approved === false
-                  ? 'Rejected'
-                  : sub.resubmitted
-                  ? 'Resubmitted'
-                  : 'Pending'
-              }}
+            
+            <!-- Show R version for rejected items, u version otherwise -->
+            <span v-if="sub.Status === 'Rejected' || sub.approval?.approved === false" 
+                  class="version-tag reviewer-version">
+              Version: {{ sub.reviewerVersion || 'R1' }}
             </span>
-          </div>
-          
-          <div class="subpolicy-version" v-if="sub.resubmitted && isReviewer">
-            <span class="version-tag">Version: {{ getSubpolicyVersion(sub) }}</span>
+            <span v-else class="version-tag">
+              Version: {{ sub.version || 'u1' }}
+            </span>
           </div>
 
           <div class="subpolicy-content">
@@ -552,7 +581,9 @@
             <div v-if="sub.showEditForm">
               <!-- Inline edit form -->
               <div class="subpolicy-inline-edit">
-                <h4>Edit Rejected Subpolicy</h4>
+                <h4>Edit Rejected Subpolicy
+                  <span class="version-tag reviewer-version">Version: {{ sub.reviewerVersion || 'R1' }}</span>
+                </h4>
                 <div>
                   <label>Name:</label>
                   <input v-model="sub.SubPolicyName" disabled />
@@ -564,6 +595,12 @@
                 <div>
                   <label>Control:</label>
                   <textarea v-model="sub.Control"></textarea>
+                </div>
+                <div>
+                  <label>Rejection Reason:</label>
+                  <div class="rejection-reason">
+                    {{ sub.approval && sub.approval.remarks ? sub.approval.remarks : 'No rejection reason provided' }}
+                  </div>
                 </div>
                 <div class="subpolicy-edit-actions">
                   <button class="resubmit-btn" @click="resubmitSubpolicyDirect(sub)">Resubmit for Review</button>
@@ -739,23 +776,48 @@ export default {
   methods: {
     // Update the method to fetch policies and policy approvals
     fetchPolicies() {
-      // Always fetch from policies endpoint regardless of mode
       console.log('Fetching policies...');
       axios.get('http://localhost:8000/api/policies/')
         .then(response => {
           console.log('Policies response:', response.data);
-          // Map policies to the expected format
           this.approvals = response.data.map(policy => {
-            // For each policy, fetch the latest approval based on role
-            const role = this.isReviewer ? 'reviewer' : 'user';
-            this.fetchLatestApprovalForPolicy(policy.PolicyId, role);
-            
-            // Map subpolicies to include proper SubPolicyId
-            const mappedSubpolicies = policy.subpolicies?.map(sub => ({
+            // Get latest version for each subpolicy
+            const mappedSubpolicies = policy.subpolicies?.map(sub => {
+              // Get the version from the database or calculate latest
+              let version = sub.version;
+              if (!version) {
+                // Query to get latest version for this subpolicy
+                axios.get(`http://localhost:8000/api/subpolicies/${sub.SubPolicyId}/version/`)
+                  .then(versionResponse => {
+                    version = versionResponse.data.version;
+                  })
+                  .catch(err => {
+                    console.error('Error fetching subpolicy version:', err);
+                    version = 'u1'; // Fallback
+                  });
+              }
+              
+              return {
               ...sub,
               SubPolicyId: sub.SubPolicyId,
-              PolicyId: policy.PolicyId
-            })) || [];
+                PolicyId: policy.PolicyId,
+                version: version
+              };
+            }) || [];
+            
+            // Get latest version for policy
+            let policyVersion = policy.version;
+            if (!policyVersion) {
+              // Query to get latest version for this policy
+              axios.get(`http://localhost:8000/api/policies/${policy.PolicyId}/version/`)
+                .then(versionResponse => {
+                  policyVersion = versionResponse.data.version;
+                })
+                .catch(err => {
+                  console.error('Error fetching policy version:', err);
+                  policyVersion = 'u1'; // Fallback
+                });
+            }
             
             return {
               PolicyId: policy.PolicyId,
@@ -767,62 +829,258 @@ export default {
                 Scope: policy.Scope,
                 Status: policy.Status,
                 Objective: policy.Objective,
-                subpolicies: mappedSubpolicies
+                subpolicies: mappedSubpolicies,
+                version: policyVersion
               },
               ApprovedNot: policy.Status === 'Approved' ? true : 
-                          policy.Status === 'Rejected' ? false : null
+                          policy.Status === 'Rejected' ? false : null,
+              version: policyVersion
             };
           });
-          console.log('Processed policies:', this.approvals.length);
+          console.log('Processed policies:', this.approvals);
         })
         .catch(error => {
           console.error('Error fetching policies:', error);
         });
     },
-    // Add this new method
-    fetchLatestApprovalForPolicy(policyId, role) {
-      axios.get(`http://localhost:8000/api/policy-approvals/latest-by-role/${policyId}/${role}/`)
-        .then(response => {
-          console.log(`Latest ${role} approval for policy ${policyId}:`, response.data);
+    // Remove the fetchLatestApprovalForPolicy method as it's causing errors
+    
+    openApprovalDetails(approval) {
+      // Get the policy ID
+      const policyId = this.getPolicyId(approval);
+
+      // First, let's get the latest version information for this policy
+      axios.get(`http://localhost:8000/api/policies/${policyId}/version/`)
+        .then(versionResponse => {
+          const policyVersion = versionResponse.data.version || 'u1';
+          console.log(`Latest policy version: ${policyVersion}`);
           
-          // Find the policy in our array and update it with the latest approval data
-          const policyIndex = this.approvals.findIndex(p => 
-            p.PolicyId === policyId || 
-            (typeof p.PolicyId === 'object' && p.PolicyId.PolicyId === policyId)
-          );
-          
-          if (policyIndex !== -1) {
-            // Update the policy with the latest approval data
-            const policy = this.approvals[policyIndex];
-            
-            // Merge the ExtractedData from the approval with our existing policy data
-            if (response.data.ExtractedData) {
-              this.approvals[policyIndex].ExtractedData = {
-                ...policy.ExtractedData,
-                ...response.data.ExtractedData
-              };
-            }
-            
-            // Update approval status
-            this.approvals[policyIndex].ApprovedNot = response.data.ApprovedNot;
-            this.approvals[policyIndex].Version = response.data.Version;
-            this.approvals[policyIndex].ApprovedDate = response.data.ApprovedDate;
-          }
+          // Now fetch the latest policy approval with this version
+          axios.get(`http://localhost:8000/api/policy-approvals/latest/${policyId}/`)
+            .then(approvalResponse => {
+              console.log('Latest policy approval:', approvalResponse.data);
+              
+              // If we got data and it has ExtractedData, use it
+              if (approvalResponse.data && approvalResponse.data.ExtractedData) {
+                const latestApproval = approvalResponse.data;
+                
+                // Create a complete approval object with the latest data
+                const updatedApproval = {
+                  ...approval,
+                  ...latestApproval,
+                  version: policyVersion,
+                  ExtractedData: latestApproval.ExtractedData
+                };
+                
+                // Now get subpolicy versions if there are any
+                if (updatedApproval.ExtractedData && updatedApproval.ExtractedData.subpolicies && updatedApproval.ExtractedData.subpolicies.length > 0) {
+                  console.log('Fetching versions for', updatedApproval.ExtractedData.subpolicies.length, 'subpolicies');
+                  
+                  const promises = updatedApproval.ExtractedData.subpolicies.map(sub => {
+                    if (sub.SubPolicyId) {
+                      return axios.get(`http://localhost:8000/api/subpolicies/${sub.SubPolicyId}/version/`)
+                        .then(subVersionResponse => {
+                          console.log(`Subpolicy ${sub.SubPolicyId} version:`, subVersionResponse.data.version);
+                          sub.version = subVersionResponse.data.version || 'u1';
+                          return sub;
+                        })
+                        .catch(err => {
+                          console.error(`Error fetching version for subpolicy ${sub.SubPolicyId}:`, err);
+                          sub.version = 'u1'; // Default fallback
+                          return sub;
+                        });
+                    } else {
+                      sub.version = 'u1'; // Default for subpolicies without ID
+                      return Promise.resolve(sub);
+                    }
+                  });
+                  
+                  // Wait for all version fetching to complete
+                  Promise.all(promises)
+                    .then(updatedSubpolicies => {
+                      updatedApproval.ExtractedData.subpolicies = updatedSubpolicies;
+                      this.completeApprovalSelection(updatedApproval);
+                    })
+                    .catch(error => {
+                      console.error('Error updating subpolicy versions:', error);
+                      this.completeApprovalSelection(updatedApproval);
+                    });
+                } else {
+                  // No subpolicies to process
+                  this.completeApprovalSelection(updatedApproval);
+                }
+              } else {
+                // If we couldn't get the latest approval data, fall back to using existing data with just the version updated
+                const updatedApproval = JSON.parse(JSON.stringify(approval));
+                updatedApproval.version = policyVersion;
+                
+                this.processSubpolicyVersions(updatedApproval);
+              }
+            })
+            .catch(approvalError => {
+              console.error('Error fetching latest approval:', approvalError);
+              
+              // Fall back to just updating the version
+              const updatedApproval = JSON.parse(JSON.stringify(approval));
+              updatedApproval.version = policyVersion;
+              
+              this.processSubpolicyVersions(updatedApproval);
+            });
         })
         .catch(error => {
-          // If 404, it means no approval found, which is fine
-          if (error.response && error.response.status !== 404) {
-            console.error(`Error fetching latest ${role} approval for policy ${policyId}:`, error);
+          console.error('Error fetching policy version:', error);
+          // Fall back to using the approval as-is
+          this.completeApprovalSelection(approval);
+        });
+    },
+    
+    // Helper method to process subpolicy versions
+    processSubpolicyVersions(approval) {
+      // Get subpolicy versions if there are any
+      if (approval.ExtractedData && approval.ExtractedData.subpolicies && approval.ExtractedData.subpolicies.length > 0) {
+        console.log('Fetching versions for', approval.ExtractedData.subpolicies.length, 'subpolicies');
+        
+        const promises = approval.ExtractedData.subpolicies.map(sub => {
+          if (sub.SubPolicyId) {
+            return axios.get(`http://localhost:8000/api/subpolicies/${sub.SubPolicyId}/version/`)
+              .then(subVersionResponse => {
+                console.log(`Subpolicy ${sub.SubPolicyId} version:`, subVersionResponse.data.version);
+                sub.version = subVersionResponse.data.version || 'u1';
+                return sub;
+              })
+              .catch(err => {
+                console.error(`Error fetching version for subpolicy ${sub.SubPolicyId}:`, err);
+                sub.version = 'u1'; // Default fallback
+                return sub;
+              });
+          } else {
+            sub.version = 'u1'; // Default for subpolicies without ID
+            return Promise.resolve(sub);
           }
         });
+        
+        // Wait for all version fetching to complete
+        Promise.all(promises)
+          .then(updatedSubpolicies => {
+            approval.ExtractedData.subpolicies = updatedSubpolicies;
+            this.completeApprovalSelection(approval);
+          })
+          .catch(error => {
+            console.error('Error updating subpolicy versions:', error);
+            this.completeApprovalSelection(approval);
+          });
+      } else {
+        // No subpolicies to process
+        this.completeApprovalSelection(approval);
+      }
+    },
+    
+    // Helper method to finish the approval selection process
+    completeApprovalSelection(approval) {
+      this.selectedApproval = approval;
+      
+      // If policy is approved, filter subpolicies to only show approved ones
+      if (this.selectedApproval.ExtractedData && 
+          (this.selectedApproval.ApprovedNot === true || this.selectedApproval.ExtractedData.Status === 'Approved') && 
+          this.selectedApproval.ExtractedData.subpolicies) {
+        
+        // When a policy is approved, all its subpolicies should be treated as approved
+        this.selectedApproval.ExtractedData.subpolicies = this.selectedApproval.ExtractedData.subpolicies.map(sub => {
+          // Mark all subpolicies as approved when parent policy is approved
+          if (!sub.approval) {
+            sub.approval = {};
+          }
+          sub.approval.approved = true;
+          sub.Status = 'Approved';
+          return sub;
+        });
+        
+        // Add a flag to indicate this is showing only accepted items
+        this.selectedApproval.showingApprovedOnly = true;
+      }
+      
+      this.showDetails = true;
     },
     // Update the refresh method
     refreshData() {
+      // Refresh all data sources to ensure UI is up-to-date
       this.fetchPolicies();
-      if (!this.isReviewer) {
-        this.fetchRejectedSubpolicies();
+      
+      // If there's a selected approval, refresh it with latest data
+      if (this.selectedApproval && this.selectedApproval.PolicyId) {
+        this.openApprovalDetails(this.selectedApproval);
+      }
+      
+      // If there's a selected policy for subpolicies, refresh it
+      if (this.selectedPolicyForSubpolicies && this.selectedPolicyForSubpolicies.PolicyId) {
+        const policyId = this.selectedPolicyForSubpolicies.PolicyId;
+        
+        // Fetch latest data for this policy
+        axios.get(`http://localhost:8000/api/policies/${policyId}`)
+          .then(response => {
+            if (response.data) {
+              // Get the version for policy and subpolicies
+              axios.get(`http://localhost:8000/api/policies/${policyId}/version/`)
+                .then(versionResponse => {
+                  const policyVersion = versionResponse.data.version || 'u1';
+                  
+                  // Create a new object with the policy data
+                  const policyData = {
+                    ...response.data,
+                    version: policyVersion
+                  };
+                  
+                  // If this policy has subpolicies, fetch their version information
+                  if (response.data.ExtractedData && response.data.ExtractedData.subpolicies) {
+                    const subpolicyPromises = response.data.ExtractedData.subpolicies.map(subpolicy => {
+                      return axios.get(`http://localhost:8000/api/subpolicies/${subpolicy.SubPolicyId}/version/`)
+                        .then(subVersionResponse => {
+                          return {
+                            subpolicyId: subpolicy.SubPolicyId,
+                            version: subVersionResponse.data.version || 'u1'
+                          };
+                        })
+                        .catch(() => {
+                          return {
+                            subpolicyId: subpolicy.SubPolicyId,
+                            version: 'u1'
+                          };
+                        });
+                    });
+                    
+                    Promise.all(subpolicyPromises)
+                      .then(subpolicyVersions => {
+                        // Update subpolicy versions
+                        if (policyData.ExtractedData && policyData.ExtractedData.subpolicies) {
+                          policyData.ExtractedData.subpolicies.forEach(subpolicy => {
+                            const versionInfo = subpolicyVersions.find(v => v.subpolicyId === subpolicy.SubPolicyId);
+                            if (versionInfo) {
+                              subpolicy.version = versionInfo.version;
+                            }
+                          });
+                        }
+                        
+                        // Update the selected policy
+                        this.selectedPolicyForSubpolicies = policyData;
+                      });
       } else {
-      this.fetchRejectedPolicies();
+                    // No subpolicies, just update the policy
+                    this.selectedPolicyForSubpolicies = policyData;
+                  }
+                })
+                .catch(error => {
+                  console.error("Error fetching policy version:", error);
+                });
+            }
+          })
+          .catch(error => {
+            console.error("Error refreshing policy data:", error);
+          });
+      }
+      
+      // Refresh rejected subpolicies list if it's being displayed
+      if (this.showRejectedSubpolicies) {
+        this.fetchRejectedSubpolicies();
       }
     },
     // Update the refresh approvals method
@@ -903,37 +1161,51 @@ export default {
     // Modify submitReview to update policy status
     submitReview() {
       if (!this.isComplianceApproval) {
-        // Policy review submission - now directly getting PolicyId
         const policyId = this.selectedApproval.PolicyId;
         
-        // Determine the new status based on approval state
-        const newStatus = this.selectedApproval.ApprovedNot === true 
-          ? 'Approved' 
-          : this.selectedApproval.ApprovedNot === false 
-            ? 'Rejected' 
-            : 'Under Review';
-      
-        // Update the policy status
-        axios.put(`http://localhost:8000/api/policies/${policyId}/`, {
-          Status: newStatus,
-          // Include any other fields that might have been modified
-          Scope: this.selectedApproval.ExtractedData.Scope,
-          Objective: this.selectedApproval.ExtractedData.Objective
-      })
-      .then(response => {
-          console.log('Policy updated successfully:', response.data);
-          alert('Policy review submitted successfully!');
+        // Create the policy approval data
+        const reviewData = {
+          ExtractedData: JSON.parse(JSON.stringify(this.selectedApproval.ExtractedData)),
+          ApprovedNot: this.selectedApproval.ApprovedNot,
+          UserId: this.userId,
+          ReviewerId: this.userId
+        };
         
-          // Close the details view
-          this.closeApprovalDetails();
-          
-          // Refresh the policies list
-          this.refreshApprovals();
-      })
-      .catch(error => {
-          console.error('Error submitting review:', error);
-          alert('Error submitting review: ' + (error.response?.data?.error || error.message));
-        });
+        // First get the current version
+        axios.get(`http://localhost:8000/api/policies/${policyId}/version/`)
+          .then(versionResponse => {
+            const currentVersion = versionResponse.data.version;
+            console.log('Current version before submission:', currentVersion);
+            
+            // Submit policy review with current version info
+            return axios.post(`http://localhost:8000/api/policies/${policyId}/submit-review/`, {
+              ...reviewData,
+              currentVersion: currentVersion
+            });
+          })
+          .then(response => {
+            console.log('Policy review submitted successfully:', response.data);
+            
+            // Update the local approval with the returned data
+            this.selectedApproval.Version = response.data.Version;
+            
+            if (response.data.ApprovedDate) {
+              this.selectedApproval.ApprovedDate = response.data.ApprovedDate;
+            }
+            
+            alert(`Policy review submitted successfully! New version: ${response.data.Version}`);
+            
+            // Close the details view
+            this.closeApprovalDetails();
+            
+            // Refresh the policies list
+            this.refreshApprovals();
+          })
+          .catch(error => {
+            console.error('Error submitting review:', error);
+            alert('Error submitting review: ' + (error.response?.data?.error || error.message));
+          });
+        
         return;
       }
       
@@ -1181,60 +1453,6 @@ export default {
       }
       return policy.ApprovalId;
     },
-    openApprovalDetails(approval) {
-      // Fetch the latest approval data before opening details
-      const role = this.isReviewer ? 'reviewer' : 'user';
-      const policyId = this.getPolicyId(approval);
-      
-      axios.get(`http://localhost:8000/api/policy-approvals/latest-by-role/${policyId}/${role}/`)
-        .then(response => {
-          console.log(`Latest ${role} approval data:`, response.data);
-          
-          // Merge the approval data with our existing policy data
-          this.selectedApproval = {
-            ...approval,
-            ExtractedData: {
-              ...approval.ExtractedData,
-              ...response.data.ExtractedData
-            },
-            ApprovedNot: response.data.ApprovedNot,
-            Version: response.data.Version,
-            ApprovedDate: response.data.ApprovedDate
-          };
-          
-          // If policy is approved, filter subpolicies to only show approved ones
-          if (this.selectedApproval.ExtractedData && 
-              (this.selectedApproval.ApprovedNot === true || this.selectedApproval.ExtractedData.Status === 'Approved') && 
-              this.selectedApproval.ExtractedData.subpolicies) {
-            
-            // When a policy is approved, all its subpolicies should be treated as approved
-            this.selectedApproval.ExtractedData.subpolicies = this.selectedApproval.ExtractedData.subpolicies.map(sub => {
-              // Mark all subpolicies as approved when parent policy is approved
-              if (!sub.approval) {
-                sub.approval = {};
-              }
-              sub.approval.approved = true;
-              sub.Status = 'Approved';
-              return sub;
-            });
-            
-            // Add a flag to indicate this is showing only accepted items
-            this.selectedApproval.showingApprovedOnly = true;
-          }
-          
-          this.showDetails = true;
-        })
-        .catch(error => {
-          // If no approval found, just use the existing data
-          if (error.response && error.response.status === 404) {
-            this.selectedApproval = approval;
-            this.showDetails = true;
-          } else {
-            console.error(`Error fetching latest ${role} approval:`, error);
-            alert('Error loading approval details. Please try again.');
-          }
-        });
-    },
     closeApprovalDetails() {
       this.selectedApproval = null;
       this.showDetails = false;
@@ -1299,6 +1517,58 @@ export default {
       subpolicy.originalDescription = subpolicy.Description;
       subpolicy.originalControl = subpolicy.Control;
       
+      // Make sure approval object exists before accessing it
+      if (!subpolicy.approval) {
+        subpolicy.approval = { remarks: '', approved: false };
+      }
+      
+      // If this is a rejected subpolicy, fetch the latest reviewer version
+      if (subpolicy.Status === 'Rejected' || (subpolicy.approval && subpolicy.approval.approved === false)) {
+        axios.get(`http://localhost:8000/api/subpolicies/${subpolicy.SubPolicyId}/reviewer-version/`)
+          .then(versionResponse => {
+            const rVersion = versionResponse.data.version || 'R1';
+            console.log(`Using reviewer version ${rVersion} for rejected subpolicy ${subpolicy.SubPolicyId}`);
+            subpolicy.reviewerVersion = rVersion;
+            
+            // If we have approval data with this subpolicy, use it
+            if (versionResponse.data.approval_data && 
+                versionResponse.data.approval_data.ExtractedData && 
+                versionResponse.data.approval_data.ExtractedData.subpolicies) {
+              
+              const approvalData = versionResponse.data.approval_data;
+              
+              // Find this subpolicy in the ExtractedData
+              const subpolicyData = approvalData.ExtractedData.subpolicies.find(
+                s => s.SubPolicyId === subpolicy.SubPolicyId
+              );
+              
+              if (subpolicyData) {
+                // Keep original values for comparison
+                const originalDescription = subpolicy.originalDescription;
+                const originalControl = subpolicy.originalControl;
+                
+                // Update this subpolicy with the R version data
+                Object.assign(subpolicy, subpolicyData);
+                
+                // Restore original values for comparison
+                subpolicy.originalDescription = originalDescription;
+                subpolicy.originalControl = originalControl;
+                
+                // Make sure approval object exists
+                if (!subpolicy.approval) {
+                  subpolicy.approval = { remarks: '', approved: false };
+                }
+                
+                console.log(`Updated subpolicy ${subpolicy.SubPolicyId} with R version data for inline edit`);
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching reviewer version:', error);
+            subpolicy.reviewerVersion = 'R1'; // Default fallback
+          });
+      }
+      
       // Show the edit form
       subpolicy.showEditForm = true;
     },
@@ -1318,72 +1588,73 @@ export default {
         return;
       }
       
-      console.log('Resubmitting subpolicy with ID:', this.editingSubpolicy.SubPolicyId);
-      console.log('Changes detected:');
-      
-      if (this.editingSubpolicy.Description !== this.editingSubpolicy.originalDescription) {
-        console.log('- Description changed from:', this.editingSubpolicy.originalDescription);
-        console.log('- Description changed to:', this.editingSubpolicy.Description);
-      }
-      
-      if (this.editingSubpolicy.Control !== this.editingSubpolicy.originalControl) {
-        console.log('- Control changed from:', this.editingSubpolicy.originalControl);
-        console.log('- Control changed to:', this.editingSubpolicy.Control);
-      }
-      
-      // Store previous version for comparison
-      const previousVersion = {
-        Description: this.editingSubpolicy.originalDescription,
-        Control: this.editingSubpolicy.originalControl
-      };
-      
-      // Prepare data to send to the backend
       const updateData = {
         Control: this.editingSubpolicy.Control,
         Description: this.editingSubpolicy.Description,
-        previousVersion: previousVersion,
         SubPolicyId: this.editingSubpolicy.SubPolicyId
       };
       
-      // Send the updated subpolicy data to the resubmit endpoint
+      // Send the resubmit request
       axios.put(`http://localhost:8000/api/subpolicies/${this.editingSubpolicy.SubPolicyId}/resubmit/`, updateData)
-        .then(response => {
-          console.log('Subpolicy resubmitted successfully:', response.data);
-          
-          // Update the local state if we have this subpolicy in our data
-          const subpolicy = this.findSubpolicyById(this.editingSubpolicy.SubPolicyId);
-          if (subpolicy) {
-            // Update the subpolicy with new values
-            subpolicy.Status = 'Under Review';
-            subpolicy.Control = this.editingSubpolicy.Control;
-            subpolicy.Description = this.editingSubpolicy.Description;
-            subpolicy.resubmitted = true;
-            subpolicy.previousVersion = previousVersion;
-            
-            if (!subpolicy.approval) {
-              subpolicy.approval = {};
-            }
-      subpolicy.approval.approved = null;
-            subpolicy.approval.remarks = '';
-            
-            if (response.data.Version) {
-              subpolicy.version = response.data.Version;
-            }
-          }
-          
-          // Show success message
-          alert(`Subpolicy "${this.editingSubpolicy.SubPolicyName}" resubmitted successfully with version ${response.data.Version || 'u1'}!`);
-          
-          // Close the edit modal
-          this.closeEditSubpolicyModal();
-          
-          // Refresh data
-          this.fetchRejectedSubpolicies();
-        })
-        .catch(error => {
-          console.error('Error resubmitting subpolicy:', error.response || error);
-          alert(`Error resubmitting subpolicy: ${error.response?.data?.error || error.message}`);
-        });
+          .then(response => {
+              console.log('Subpolicy resubmitted successfully:', response.data);
+              
+              // Update the UI with new version
+              const newVersion = response.data.version;
+              this.editingSubpolicy.Status = 'Under Review';
+              this.editingSubpolicy.version = newVersion;
+              
+              if (!this.editingSubpolicy.approval) {
+                  this.editingSubpolicy.approval = {};
+              }
+              this.editingSubpolicy.approval.approved = null;
+              this.editingSubpolicy.resubmitted = true;
+              
+              // Show success message with new version
+              alert(`Subpolicy "${this.editingSubpolicy.SubPolicyName}" resubmitted successfully with version ${newVersion}!`);
+              
+              // Close the edit modal
+              this.closeEditSubpolicyModal();
+              
+              // Refresh data
+              this.fetchRejectedSubpolicies();
+              this.refreshData();
+          })
+          .catch(error => {
+              console.error('Error resubmitting subpolicy:', error.response || error);
+              alert(`Error resubmitting subpolicy: ${error.response?.data?.error || error.message}`);
+          });
+    },
+    
+    // Add a helper method to update subpolicy references across the UI
+    updateSubpolicyReferences(subpolicyId, updates) {
+      // Update in selectedApproval if applicable
+      if (this.selectedApproval?.ExtractedData?.subpolicies) {
+        const subpolicy = this.selectedApproval.ExtractedData.subpolicies.find(
+          sub => sub.SubPolicyId === subpolicyId
+        );
+        if (subpolicy) {
+          Object.assign(subpolicy, updates);
+        }
+      }
+      
+      // Update in selectedPolicyForSubpolicies if applicable
+      if (this.selectedPolicyForSubpolicies?.ExtractedData?.subpolicies) {
+        const subpolicy = this.selectedPolicyForSubpolicies.ExtractedData.subpolicies.find(
+          sub => sub.SubPolicyId === subpolicyId
+        );
+        if (subpolicy) {
+          Object.assign(subpolicy, updates);
+        }
+      }
+      
+      // Update in rejectedSubpolicies if applicable
+      const rejectedSubpolicy = this.rejectedSubpolicies.find(
+        sub => sub.SubPolicyId === subpolicyId
+      );
+      if (rejectedSubpolicy) {
+        Object.assign(rejectedSubpolicy, updates);
+      }
     },
     resubmitSubpolicyDirect(subpolicy) {
       if (!subpolicy.SubPolicyId) {
@@ -1488,6 +1759,56 @@ export default {
             sub.Status = 'Approved';
             return sub;
           });
+      } else if (policy.ExtractedData && 
+          (policy.ApprovedNot === false || policy.ExtractedData.Status === 'Rejected') && 
+          policy.ExtractedData.subpolicies) {
+        
+        // Make a deep copy for rejected policies
+        this.selectedPolicyForSubpolicies = JSON.parse(JSON.stringify(policy));
+        
+        // For rejected policies, fetch the latest reviewer version (R1, R2, etc.) with full data
+        const policyId = this.getPolicyId(policy);
+        
+        // Fetch the latest R version for the policy with its approval data
+        axios.get(`http://localhost:8000/api/policies/${policyId}/reviewer-version/`)
+          .then(versionResponse => {
+            const rVersion = versionResponse.data.version || 'R1';
+            console.log(`Using reviewer version: ${rVersion} for policy ${policyId}`);
+            
+            // If we have approval data, use it to replace the current data
+            if (versionResponse.data.approval_data) {
+              const approvalData = versionResponse.data.approval_data;
+              console.log('Found R version approval data:', approvalData);
+              
+              // Use the ExtractedData from the R version instead of the current data
+              if (approvalData.ExtractedData) {
+                // Keep reference to original policy for ID, etc.
+                const originalPolicy = this.selectedPolicyForSubpolicies;
+                
+                // Replace the extracted data with the R version data
+                this.selectedPolicyForSubpolicies = {
+                  ...originalPolicy,
+                  ExtractedData: approvalData.ExtractedData,
+                  reviewerVersion: rVersion,
+                  ApprovalId: approvalData.ApprovalId,
+                  Version: approvalData.Version
+                };
+                
+                console.log('Updated policy data with R version data:', this.selectedPolicyForSubpolicies);
+              }
+            } else {
+              // Just update the version info if we don't have approval data
+              this.selectedPolicyForSubpolicies.reviewerVersion = rVersion;
+              
+              // Now fetch R versions for each subpolicy
+              this.fetchSubpolicyVersions();
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching policy reviewer version:', error);
+            // Try to fetch subpolicy versions anyway
+            this.fetchSubpolicyVersions();
+          });
       }
       
       this.showSubpoliciesModal = true;
@@ -1509,6 +1830,60 @@ export default {
             });
           }
         }, 100); // Small delay to ensure DOM is updated
+      }
+    },
+    
+    // Helper method to fetch subpolicy versions
+    fetchSubpolicyVersions() {
+      if (this.selectedPolicyForSubpolicies && 
+          this.selectedPolicyForSubpolicies.ExtractedData && 
+          this.selectedPolicyForSubpolicies.ExtractedData.subpolicies) {
+        
+        const promises = this.selectedPolicyForSubpolicies.ExtractedData.subpolicies.map(sub => {
+          if (sub.SubPolicyId) {
+            return axios.get(`http://localhost:8000/api/subpolicies/${sub.SubPolicyId}/reviewer-version/`)
+              .then(subVersionResponse => {
+                const subRVersion = subVersionResponse.data.version || 'R1';
+                console.log(`Subpolicy ${sub.SubPolicyId} reviewer version: ${subRVersion}`);
+                
+                // Store reviewer version
+                sub.reviewerVersion = subRVersion;
+                
+                // If we have approval data for this subpolicy, update its data
+                if (subVersionResponse.data.approval_data && 
+                    subVersionResponse.data.approval_data.ExtractedData && 
+                    subVersionResponse.data.approval_data.ExtractedData.subpolicies) {
+                  
+                  const approvalData = subVersionResponse.data.approval_data;
+                  
+                  // Find this subpolicy in the ExtractedData
+                  const subpolicyData = approvalData.ExtractedData.subpolicies.find(
+                    s => s.SubPolicyId === sub.SubPolicyId
+                  );
+                  
+                  if (subpolicyData) {
+                    // Update this subpolicy with the R version data
+                    Object.assign(sub, subpolicyData);
+                    console.log(`Updated subpolicy ${sub.SubPolicyId} with R version data`);
+                  }
+                }
+                
+                return sub;
+              })
+              .catch(err => {
+                console.error(`Error fetching reviewer version for subpolicy ${sub.SubPolicyId}:`, err);
+                sub.reviewerVersion = 'R1'; // Default fallback
+                return sub;
+              });
+          } else {
+            sub.reviewerVersion = 'R1'; // Default for subpolicies without ID
+            return Promise.resolve(sub);
+          }
+        });
+        
+        Promise.all(promises).then(() => {
+          console.log('All reviewer versions fetched for subpolicies');
+        });
       }
     },
     closeSubpoliciesModal() {
@@ -1627,6 +2002,48 @@ export default {
       this.editingSubpolicy.originalDescription = subpolicy.Description;
       this.editingSubpolicy.originalControl = subpolicy.Control;
       
+      // Fetch the latest reviewer version for this rejected subpolicy with complete data
+      if (subpolicy.SubPolicyId) {
+        axios.get(`http://localhost:8000/api/subpolicies/${subpolicy.SubPolicyId}/reviewer-version/`)
+          .then(versionResponse => {
+            const rVersion = versionResponse.data.version || 'R1';
+            console.log(`Fetched reviewer version for edit modal: ${rVersion}`);
+            this.editingSubpolicy.reviewerVersion = rVersion;
+            
+            // If we have approval data with this subpolicy, use it
+            if (versionResponse.data.approval_data && 
+                versionResponse.data.approval_data.ExtractedData && 
+                versionResponse.data.approval_data.ExtractedData.subpolicies) {
+              
+              const approvalData = versionResponse.data.approval_data;
+              
+              // Find this subpolicy in the ExtractedData
+              const subpolicyData = approvalData.ExtractedData.subpolicies.find(
+                s => s.SubPolicyId === subpolicy.SubPolicyId
+              );
+              
+              if (subpolicyData) {
+                // Keep original values for comparison
+                const originalDescription = this.editingSubpolicy.originalDescription;
+                const originalControl = this.editingSubpolicy.originalControl;
+                
+                // Update this subpolicy with the R version data
+                Object.assign(this.editingSubpolicy, subpolicyData);
+                
+                // Restore original values for comparison
+                this.editingSubpolicy.originalDescription = originalDescription;
+                this.editingSubpolicy.originalControl = originalControl;
+                
+                console.log(`Updated subpolicy ${subpolicy.SubPolicyId} with R version data for edit modal`);
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching reviewer version:', err);
+            this.editingSubpolicy.reviewerVersion = 'R1'; // Default
+          });
+      }
+      
       // Show the edit modal
       this.showEditSubpolicyModal = true;
       
@@ -1701,6 +2118,18 @@ export default {
       // We just need this method to trigger when input happens
       console.log('Changes detected in form');
     },
+    // Add helper method to increment version
+    incrementVersion(currentVersion) {
+      if (!currentVersion) return 'u1';
+      const match = currentVersion.match(/u(\d+)/);
+      if (!match) return 'u1';
+      const num = parseInt(match[1]) + 1;
+      return `u${num}`;
+    },
+    // Add this helper method
+    getSubpolicyRemarks(sub) {
+      return sub && sub.approval && sub.approval.remarks ? sub.approval.remarks : 'No reason provided';
+    },
   },
   computed: {
     policyApprovals() {
@@ -1733,11 +2162,11 @@ export default {
     hasChanges() {
       if (!this.editingSubpolicy) return false;
       
-      // Check if Description or Control have been modified
-      return (
-        this.editingSubpolicy.Description !== this.editingSubpolicy.originalDescription ||
-        this.editingSubpolicy.Control !== this.editingSubpolicy.originalControl
-      );
+      // Check if Description or Control have changed from their original values
+      const descriptionChanged = this.editingSubpolicy.Description !== this.editingSubpolicy.originalDescription;
+      const controlChanged = this.editingSubpolicy.Control !== this.editingSubpolicy.originalControl;
+      
+      return descriptionChanged || controlChanged;
     },
     rejectedSubpoliciesInPolicy() {
       if (!this.editingPolicy || !this.editingPolicy.ExtractedData || !this.editingPolicy.ExtractedData.subpolicies) {
@@ -2402,5 +2831,105 @@ export default {
   background-color: #f59e0b;
   color: white;
   box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+
+/* Add these styles to your component */
+.rejection-reason-section {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #fff5f5;
+  border-left: 4px solid #ef4444;
+  border-radius: 0 4px 4px 0;
+}
+
+.rejection-reason-section h4 {
+  color: #b91c1c;
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.rejection-message {
+  color: #991b1b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Add these styles */
+.rejected-subpolicy-details {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #fff5f5;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+.status-badge.rejected {
+  background-color: #ef4444;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rejection-reason {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background-color: #fee2e2;
+  border-radius: 6px;
+}
+
+.reason-header {
+  font-weight: 600;
+  color: #b91c1c;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reason-content {
+  color: #991b1b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Add these styles */
+.policy-rejection-reason {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+/* Add these styles */
+.rejection-reason-container {
+  margin: 15px 0 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rejection-reason-header {
+  background-color: #ef4444;
+  color: white;
+  padding: 12px 15px;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rejection-reason-content {
+  padding: 15px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  font-size: 14px;
+  line-height: 1.6;
 }
 </style> 
