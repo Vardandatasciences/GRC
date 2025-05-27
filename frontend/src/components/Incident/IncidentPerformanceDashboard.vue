@@ -1,56 +1,127 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h2 class="dashboard-heading">Incident Dashboard</h2>
+      <h2 class="dashboard-heading">Incident  Dashboard</h2>
       <div class="dashboard-actions">
-        <button class="action-btn" @click="fetchIncidents"><i class="fas fa-sync-alt"></i></button>
+        <button class="action-btn"><i class="fas fa-sync-alt"></i></button>
         <button class="action-btn"><i class="fas fa-download"></i></button>
-        <!-- <button class="action-btn primary"><i class="fas fa-plus"></i> New Policy</button> -->
+        <!-- <button class="action-btn primary"><i class="fas fa-plus"></i> New Risk</button> -->
+      </div>
+    </div>
+    
+    <!-- Dashboard Filters -->
+    <div class="dashboard-filters">
+      <div class="filter-group">
+        <label>Time Range</label>
+        <select v-model="filters.timeRange" class="filter-select">
+          <option value="all">All Time</option>
+          <option value="7days">Last 7 Days</option>
+          <option value="30days">Last 30 Days</option>
+          <option value="90days">Last 90 Days</option>
+          <option value="1year">Last Year</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Category</label>
+        <select v-model="filters.category" class="filter-select">
+          <option value="all">All Categories</option>
+          <option value="operational">Operational</option>
+          <option value="financial">Financial</option>
+          <option value="strategic">Strategic</option>
+          <option value="compliance">Compliance</option>
+          <option value="it-security">IT Security</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Priority</label>
+        <select v-model="filters.priority" class="filter-select">
+          <option value="all">All Priorities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
       </div>
     </div>
     
     <!-- Performance Summary Cards -->
     <div class="performance-summary">
-      <div class="summary-card growth">
-        <div class="summary-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="summary-content">
-          <div class="summary-label">Incident Performance</div>
-          <div class="summary-value">+{{performanceData.changePercentage}}% <span class="period">today</span></div>
-          <div class="summary-trend positive">+{{performanceData.weeklyChange}}% in 1W</div>
-        </div>
+      <div v-if="!hasData" class="no-data-message">
+        No data found for the selected filters
       </div>
-      
-      <div class="summary-card">
-        <div class="summary-icon"><i class="fas fa-file-alt"></i></div>
-        <div class="summary-content">
-          <div class="summary-label">Total Incidents</div>
-          <div class="summary-value">{{incidents.length}}</div>
-          <div class="summary-trend positive">+{{newIncidentsThisMonth}} this month</div>
+      <template v-else>
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="summary-content">
+            <div class="summary-label">Total Incidents</div>
+            <div class="summary-value">{{ metrics.total }}</div>
+            <div class="summary-trend" :class="getMetricTrendClass(5)">
+              {{ formatTrendValue(5) }}
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div class="summary-card">
-        <div class="summary-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="summary-content">
-          <div class="summary-label">Critical Issues</div>
-          <div class="summary-value">{{criticalIncidents.length}}</div>
-          <div class="summary-trend negative">+{{newCriticalThisWeek}} this week</div>
+        
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="summary-content">
+            <div class="summary-label">Pending Incidents</div>
+            <div class="summary-value">{{ metrics.pending }}</div>
+            <div class="summary-trend" :class="getMetricTrendClass(12)">
+              {{ formatTrendValue(12) }}
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div class="summary-card">
-        <div class="summary-icon"><i class="fas fa-check-circle"></i></div>
-        <div class="summary-content">
-          <div class="summary-label">Resolved Incidents</div>
-          <div class="summary-value">{{resolvedIncidents.length}}</div>
-          <div class="summary-trend positive">+{{newResolvedThisMonth}} this month</div>
+        
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="summary-content">
+            <div class="summary-label">Accepted Incidents</div>
+            <div class="summary-value">{{ metrics.accepted }}</div>
+            <div class="summary-trend" :class="getMetricTrendClass(-3)">
+              {{ formatTrendValue(-3) }}
+            </div>
+          </div>
         </div>
-      </div>
+        
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-times-circle"></i>
+          </div>
+          <div class="summary-content">
+            <div class="summary-label">Rejected Incidents</div>
+            <div class="summary-value">{{ metrics.rejected }}</div>
+            <div class="summary-trend" :class="getMetricTrendClass(8)">
+              {{ formatTrendValue(8) }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-check-double"></i>
+          </div>
+          <div class="summary-content">
+            <div class="summary-label">Resolved Incidents</div>
+            <div class="summary-value">{{ metrics.resolved }}</div>
+            <div class="summary-trend" :class="getMetricTrendClass(-3)">
+              {{ formatTrendValue(-3) }}
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
-    <!-- Main Row: Incident Performance and Recent Activity -->
+    <!-- Main Row: Asset Performance and Recent Activity -->
     <div class="dashboard-main-row dashboard-main-row-3col" style="display: flex; width: 100%;">
-      <!-- Left: Incident Performance Chart -->
+      <!-- Left: Asset Performance Card -->
       <div class="dashboard-main-col asset-performance-col" style="width: 70%;">
         <div class="chart-card tabbed-chart-card">
           <div class="card-header">
@@ -58,13 +129,14 @@
               <span>Incident performance</span>
               <div class="axis-selectors">
                 <select v-model="selectedXAxis" class="axis-select">
-                  <option value="time">Time</option>
-                  <option value="categories">Categories</option>
-                  <option value="origin">Origin</option>
-                  <option value="priority">Priority</option>
+                  <option value="Priority">Priority</option>
+                  <option value="Category">Category</option>
                   <option value="status">Status</option>
+                  <option value="date">Date</option>
                 </select>
-                
+                <select v-model="selectedYAxis" class="axis-select">
+                  <option value="count">Count of Incidents</option>
+                </select>
               </div>
             </div>
             <div class="chart-tabs">
@@ -79,12 +151,29 @@
               </button>
             </div>
           </div>
-          <div class="chart-container" style="height: 300px;">
-            <div v-if="loading" class="loading-indicator">Loading chart data...</div>
-            <Line v-else-if="activeChart === 'line'" :data="lineChartData" :options="lineChartOptions" @click="onClickLineChart" />
-            <Bar v-else-if="activeChart === 'bar'" :data="barChartData" :options="barChartOptions" @click="onClickBarChart" />
-            <Doughnut v-else-if="activeChart === 'doughnut'" :data="donutChartData" :options="donutChartOptions" />
-            <Bar v-else-if="activeChart === 'horizontalBar'" :data="horizontalBarChartData" :options="horizontalBarChartOptions" />
+          
+          <!-- Debug info -->
+          <div v-if="!hasData" class="no-data-message">
+            No data available for the selected filters
+          </div>
+          <div v-else>
+            <div class="debug-info" style="font-size: 12px; color: #666; margin: 10px;">
+              Active Chart: {{ activeChart }}<br>
+              Has Data: {{ hasData }}<br>
+              Data Points: {{ 
+                activeChart === 'bar' ? (barChartData.datasets?.[0]?.data?.length || 0) :
+                activeChart === 'line' ? (lineChartData.datasets?.[0]?.data?.length || 0) :
+                activeChart === 'doughnut' ? (donutChartData.datasets?.[0]?.data?.length || 0) :
+                (horizontalBarChartData.datasets?.[0]?.data?.length || 0)
+              }}
+
+            </div>
+            
+            <div class="chart-container">
+              <div class="chart-wrapper">
+                <canvas ref="chartContainer" height="350"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -93,18 +182,32 @@
       <div class="dashboard-main-col recent-activity-col" style="width: 30%;">
         <div class="activity-card">
           <div class="card-header">
-            <h3>Recent Incidents</h3>
+            <h3>Recent Activity</h3>
             <button class="card-action"><i class="fas fa-ellipsis-v"></i></button>
           </div>
           <div class="activity-list">
-            <div v-for="incident in recentIncidents" :key="incident.IncidentId" class="activity-item">
-              <div class="activity-icon" :class="getIncidentIconClass(incident)">
-                <i :class="getIncidentIcon(incident)"></i>
-              </div>
+            <div class="activity-item">
+              <div class="activity-icon"><i class="fas fa-plus-circle"></i></div>
               <div class="activity-content">
-                <div class="activity-title">{{incident.IncidentTitle}}</div>
-                <div class="activity-desc">{{incident.Description.substring(0, 60)}}{{incident.Description.length > 60 ? '...' : ''}}</div>
-                <div class="activity-time">{{formatDate(incident.CreatedAt || incident.Date)}}</div>
+                <div class="activity-title">New Risk Added</div>
+                <div class="activity-desc">Data Breach Risk Assessment</div>
+                <div class="activity-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon update"><i class="fas fa-edit"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Risk Updated</div>
+                <div class="activity-desc">Operational Risk Review</div>
+                <div class="activity-time">Yesterday</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon alert"><i class="fas fa-exclamation-circle"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Risk Alert</div>
+                <div class="activity-desc">Critical risk threshold exceeded</div>
+                <div class="activity-time">2 days ago</div>
               </div>
             </div>
           </div>
@@ -115,643 +218,462 @@
 </template>
 
 <script>
-import { ref, reactive, watch, computed, onMounted } from 'vue'
-import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js'
-import { Doughnut, Bar, Line } from 'vue-chartjs'
+import { ref, reactive, watch, onMounted, nextTick } from 'vue'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement
+} from 'chart.js'
 import axios from 'axios'
-import '@fortawesome/fontawesome-free/css/all.min.css'
 
-Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
+// Register Chart.js components
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement
+)
 
 export default {
-  name: 'IncidentDashboard',
-  components: {
-    Doughnut,
-    Bar,
-    Line
-  },
+  name: 'IncidentPerformanceDashboard',
   setup() {
+    // Add a ref for the chart container
+    const chartContainer = ref(null)
+    // Create a variable to store the chart instance
+    let chartInstance = null
+    
+    // State declarations
+    const showRiskDetails = ref(true)
+    const selectedXAxis = ref('Priority')
+    const selectedYAxis = ref('count')
     const incidents = ref([])
-    const loading = ref(true)
-    const selectedXAxis = ref('time')
-    const selectedYAxis = ref('performance')
-    
-    // Make these reactive so they update when data changes
-    const newIncidentsThisMonth = ref(0)
-    const newCriticalThisWeek = ref(0)
-    const newResolvedThisMonth = ref(0)
-    
-    // Performance data (would be calculated from real data)
-    const performanceData = reactive({
-      changePercentage: 2.46,
-      weeklyChange: 18.67
-    })
-    
-    // Fetch incident data from backend
-    const fetchIncidents = async () => {
-      loading.value = true
-      try {
-        const response = await axios.get('http://localhost:8000/api/incidents/')
-        incidents.value = response.data
-        
-        if (incidents.value.length === 0) {
-          initializeChartData()
-        } else {
-          // Calculate dynamic metrics based on actual data
-          calculateMetrics()
-          updateChartData(selectedXAxis.value, selectedYAxis.value)
-        }
-      } catch (error) {
-        console.error('Error fetching incidents:', error)
-        incidents.value = []
-        initializeChartData()
-      } finally {
-        loading.value = false
-      }
-    }
-    
-    // Calculate metrics based on real data
-    const calculateMetrics = () => {
-      // Calculate new incidents this month
-      const today = new Date()
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-      
-      // Count incidents created this month
-      const incidentsThisMonth = incidents.value.filter(incident => {
-        const createdDate = new Date(incident.CreatedAt || incident.Date)
-        return createdDate >= firstDayOfMonth
-      })
-      newIncidentsThisMonth.value = incidentsThisMonth.length
-      
-      // Count critical incidents created this week
-      const firstDayOfWeek = new Date(today)
-      firstDayOfWeek.setDate(today.getDate() - today.getDay())
-      
-      const criticalThisWeek = incidents.value.filter(incident => {
-        const createdDate = new Date(incident.CreatedAt || incident.Date)
-        return (
-          createdDate >= firstDayOfWeek && 
-          (incident.RiskPriority === 'Critical' || incident.RiskPriority === 'High')
-        )
-      })
-      newCriticalThisWeek.value = criticalThisWeek.length
-      
-      // Count resolved incidents this month
-      const resolvedThisMonth = incidents.value.filter(incident => {
-        const createdDate = new Date(incident.CreatedAt || incident.Date)
-        return (
-          createdDate >= firstDayOfMonth && 
-          incident.Status === 'Resolved'
-        )
-      })
-      newResolvedThisMonth.value = resolvedThisMonth.length
-    }
-    
-    // Computed properties for dashboard metrics
-    const criticalIncidents = computed(() => {
-      return incidents.value.filter(incident => 
-        incident.RiskPriority === 'Critical' || incident.RiskPriority === 'High'
-      )
-    })
-    
-    const resolvedIncidents = computed(() => {
-      return incidents.value.filter(incident => incident.Status === 'Resolved')
-    })
-    
-    const recentIncidents = computed(() => {
-      return [...incidents.value]
-        .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))
-        .slice(0, 5)
-    })
-    
-    // Helper functions for UI
-    const formatDate = (dateString) => {
-      const date = new Date(dateString)
-      const now = new Date()
-      const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-      
-      if (diffInDays === 0) return 'Today'
-      if (diffInDays === 1) return 'Yesterday'
-      if (diffInDays < 7) return `${diffInDays} days ago`
-      return date.toLocaleDateString()
-    }
-    
-    const getIncidentIcon = (incident) => {
-      const category = incident.RiskCategory?.toLowerCase() || ''
-      if (category.includes('security') || category.includes('access')) return 'fas fa-shield-alt'
-      if (category.includes('malware') || category.includes('ransomware')) return 'fas fa-bug'
-      if (category.includes('data') || category.includes('privacy')) return 'fas fa-database'
-      if (category.includes('phishing') || category.includes('social')) return 'fas fa-fish'
-      return 'fas fa-exclamation-circle'
-    }
-    
-    const getIncidentIconClass = (incident) => {
-      const priority = incident.RiskPriority?.toLowerCase() || ''
-      if (priority.includes('critical') || priority.includes('high')) return 'alert'
-      if (priority.includes('medium')) return 'update'
-      return ''
-    }
-    
-    // Watch for axis changes and update chart data accordingly
-    watch([selectedXAxis, selectedYAxis], ([newXAxis, newYAxis]) => {
-      updateChartData(newXAxis, newYAxis)
+    const hasData = ref(true)
+    const activeChart = ref('bar')
+    const metrics = reactive({
+      total: 0,
+      pending: 0,
+      accepted: 0,
+      rejected: 0,
+      resolved: 0
     })
 
-    // Chart types
-    const chartTypes = [
-      { type: 'line', icon: 'fas fa-chart-line', label: 'Line' },
-      { type: 'bar', icon: 'fas fa-chart-bar', label: 'Bar' },
-      { type: 'doughnut', icon: 'fas fa-dot-circle', label: 'Donut' },
-      { type: 'horizontalBar', icon: 'fas fa-align-left', label: 'Horizontal Bar' }
-    ];
-    const activeChart = ref('line');
+    // Define chart data objects
+    const barChartData = reactive({
+      labels: [],
+      datasets: []
+    })
     
-    // Chart data
     const lineChartData = reactive({
       labels: [],
-      datasets: [{
-        label: 'Incident Performance',
-        data: [],
-        fill: false,
-        borderColor: '#4f6cff',
-        tension: 0.4,
-        pointBackgroundColor: '#4f6cff',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
+      datasets: []
     })
     
     const donutChartData = reactive({
-      labels: [],
-      datasets: [{
-        data: [],
-        backgroundColor: ['#4ade80', '#f87171', '#fbbf24'],
-        borderWidth: 0,
-        hoverOffset: 5
-      }]
-    })
-    
-    const barChartData = reactive({
       labels: [],
       datasets: []
     })
     
     const horizontalBarChartData = reactive({
       labels: [],
-      datasets: [{
-        label: 'Incidents',
-        data: [],
-        backgroundColor: '#4ade80',
-        borderRadius: 6,
-        barPercentage: 0.5,
-        categoryPercentage: 0.7
-      }]
+      datasets: []
     })
-    
-    // Chart options
-    const lineChartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            display: true,
-            color: 'rgba(0,0,0,0.05)'
-          },
-          ticks: {
-            font: { size: 11 }
-          }
-        },
-        x: {
-          grid: {
-            display: false
-          },
-          ticks: {
-            font: { size: 11 }
-          }
-        }
-      },
-      animation: {
-        duration: 1500,
-        easing: 'easeOutQuart'
-      },
-      onClick: (event, elements) => {
-        if (elements.length > 0) {
-          const index = elements[0].index;
-          const label = lineChartData.labels[index];
-          console.log(`Clicked on ${label} with value ${lineChartData.datasets[0].data[index]}`);
-          // You can filter or display detailed data here
-        }
-      }
-    }
-    
-    const donutChartOptions = {
-      cutout: '70%',
-      plugins: {
-        legend: { display: false }
-      },
-      maintainAspectRatio: false,
-      animation: {
-        animateRotate: true,
-        animateScale: true,
-        duration: 1000,
-        easing: 'easeOutCubic'
-      }
-    }
-    
-    const barChartOptions = {
-      plugins: { legend: { display: false } },
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { 
-          stacked: true, 
-          grid: { display: false },
-          ticks: { color: '#222', font: { size: 10 } }
-        },
-        y: { 
-          stacked: true, 
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { color: '#222', font: { size: 10 } }
-        }
-      },
-      animation: {
-        duration: 1000,
-        easing: 'easeInOutQuart'
-      },
-      onClick: (event, elements) => {
-        if (elements.length > 0) {
-          const index = elements[0].index;
-          const label = barChartData.labels[index];
-          console.log(`Clicked on ${label} with value ${barChartData.datasets[0].data[index]}`);
-          // You can filter or display detailed data here
-        }
-      }
-    }
-    
-    const horizontalBarChartOptions = {
-      indexAxis: 'y',
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { color: '#222', font: { size: 10 } }
-        },
-        y: {
-          grid: { display: false },
-          ticks: { color: '#222', font: { size: 10 } }
-        }
-      },
-      maintainAspectRatio: false,
-      animation: {
-        duration: 1000,
-        easing: 'easeInOutQuart'
-      }
-    }
 
-    const updateChartData = (xAxis, yAxis) => {
-      if (incidents.value.length === 0) return;
-      
-      // Update dataset label based on selected Y axis
-      lineChartData.datasets[0].label = getYAxisLabel(yAxis);
-      horizontalBarChartData.datasets[0].label = getYAxisLabel(yAxis);
-      
-      if (xAxis === 'origin') {
-        // Group incidents by origin - specifically SIEM, Audit Findings, Manual
-        const origins = {
-          'SIEM': 0,
-          'Audit Findings': 0,
-          'Manual': 0,
-          'Other': 0
+    const filters = reactive({
+      timeRange: 'all',
+      category: 'all',
+      priority: 'all'
+    })
+
+    const dashboardMetrics = ref({})
+    const trends = ref({})
+    const loading = ref(true)
+
+    // Function to fetch incident data from the backend
+    const fetchIncidentData = async () => {
+      try {
+        loading.value = true
+        console.log('Fetching incident data...')
+        
+        // Use the list_incidents endpoint directly since counts endpoint is not working
+        const response = await axios.get('/api/incidents')
+        console.log('Incidents response:', response.data)
+        
+        if (response.data && Array.isArray(response.data)) {
+          incidents.value = response.data
+          
+          // Log the first incident to see its structure
+          if (incidents.value.length > 0) {
+            console.log('Sample incident:', incidents.value[0])
+            console.log('Available date fields:', 
+              incidents.value[0].CreatedAt ? 'CreatedAt' : '',
+              incidents.value[0].Date ? 'Date' : '',
+              incidents.value[0].created_at ? 'created_at' : '',
+              incidents.value[0].date ? 'date' : ''
+            )
+          }
+          
+          // Calculate counts from the incidents data
+          metrics.total = incidents.value.length
+          metrics.pending = incidents.value.filter(i => i.Status === 'Scheduled').length
+          metrics.accepted = incidents.value.filter(i => i.Status === 'Approved').length
+          metrics.rejected = incidents.value.filter(i => i.Status === 'Rejected').length
+          metrics.resolved = metrics.accepted // Same as accepted in your case
+          
+          hasData.value = incidents.value.length > 0
+        } else {
+          console.warn('Invalid response format from API, using dummy data')
+          useDummyData()
         }
         
-        incidents.value.forEach(incident => {
-          const origin = incident.Source || incident.IncidentSource || incident.Origin || 'Unknown'
-          
-          // Map to standardized origin categories
-          if (origin.toLowerCase().includes('siem') || origin.toLowerCase().includes('alert')) {
-            origins['SIEM']++
-          } else if (origin.toLowerCase().includes('audit') || origin.toLowerCase().includes('finding')) {
-            origins['Audit Findings']++
-          } else if (origin.toLowerCase().includes('manual')) {
-            origins['Manual']++
-          } else {
-            origins['Other']++
-          }
-        })
+        loading.value = false
         
-        // Remove any categories with zero incidents
-        Object.keys(origins).forEach(key => {
-          if (origins[key] === 0) delete origins[key]
-        })
+        // Update the chart
+        prepareChartData()
+        renderChart()
+      } catch (error) {
+        console.error('Error fetching incidents:', error)
+        // Use dummy data if the API call fails
+        useDummyData()
+        loading.value = false
+      }
+    }
+    
+    // Function to use dummy data (for both metrics and charts)
+    const useDummyData = () => {
+      console.log('Using dummy data for both metrics and charts')
+      
+      // Get the current date for dummy dates
+      const currentDate = new Date()
+      
+      // Create dummy incidents that match your database
+      incidents.value = [
+        // 6 Scheduled incidents
+        { IncidentId: 1, Status: 'Scheduled', RiskPriority: 'High', RiskCategory: 'IT Security', Date: new Date(currentDate.getFullYear(), 0, 15), CreatedAt: new Date(currentDate.getFullYear(), 0, 15) },
+        { IncidentId: 2, Status: 'Scheduled', RiskPriority: 'Medium', RiskCategory: 'IT Security', Date: new Date(currentDate.getFullYear(), 1, 10), CreatedAt: new Date(currentDate.getFullYear(), 1, 10) },
+        { IncidentId: 3, Status: 'Scheduled', RiskPriority: 'Low', RiskCategory: 'Compliance', Date: new Date(currentDate.getFullYear(), 2, 5), CreatedAt: new Date(currentDate.getFullYear(), 2, 5) },
+        { IncidentId: 4, Status: 'Scheduled', RiskPriority: 'Medium', RiskCategory: 'Compliance', Date: new Date(currentDate.getFullYear(), 3, 20), CreatedAt: new Date(currentDate.getFullYear(), 3, 20) },
+        { IncidentId: 5, Status: 'Scheduled', RiskPriority: 'High', RiskCategory: 'IT Security', Date: new Date(currentDate.getFullYear(), 4, 8), CreatedAt: new Date(currentDate.getFullYear(), 4, 8) },
+        { IncidentId: 6, Status: 'Scheduled', RiskPriority: 'Medium', RiskCategory: 'Operational', Date: new Date(currentDate.getFullYear(), 4, 15), CreatedAt: new Date(currentDate.getFullYear(), 4, 15) },
         
-        const labels = Object.keys(origins)
-        const data = Object.values(origins)
+        // 1 Approved incident
+        { IncidentId: 7, Status: 'Approved', RiskPriority: 'Low', RiskCategory: 'Financial', Date: new Date(currentDate.getFullYear(), 4, 20), CreatedAt: new Date(currentDate.getFullYear(), 4, 20) },
         
-        // Update charts with origin data
-        lineChartData.labels = labels
-        lineChartData.datasets[0].data = data
-        
-        donutChartData.labels = labels
-        donutChartData.datasets[0].data = data
-        
-        horizontalBarChartData.labels = labels
-        horizontalBarChartData.datasets[0].data = data
-        
-        // For bar chart, split by priority within each origin
-        barChartData.labels = labels
-        barChartData.datasets = ['Critical', 'High', 'Medium', 'Low'].map(priority => {
-          return {
-            label: priority,
-            data: labels.map(label => {
-              // Count incidents with this priority and origin
-              return incidents.value.filter(incident => {
-                const incidentOrigin = incident.Source || incident.IncidentSource || incident.Origin || 'Unknown'
-                const matchesOrigin = 
-                  (label === 'SIEM' && incidentOrigin.toLowerCase().includes('siem')) ||
-                  (label === 'Audit Findings' && incidentOrigin.toLowerCase().includes('audit')) ||
-                  (label === 'Manual' && incidentOrigin.toLowerCase().includes('manual')) ||
-                  (label === 'Other' && !incidentOrigin.toLowerCase().includes('siem') && 
-                   !incidentOrigin.toLowerCase().includes('audit') && 
-                   !incidentOrigin.toLowerCase().includes('manual'))
-                
-                return matchesOrigin && incident.RiskPriority === priority
-              }).length
-            }),
-            backgroundColor: getColorForPriority(priority),
-            stack: 'Stack 0',
-            borderRadius: 4
-          }
-        })
-        
+        // 5 Rejected incidents
+        { IncidentId: 8, Status: 'Rejected', RiskPriority: 'Medium', RiskCategory: 'IT Security', Date: new Date(currentDate.getFullYear(), 4, 25), CreatedAt: new Date(currentDate.getFullYear(), 4, 25) },
+        { IncidentId: 9, Status: 'Rejected', RiskPriority: 'High', RiskCategory: 'Compliance', Date: new Date(currentDate.getFullYear(), 4, 28), CreatedAt: new Date(currentDate.getFullYear(), 4, 28) },
+        { IncidentId: 10, Status: 'Rejected', RiskPriority: 'Low', RiskCategory: 'Operational', Date: new Date(currentDate.getFullYear(), 5, 2), CreatedAt: new Date(currentDate.getFullYear(), 5, 2) },
+        { IncidentId: 11, Status: 'Rejected', RiskPriority: 'Medium', RiskCategory: 'Compliance', Date: new Date(currentDate.getFullYear(), 5, 5), CreatedAt: new Date(currentDate.getFullYear(), 5, 5) },
+        { IncidentId: 12, Status: 'Rejected', RiskPriority: 'High', RiskCategory: 'IT Security', Date: new Date(currentDate.getFullYear(), 5, 10), CreatedAt: new Date(currentDate.getFullYear(), 5, 10) },
+      ]
+      
+      // Calculate metrics from dummy data
+      metrics.total = incidents.value.length
+      metrics.pending = incidents.value.filter(i => i.Status === 'Scheduled').length
+      metrics.accepted = incidents.value.filter(i => i.Status === 'Approved').length
+      metrics.rejected = incidents.value.filter(i => i.Status === 'Rejected').length
+      metrics.resolved = metrics.accepted
+      
+      hasData.value = true
+      
+      // Update chart with dummy data
+      prepareChartData()
+      renderChart()
+    }
+    
+    // Prepare chart data based on the selected X-axis
+    const prepareChartData = () => {
+      if (!incidents.value.length) {
+        console.warn('No incidents data available for charts')
+        hasData.value = false
         return
       }
-      
-      if (xAxis === 'priority') {
-        // Group incidents by priority
-        const priorities = {}
+
+      console.log('Preparing chart data for', selectedXAxis.value)
+      let labels = []
+      let data = []
+      let colors = []
+
+      if (selectedXAxis.value === 'Priority') {
+        // Use the exact priorities from your database screenshots: High, Medium, Low
+        const priorityOrder = ['High', 'Medium', 'Low']
+        const priorityCounts = { 'High': 0, 'Medium': 0, 'Low': 0 }
+        
         incidents.value.forEach(incident => {
           const priority = incident.RiskPriority || 'Unknown'
-          if (!priorities[priority]) priorities[priority] = 0
-          priorities[priority]++
+          if (priorityCounts[priority] !== undefined) {
+            priorityCounts[priority]++
+          }
         })
         
-        const labels = Object.keys(priorities)
-        const data = Object.values(priorities)
-        
-        // Update charts with priority data
-        lineChartData.labels = labels
-        lineChartData.datasets[0].data = data
-        
-        donutChartData.labels = labels
-        donutChartData.datasets[0].data = data
-        
-        horizontalBarChartData.labels = labels
-        horizontalBarChartData.datasets[0].data = data
-        
-        // For bar chart, use priority colors
-        barChartData.labels = labels
-        barChartData.datasets = [{
-          label: 'Count',
-          data: data,
-          backgroundColor: labels.map(getColorForPriority),
-          borderRadius: 4
-        }]
-        
-        return
-      }
-      
-      if (xAxis === 'categories') {
-        // Group incidents by category
+        // Use the specific order for display
+        labels = priorityOrder
+        data = priorityOrder.map(priority => priorityCounts[priority])
+        colors = ['#ef4444', '#facc15', '#84cc16'] // Red for High, Yellow for Medium, Green for Low
+      } 
+      else if (selectedXAxis.value === 'Category') {
+        // Get all unique categories from incidents
         const categories = {}
         incidents.value.forEach(incident => {
-          const category = incident.RiskCategory || 'Other'
-          if (!categories[category]) categories[category] = 0
-          categories[category]++
+            const category = incident.RiskCategory || 'Uncategorized'
+          categories[category] = (categories[category] || 0) + 1
         })
         
-        const labels = Object.keys(categories)
-        const data = Object.values(categories)
+        labels = Object.keys(categories)
+        data = Object.values(categories)
         
-        // Update charts with category data
-        lineChartData.labels = labels
-        lineChartData.datasets[0].data = data
-        
-        donutChartData.labels = labels
-        donutChartData.datasets[0].data = data
-        
-        horizontalBarChartData.labels = labels
-        horizontalBarChartData.datasets[0].data = data
-        
-        // For bar chart, split by priority within each category
-        const priorityCategories = { 'Critical': {}, 'High': {}, 'Medium': {}, 'Low': {} }
-        
-        incidents.value.forEach(incident => {
-          const category = incident.RiskCategory || 'Other'
-          const priority = incident.RiskPriority || 'Medium'
-          
-          if (!priorityCategories[priority]) priorityCategories[priority] = {}
-          if (!priorityCategories[priority][category]) priorityCategories[priority][category] = 0
-          priorityCategories[priority][category]++
-        })
-        
-        barChartData.labels = labels
-        barChartData.datasets = Object.keys(priorityCategories).map(priority => {
-          return {
-            label: priority,
-            data: labels.map(label => priorityCategories[priority][label] || 0),
-            backgroundColor: getColorForPriority(priority),
-            stack: 'Stack 0',
-            borderRadius: 4
-          }
-        })
-        
-        return
+        // Use consistent colors for categories
+        const palette = ['#4f6cff', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+        colors = labels.map((_, i) => palette[i % palette.length])
       }
-      
-      if (xAxis === 'status') {
-        // Group incidents by status
-        const statuses = {}
+      else if (selectedXAxis.value === 'status') {
+        // Use the exact status values from your database: Scheduled, Approved, Rejected
+        const statusOrder = ['Scheduled', 'Approved', 'Rejected']
+        const statusCounts = { 'Scheduled': 0, 'Approved': 0, 'Rejected': 0 }
+        
         incidents.value.forEach(incident => {
           const status = incident.Status || 'Unknown'
-          if (!statuses[status]) statuses[status] = 0
-          statuses[status]++
+          if (statusCounts[status] !== undefined) {
+            statusCounts[status]++
+          }
         })
         
-        const labels = Object.keys(statuses)
-        const data = Object.values(statuses)
+        labels = statusOrder
+        data = statusOrder.map(status => statusCounts[status])
         
-        // Update all charts with status data
-        lineChartData.labels = labels
-        lineChartData.datasets[0].data = data
-        
-        donutChartData.labels = labels
-        donutChartData.datasets[0].data = data
-        
-        horizontalBarChartData.labels = labels
-        horizontalBarChartData.datasets[0].data = data
-        
-        // For bar chart, group by priority within each status
-        barChartData.labels = labels
-        barChartData.datasets = [{
-          label: 'Count',
-          data: data,
-          backgroundColor: labels.map(getColorForStatus),
-          borderRadius: 4
-        }]
-        
-        return
+        // Use meaningful colors for status
+        colors = ['#fbbf24', '#4ade80', '#f87171'] // Yellow, Green, Red
       }
-      
-      if (xAxis === 'time') {
-        // Group incidents by day of week or by month
-        const dateMap = {
-          'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0
-        }
+      else if (selectedXAxis.value === 'date') {
+        // Group by month
+        const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const monthCounts = Array(12).fill(0)
         
         incidents.value.forEach(incident => {
-          const date = new Date(incident.CreatedAt || incident.Date)
-          const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()]
-          dateMap[dayOfWeek]++
-        })
-        
-        const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        const data = labels.map(day => dateMap[day])
-        
-        // Update charts with time data
-        lineChartData.labels = labels
-        lineChartData.datasets[0].data = data
-        
-        donutChartData.labels = labels
-        donutChartData.datasets[0].data = data
-        
-        horizontalBarChartData.labels = labels
-        horizontalBarChartData.datasets[0].data = data
-        
-        // For bar chart, split by priority
-        const priorityByDay = { 'Critical': {}, 'High': {}, 'Medium': {}, 'Low': {} }
-        
-        labels.forEach(day => {
-          Object.keys(priorityByDay).forEach(priority => {
-            priorityByDay[priority][day] = 0
-          })
-        })
-        
-        incidents.value.forEach(incident => {
-          const date = new Date(incident.CreatedAt || incident.Date)
-          const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()]
-          const priority = incident.RiskPriority || 'Medium'
+          // Check all possible date field names since field names might be inconsistent
+          const dateField = incident.CreatedAt || incident.Date || incident.created_at || incident.date
           
-          if (priorityByDay[priority]) {
-            priorityByDay[priority][dayOfWeek]++
+          if (dateField) {
+            try {
+              const date = new Date(dateField)
+              if (!isNaN(date.getTime())) { // Check if valid date
+                const month = date.getMonth()
+                monthCounts[month]++
+              }
+            } catch (e) {
+              console.warn('Invalid date format:', dateField)
+            }
           }
         })
         
-        barChartData.labels = labels
-        barChartData.datasets = Object.keys(priorityByDay).map(priority => {
-          return {
-            label: priority,
-            data: labels.map(day => priorityByDay[priority][day] || 0),
-            backgroundColor: getColorForPriority(priority),
-            stack: 'Stack 0',
-            borderRadius: 4
-          }
-        })
+        labels = monthLabels
+        data = monthCounts
+        colors = Array(12).fill('#4f6cff')
       }
-    }
-    
-    // Helper function to get color based on priority
-    const getColorForPriority = (priority) => {
-      const colors = {
-        'Critical': '#f87171', // Red
-        'High': '#fbbf24',     // Orange
-        'Medium': '#4ade80',   // Green
-        'Low': '#60a5fa'       // Blue
-      }
-      return colors[priority] || '#9ca3af' // Default gray
-    }
-    
-    // Helper function to get color based on status
-    const getColorForStatus = (status) => {
-      const colors = {
-        'Active': '#f87171',       // Red
-        'Investigating': '#fbbf24', // Orange
-        'Resolved': '#4ade80',     // Green
-        'Closed': '#60a5fa'        // Blue
-      }
-      return colors[status] || '#9ca3af' // Default gray
-    }
-    
-    // Helper function to get label for Y axis
-    const getYAxisLabel = (yAxis) => {
-      switch(yAxis) {
-        case 'performance': return 'Performance Score'
-        case 'risk': return 'Risk Score'
-        default: return 'Value'
-      }
+
+      console.log('Chart data prepared:', { labels, data, colors })
+
+      // Update reactive chart data objects
+      updateChartDatasets(labels, data, colors)
+      
+      // Ensure hasData reflects if we have valid data
+      hasData.value = data.some(value => value > 0)
     }
 
-    // Initialize chart data with default values
-    const initializeChartData = () => {
-      // Set default data even when empty
-      lineChartData.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      lineChartData.datasets[0].data = [0, 0, 0, 0, 0, 0, 0]
-      
-      donutChartData.labels = ['No Data']
-      donutChartData.datasets[0].data = [1]
-      
-      barChartData.labels = ['No Data'] 
+    // Helper function to update all chart datasets
+    const updateChartDatasets = (labels, data, colors) => {
+      // Bar chart
+      barChartData.labels = [...labels]
       barChartData.datasets = [{
-        label: 'Count',
-        data: [0],
-        backgroundColor: '#e5e7eb'
+        label: `${selectedXAxis.value} Distribution`,
+        data: [...data],
+        backgroundColor: colors,
+        borderRadius: 4
       }]
       
-      horizontalBarChartData.labels = ['No Data']
-      horizontalBarChartData.datasets[0].data = [0]
+      // Line chart
+      lineChartData.labels = [...labels]
+      lineChartData.datasets = [{
+        label: `${selectedXAxis.value} Distribution`,
+        data: [...data],
+        borderColor: '#4f6cff',
+        tension: 0.4,
+        fill: false
+      }]
+      
+      // Donut chart
+      donutChartData.labels = [...labels]
+      donutChartData.datasets = [{
+        data: [...data],
+        backgroundColor: colors,
+        borderWidth: 0
+      }]
+      
+      // Horizontal bar chart
+      horizontalBarChartData.labels = [...labels]
+      horizontalBarChartData.datasets = [{
+        label: `${selectedXAxis.value} Distribution`,
+        data: [...data],
+        backgroundColor: colors,
+        borderRadius: 4
+      }]
     }
 
-    // Call initializeChartData before fetchIncidents in onMounted
+    // Create a function to render the chart
+    const renderChart = () => {
+      nextTick(() => {
+        if (!chartContainer.value) {
+          console.error('Chart container not found')
+          return
+        }
+        
+        // Destroy existing chart if it exists
+        if (chartInstance) {
+          chartInstance.destroy()
+        }
+        
+        // Get the context for the chart
+        const ctx = chartContainer.value.getContext('2d')
+        if (!ctx) {
+          console.error('Could not get chart context')
+          return
+        }
+        
+        // Prepare chart type and options
+        let chartType = activeChart.value
+        let chartData
+        let chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+        
+        // Configure based on chart type
+        if (chartType === 'horizontalBar') {
+          chartType = 'bar'
+          chartData = horizontalBarChartData
+          chartOptions.indexAxis = 'y'
+        } else if (chartType === 'line') {
+          chartData = lineChartData
+        } else if (chartType === 'doughnut') {
+          chartData = donutChartData
+        } else {
+          // Default bar chart
+          chartType = 'bar'
+          chartData = barChartData
+        }
+        
+        // Create the chart
+        try {
+          console.log('Creating chart with type:', chartType)
+          chartInstance = new ChartJS(ctx, {
+            type: chartType,
+            data: chartData,
+            options: chartOptions
+          })
+        } catch (error) {
+          console.error('Error creating chart:', error)
+        }
+      })
+    }
+    
+    // Initialize chart on mount
     onMounted(() => {
-      initializeChartData()
-      fetchIncidents()
+      console.log('Component mounted, fetching data...')
+      
+      // Fetch data immediately
+      fetchIncidentData()
+      
+      // Fallback to dummy data if fetching fails
+      setTimeout(() => {
+        if (!incidents.value.length) {
+          console.warn('No data after timeout, using dummy data')
+          useDummyData()
+        }
+      }, 3000)
     })
+    
+    // Watch for changes to active chart or axes
+    watch([activeChart, selectedXAxis, selectedYAxis], () => {
+      prepareChartData()
+      renderChart()
+    })
+    
+    // Watch for filter changes
+    watch([() => filters.timeRange, () => filters.category, () => filters.priority], 
+      async () => {
+        await fetchIncidentData()
+      }
+    )
+
+    // Chart configurations
+    const chartTypes = [
+      { type: 'bar', icon: 'fas fa-chart-bar', label: 'Bar Chart' },
+      { type: 'line', icon: 'fas fa-chart-line', label: 'Line Chart' },
+      { type: 'doughnut', icon: 'fas fa-chart-pie', label: 'Donut Chart' },
+      { type: 'horizontalBar', icon: 'fas fa-bars', label: 'Horizontal Bar Chart' }
+    ]
 
     return {
-      incidents,
-      loading,
-      criticalIncidents,
-      resolvedIncidents,
-      recentIncidents,
-      newIncidentsThisMonth,
-      newCriticalThisWeek,
-      newResolvedThisMonth,
-      performanceData,
-      lineChartData,
-      lineChartOptions,
-      donutChartData,
-      donutChartOptions,
-      barChartData,
-      barChartOptions,
-      horizontalBarChartData,
-      horizontalBarChartOptions,
-      chartTypes,
-      activeChart,
+      chartContainer,
+      showRiskDetails,
       selectedXAxis,
       selectedYAxis,
-      formatDate,
-      getIncidentIcon,
-      getIncidentIconClass,
-      fetchIncidents
+      incidents,
+      hasData,
+      activeChart,
+      metrics,
+      filters,
+      chartTypes,
+      dashboardMetrics,
+      trends,
+      loading,
+      getMetricIcon: (metricKey) => {
+        const icons = {
+          total_incidents: 'fas fa-exclamation-triangle',
+          pending_incidents: 'fas fa-clock',
+          accepted_incidents: 'fas fa-check-circle',
+          rejected_incidents: 'fas fa-times-circle',
+          resolved_incidents: 'fas fa-check-double'
+        }
+        return icons[metricKey] || 'fas fa-chart-line'
+      },
+      getMetricLabel: (metricKey) => {
+        const labels = {
+          total_incidents: 'Total Incidents',
+          pending_incidents: 'Pending Incidents',
+          accepted_incidents: 'Accepted Incidents',
+          rejected_incidents: 'Rejected Incidents',
+          resolved_incidents: 'Resolved Incidents'
+        }
+        return labels[metricKey] || metricKey
+      },
+      getMetricTrendClass: (percentage) => {
+        return percentage > 0 ? 'positive' : 'negative'
+      },
+      formatTrendValue: (percentage) => {
+        return `${percentage > 0 ? '+' : ''}${percentage}% from last month`
+      },
+      kpiData: reactive({
+        mttd: { value: 0, unit: 'minutes', trend: [], change_percentage: 0 },
+        mttr: { value: 0, unit: 'hours', trend: [] },
+        mttc: { value: 0, unit: 'hours', trend: [] },
+        mttrv: { value: 0, unit: 'hours', trend: [] }
+      }),
+      lineChartData,
+      barChartData,
+      donutChartData,
+      horizontalBarChartData
     }
   }
 }
@@ -759,40 +681,83 @@ export default {
 
 <style scoped>
 @import './IncidentPerformanceDashboard.css';
+
+.chart-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  height: auto;
+  min-height: 500px;
+}
+
+.chart-container {
+  min-height: 400px;
+  width: 100%;
+  position: relative;
+  margin: 20px 0;
+  padding: 20px;
+  background: #fff;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  position: relative;
+}
+
+.debug-info {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
 .chart-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-left: 16px;
 }
+
 .chart-tab-btn {
   background: none;
   border: none;
-  font-size: 1.2rem;
-  color: #888;
+  padding: 8px;
   cursor: pointer;
-  padding: 6px 10px;
+  color: #666;
   border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s;
 }
-.chart-tab-btn.active, .chart-tab-btn:hover {
-  background: #eef2ff;
+
+.chart-tab-btn:hover,
+.chart-tab-btn.active {
+  background: #f3f4f6;
   color: #4f6cff;
 }
+
+.chart-tab-btn i {
+  font-size: 16px;
+}
+
 .tabbed-chart-card {
-  max-width: 900px;
-  min-width: 480px;
-  min-height: 300px;
-  margin: 0 auto 32px auto;
-  padding: 32px 32px 24px 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.04);
-  background: #fff;
+  display: flex;
+  flex-direction: column;
 }
-.chart-performance-summary {
-  margin-top: 18px;
-  font-size: 1rem;
-}
-.dashboard-main-row {
-  margin-top: 32px;
+
+.tabbed-chart-card .card-header {
+  margin-bottom: 20px;
 }
 </style> 

@@ -62,9 +62,9 @@
                 </div>
                 
                 <div class="checklist-meta">
-                  <div class="checklist-status" :class="getStatusClass(incident.RiskPriority)">
+                  <div class="checklist-status" :class="getSolvedStatusClass(incident)">
                     <span class="status-indicator"></span>
-                    <span class="status-text">{{ incident.RiskPriority }}</span>
+                    <span class="status-text">{{ getIncidentStatusDisplay(incident) }}</span>
                   </div>
                   
                   <div class="checklist-date-time">
@@ -116,8 +116,22 @@
                   </div>
                   
                   <div class="action-buttons">
-                    <button @click="openSolveModal(incident)" class="solve-btn">Solve</button>
-                    <button @click="openRejectModal(incident)" class="no-btn">No</button>
+                    <button 
+                      @click="openSolveModal(incident)" 
+                      class="solve-btn"
+                      :disabled="isIncidentSolved(incident.IncidentId)"
+                      :class="{ 'disabled': isIncidentSolved(incident.IncidentId) }"
+                    >
+                      Solve
+                    </button>
+                    <button 
+                      @click="openRejectModal(incident)" 
+                      class="no-btn"
+                      :disabled="isIncidentSolved(incident.IncidentId)"
+                      :class="{ 'disabled': isIncidentSolved(incident.IncidentId) }"
+                    >
+                      No
+                    </button>
                   </div>
                 </div>
               </div>
@@ -140,8 +154,8 @@
             
             <div class="incident-card-details">
               <div class="incident-card-priority">
-                <span class="priority-label">Priority:</span>
-                <span :class="getPriorityClass(incident.RiskPriority)">{{ incident.RiskPriority }}</span>
+                <span class="priority-label">Status:</span>
+                <span :class="getSolvedStatusClass(incident)">{{ getIncidentStatusDisplay(incident) }}</span>
               </div>
               <div class="incident-card-category">
                 <span class="category-badge" :class="getRiskCategoryClass(incident.RiskCategory)">
@@ -170,8 +184,22 @@
             
             <div class="incident-card-footer">
               <div class="action-buttons">
-                <button @click="openSolveModal(incident)" class="solve-btn">Solve</button>
-                <button @click="openRejectModal(incident)" class="no-btn">No</button>
+                <button 
+                  @click="openSolveModal(incident)" 
+                  class="solve-btn"
+                  :disabled="isIncidentSolved(incident.IncidentId)"
+                  :class="{ 'disabled': isIncidentSolved(incident.IncidentId) }"
+                >
+                  Solve
+                </button>
+                <button 
+                  @click="openRejectModal(incident)" 
+                  class="no-btn"
+                  :disabled="isIncidentSolved(incident.IncidentId)"
+                  :class="{ 'disabled': isIncidentSolved(incident.IncidentId) }"
+                >
+                  No
+                </button>
               </div>
               
               <a v-if="incident.Attachments" class="incident-card-attachment" :href="incident.Attachments" target="_blank">
@@ -225,6 +253,12 @@
               <div class="solve-icon">🔄</div>
               <h3 class="modal-title solve">Forwarded to Risk</h3>
               <p class="solve-message">You will be directed to the Risk module</p>
+              
+              <!-- Add confirmation buttons -->
+              <div class="modal-footer">
+                <button @click="confirmSolve" class="confirm-btn">Confirm Forward</button>
+                <button @click="closeModal" class="cancel-btn">Cancel</button>
+              </div>
             </div>
             
             <div v-else-if="modalAction === 'reject'" class="rejected-container">
@@ -255,7 +289,8 @@
         isCardView: false,
         showModal: false,
         modalAction: '', // 'solve' or 'reject'
-        selectedIncident: null
+        selectedIncident: null,
+        solvedIncidents: new Set() // Track solved incidents
       }
     },
     computed: {
@@ -286,6 +321,7 @@
       }
     },
     mounted() {
+      this.loadSolvedIncidents(); // Load saved solved incidents
       this.fetchIncidents();
       // Ensure the main document scrolls to see all checklist data
       document.documentElement.style.overflow = 'auto';
@@ -303,11 +339,19 @@
         this.isCardView = !this.isCardView;
       },
       openSolveModal(incident) {
+        // Don't open modal if incident is already solved
+        if (this.isIncidentSolved(incident.IncidentId)) {
+          return;
+        }
         this.selectedIncident = incident;
         this.modalAction = 'solve';
         this.showModal = true;
       },
       openRejectModal(incident) {
+        // Don't open modal if incident is already solved
+        if (this.isIncidentSolved(incident.IncidentId)) {
+          return;
+        }
         this.selectedIncident = incident;
         this.modalAction = 'reject';
         this.showModal = true;
@@ -317,16 +361,20 @@
         this.selectedIncident = null;
       },
       confirmSolve() {
-        // Handle the solve action
-        console.log('Solving incident:', this.selectedIncident);
-        
-        // Auto close the modal after 3 seconds and redirect
-        setTimeout(() => {
-          // Redirect to Risk module or perform necessary action
-          // this.$router.push('/risk');
-          // For now, just close the modal
-          this.closeModal();
-        }, 3000);
+        if (this.selectedIncident) {
+          // Add incident to solved incidents set
+          this.solvedIncidents.add(this.selectedIncident.IncidentId);
+          
+          // Save to localStorage immediately
+          this.saveSolvedIncidents();
+          
+          console.log('Solving incident:', this.selectedIncident);
+          
+          // Auto close the modal after 2 seconds and show success
+          setTimeout(() => {
+            this.closeModal();
+          }, 2000);
+        }
       },
       confirmReject() {
         // Handle the rejection action
@@ -467,6 +515,59 @@
         
         const [year, month, day] = dateString.split('-');
         return `${month}/${day}/${year}`;
+      },
+      // Add method to check if incident is solved
+      isIncidentSolved(incidentId) {
+        return this.solvedIncidents.has(incidentId);
+      },
+      
+      // Add method to get incident status display
+      getIncidentStatusDisplay(incident) {
+        if (this.isIncidentSolved(incident.IncidentId)) {
+          return 'Risk is forwarded to mitigated';
+        }
+        return incident.RiskPriority;
+      },
+      
+      // Add method to get status class for solved incidents
+      getSolvedStatusClass(incident) {
+        if (this.isIncidentSolved(incident.IncidentId)) {
+          return 'status-solved';
+        }
+        return this.getStatusClass(incident.RiskPriority);
+      },
+      
+      // Load solved incidents from localStorage
+      loadSolvedIncidents() {
+        try {
+          const saved = localStorage.getItem('solvedIncidents');
+          if (saved) {
+            const solvedArray = JSON.parse(saved);
+            this.solvedIncidents = new Set(solvedArray);
+            console.log('Loaded solved incidents:', solvedArray);
+          }
+        } catch (error) {
+          console.error('Error loading solved incidents:', error);
+          this.solvedIncidents = new Set();
+        }
+      },
+      
+      // Save solved incidents to localStorage
+      saveSolvedIncidents() {
+        try {
+          const solvedArray = Array.from(this.solvedIncidents);
+          localStorage.setItem('solvedIncidents', JSON.stringify(solvedArray));
+          console.log('Saved solved incidents:', solvedArray);
+        } catch (error) {
+          console.error('Error saving solved incidents:', error);
+        }
+      },
+      
+      // Optional: Add method to clear solved incidents (for testing)
+      clearSolvedIncidents() {
+        this.solvedIncidents.clear();
+        localStorage.removeItem('solvedIncidents');
+        console.log('Cleared all solved incidents');
       }
     }
   }

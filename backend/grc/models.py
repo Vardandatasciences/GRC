@@ -23,35 +23,43 @@ class Users(models.Model):
 class Framework(models.Model):
     FrameworkId = models.AutoField(primary_key=True)
     FrameworkName = models.CharField(max_length=255)
-    CurrentVersion = models.FloatField()
+    CurrentVersion = models.FloatField(default=1.0)
     FrameworkDescription = models.TextField()
     EffectiveDate = models.DateField()
     CreatedByName = models.CharField(max_length=255)
     CreatedByDate = models.DateField()
-    Category = models.CharField(max_length=50)
-    DocURL = models.CharField(max_length=255)
-    Identifier = models.CharField(max_length=45)
-    StartDate = models.DateField()
-    EndDate = models.DateField()
+    Category = models.CharField(max_length=100, null=True, blank=True)
+    DocURL = models.CharField(max_length=255, null=True, blank=True)
+    Identifier = models.CharField(max_length=45, null=True, blank=True)
+    StartDate = models.DateField(null=True, blank=True)
+    EndDate = models.DateField(null=True, blank=True)
     Status = models.CharField(max_length=45, null=True, blank=True)
-    ActiveInactive = models.CharField(max_length=45)
- 
+    ActiveInactive = models.CharField(max_length=45, null=True, blank=True)
+
     class Meta:
         db_table = 'frameworks'
+
+class FrameworkVersion(models.Model):
+    VersionId = models.AutoField(primary_key=True)
+    FrameworkId = models.ForeignKey('Framework', on_delete=models.CASCADE, db_column='FrameworkId')
+    Version = models.FloatField()
+    FrameworkName = models.CharField(max_length=255)
+    CreatedBy = models.CharField(max_length=255)
+    CreatedDate = models.DateField()
+    PreviousVersionId = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'frameworkversions'
  
 # Policy model
 class Policy(models.Model):
     PolicyId = models.AutoField(primary_key=True)
-    FrameworkId = models.ForeignKey(
-        'Framework',
-        on_delete=models.CASCADE,
-        db_column='FrameworkId'
-    )
-    CurrentVersion = models.CharField(max_length=50, null=True, blank=True)
-    Status = models.CharField(max_length=50, null=True, blank=True)
-    PolicyDescription = models.TextField(null=True, blank=True)
+    FrameworkId = models.ForeignKey('Framework', on_delete=models.CASCADE, db_column='FrameworkId')
+    CurrentVersion = models.CharField(max_length=20, default='1.0')
+    Status = models.CharField(max_length=50)
+    PolicyDescription = models.TextField()
     PolicyName = models.CharField(max_length=255)
-    StartDate = models.DateField(null=True, blank=True)
+    StartDate = models.DateField()
     EndDate = models.DateField(null=True, blank=True)
     Department = models.CharField(max_length=255, null=True, blank=True)
     CreatedByName = models.CharField(max_length=255, null=True, blank=True)
@@ -63,9 +71,23 @@ class Policy(models.Model):
     Identifier = models.CharField(max_length=45, null=True, blank=True)
     PermanentTemporary = models.CharField(max_length=45, null=True, blank=True)
     ActiveInactive = models.CharField(max_length=45, null=True, blank=True)
- 
+    Reviewer=models.CharField(max_length=255, null=True, blank=True)
+
     class Meta:
         db_table = 'policies'
+
+
+class PolicyVersion(models.Model):
+    VersionId = models.AutoField(primary_key=True)
+    PolicyId = models.ForeignKey('Policy', on_delete=models.CASCADE, db_column='PolicyId')
+    Version = models.CharField(max_length=20)
+    PolicyName = models.CharField(max_length=255)
+    CreatedBy = models.CharField(max_length=255)
+    CreatedDate = models.DateField()
+    PreviousVersionId = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'policyversions'
  
 # SubPolicy model
 class SubPolicy(models.Model):
@@ -79,7 +101,7 @@ class SubPolicy(models.Model):
     Status = models.CharField(max_length=50, null=True, blank=True)
     PermanentTemporary = models.CharField(max_length=50, null=True, blank=True)
     Control = models.TextField(null=True, blank=True)
- 
+
     class Meta:
         db_table = 'subpolicies'
     
@@ -188,30 +210,20 @@ class Workflow(models.Model):
     class Meta:
         db_table = 'workflow'
  
-class PolicyVersion(models.Model):
-    VersionId = models.AutoField(primary_key=True)
-    PolicyId = models.ForeignKey('Policy', on_delete=models.CASCADE, db_column='PolicyId')
-    Version = models.CharField(max_length=20)
-    PolicyName = models.CharField(max_length=255)
-    CreatedBy = models.CharField(max_length=255)
-    CreatedDate = models.DateField()
-    PreviousVersionId = models.IntegerField(null=True, blank=True)
- 
-    class Meta:
-        db_table = 'policyversions'
- 
 class PolicyApproval(models.Model):
     ApprovalId = models.AutoField(primary_key=True)
-    Identifier = models.CharField(max_length=45)
+    PolicyId = models.ForeignKey('Policy', on_delete=models.CASCADE, db_column='PolicyId', null=True)
+    # Identifier = models.CharField(max_length=45)
     ExtractedData = models.JSONField(null=True, blank=True)
-    UserId = models.IntegerField()  # Can also be models.ForeignKey(User, on_delete=models.CASCADE) if mapped to user table
-    ReviewerId = models.IntegerField()  # Similarly, replace with ForeignKey if needed
+    UserId = models.IntegerField()
+    ReviewerId = models.IntegerField()
     Version = models.CharField(max_length=50, null=True, blank=True)
     ApprovedNot = models.BooleanField(null=True)
+    ApprovedDate = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"PolicyApproval {self.Identifier} (Version {self.Version})"
-
+        return f"PolicyApproval {self.Policy_id} (Version {self.Version})"
+ 
     class Meta:
         db_table = 'policyapproval'
 
@@ -219,15 +231,15 @@ class PolicyApproval(models.Model):
 class Risk(models.Model):
     RiskId = models.AutoField(primary_key=True)  # Primary Key
     ComplianceId = models.IntegerField(null=True)
-    Criticality = models.CharField(max_length=100, null=True)
-    PossibleDamage = models.TextField(null=True)
-    Category = models.CharField(max_length=100, null=True)
-    RiskDescription = models.TextField(null=True)
-    RiskLikelihood = models.CharField(max_length=50, null=True)
-    RiskImpact = models.CharField(max_length=50, null=True)
-    RiskExposureRating = models.CharField(max_length=50, null=True)
-    RiskPriority = models.CharField(max_length=50, null=True)
-    RiskMitigation = models.CharField(max_length=100, null=True)
+    Criticality = models.CharField(max_length=100, null=False)
+    PossibleDamage = models.TextField(null=False)
+    Category = models.CharField(max_length=100, null=False)
+    RiskDescription = models.TextField(null=False)
+    RiskLikelihood = models.IntegerField(null=False)
+    RiskImpact = models.IntegerField(null=False)
+    RiskExposureRating = models.DecimalField(max_digits=4, decimal_places=2, null=False)
+    RiskPriority = models.CharField(max_length=50, null=False)
+    RiskMitigation = models.TextField(null=True)
 
     class Meta:
         db_table = 'risk'  # Ensure Django uses the correct table in the database
@@ -283,5 +295,5 @@ class RiskApproval(models.Model):
     Date = models.DateTimeField(null=True, auto_now_add=True)
     
     class Meta:
-        db_table = 'grc_test.risk_approval'
+        db_table = 'grc.risk_approval'
         managed = False  # Since we're connecting to an existing table

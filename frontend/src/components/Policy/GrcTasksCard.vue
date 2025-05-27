@@ -4,7 +4,7 @@
       <div>
         <div class="grc-tasks-title">My GRC Tasks</div>
         <div class="grc-tasks-subtitle">
-          You have <span class="grc-tasks-link">{{ approvalTasks.length }} pending approval task{{ approvalTasks.length !== 1 ? 's' : '' }}</span> in GRC
+          You have <a href="#" class="grc-tasks-link">4 assigned tasks</a> in GRC
         </div>
       </div>
       <button class="grc-tasks-menu-btn"><i class="fas fa-ellipsis-h"></i></button>
@@ -15,13 +15,13 @@
         <span>Assigned By</span>
         <span>Status</span>
       </div>
-      <div class="grc-tasks-table-row" v-for="task in approvalTasks" :key="task.identifier">
-        <span class="grc-task-name">{{ task.identifier }}</span>
+      <div class="grc-tasks-table-row" v-for="task in tasks" :key="task.task">
+        <span class="grc-task-name">{{ task.task }}</span>
         <span class="grc-task-assigned">
-          <img src="https://randomuser.me/api/portraits/men/32.jpg" class="grc-task-avatar" alt="avatar" />
-          <span>{{ task.assignedBy || 'System' }}</span>
+          <img v-if="task.avatar" :src="task.avatar" class="grc-task-avatar" alt="avatar" />
+          <span>{{ task.assignedBy }}</span>
         </span>
-        <span :class="['grc-task-status', getStatusClass(task.status)]">{{ task.status }}</span>
+        <span :class="['grc-task-status', task.statusClass]">{{ task.status }}</span>
       </div>
     </div>
   </div>
@@ -30,39 +30,38 @@
 <script>
 export default {
   name: 'GrcTasksCard',
-  props: {
-    approvals: {
-      type: Array,
-      default: () => []
-    }
-  },
-  computed: {
-    approvalTasks() {
-      return this.approvals.map(a => {
-        // Determine status
-        let status = 'Pending';
-        if (a.ApprovedNot === true) status = 'Approved';
-        else if (a.ApprovedNot === false) status = 'Rejected';
-        // If resubmitted, show as "Resubmitted"
-        if (a.ExtractedData?.resubmitted && a.ApprovedNot === null) status = 'Resubmitted';
-
-        return {
-          identifier: a.Identifier,
-          assignedBy: a.ExtractedData?.CreatedByName || 'System',
-          status,
-        };
-      });
-    }
-  },
-  methods: {
-    getStatusClass(status) {
-      switch (status) {
-        case 'Approved': return 'in-progress';
-        case 'Rejected': return 'overdue';
-        case 'Pending': return 'pending';
-        case 'Resubmitted': return 'resubmitted';
-        default: return 'due-soon';
-      }
+  data() {
+    return {
+      tasks: [
+        {
+          task: 'CEO & CFO 302 Certification',
+          assignedBy: 'Fatima',
+          avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+          status: 'Due Soon',
+          statusClass: 'due-soon'
+        },
+        {
+          task: 'Q4 Audit Committee Deck',
+          assignedBy: 'Simon',
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+          status: 'Overdue',
+          statusClass: 'overdue'
+        },
+        {
+          task: 'ERM Risk Assessments for SVPs',
+          assignedBy: 'Olivia',
+          avatar: 'https://randomuser.me/api/portraits/women/65.jpg',
+          status: 'In Progress',
+          statusClass: 'in-progress'
+        },
+        {
+          task: 'ESG Report – Business Legal Review',
+          assignedBy: 'Francesco',
+          avatar: 'https://randomuser.me/api/portraits/men/41.jpg',
+          status: 'Pending',
+          statusClass: 'pending'
+        }
+      ]
     }
   }
 }

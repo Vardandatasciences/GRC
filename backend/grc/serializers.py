@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Audit, Framework, Policy, Users, SubPolicy, Compliance, AuditFinding, Incident, Risk, RiskInstance, Workflow
+from .models import Audit, Framework, Policy, Users, SubPolicy, Compliance, AuditFinding, Incident, Risk, RiskInstance, Workflow, PolicyApproval
 from django.contrib.auth.models import User
 
 from datetime import date
@@ -12,28 +12,42 @@ class AuditSerializer(serializers.ModelSerializer):
  
 # Serializer for Framework
 class FrameworkSerializer(serializers.ModelSerializer):
+    policies = serializers.SerializerMethodField()
+    
+    def get_policies(self, obj):
+        # Get all policies without filtering by status
+        policies = obj.policy_set.all()
+        return PolicySerializer(policies, many=True).data
+    
     class Meta:
         model = Framework
-        fields = ['FrameworkId', 'FrameworkName', 'CurrentVersion', 'Category']
+        fields = [
+            'FrameworkId', 'FrameworkName', 'CurrentVersion', 'FrameworkDescription',
+            'EffectiveDate', 'CreatedByName', 'CreatedByDate', 'Category',
+            'DocURL', 'Identifier', 'StartDate', 'EndDate', 'Status',
+            'ActiveInactive', 'policies'
+        ]
  
 # Serializer for Policy
 class PolicySerializer(serializers.ModelSerializer):
     FrameworkCategory = serializers.CharField(source='FrameworkId.Category', read_only=True)
     FrameworkName = serializers.CharField(source='FrameworkId.FrameworkName', read_only=True)
     subpolicies = serializers.SerializerMethodField()
- 
-    
- 
+
+    def get_subpolicies(self, obj):
+        # Get all subpolicies without filtering by status
+        subpolicies = obj.subpolicy_set.all()
+        return SubPolicySerializer(subpolicies, many=True).data
+
     class Meta:
         model = Policy
         fields = [
             'PolicyId', 'CurrentVersion', 'Status', 'PolicyName', 'PolicyDescription',
             'StartDate', 'EndDate', 'Department', 'CreatedByName', 'CreatedByDate',
             'Applicability', 'DocURL', 'Scope', 'Objective', 'Identifier',
-            'PermanentTemporary', 'ActiveInactive', 'FrameworkId',
+            'PermanentTemporary', 'ActiveInactive', 'FrameworkId', 'Reviewer',
             'FrameworkCategory', 'FrameworkName', 'subpolicies'
         ]
- 
 # # Serializer for Django User (for registration/authentication)
 # class UserSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -50,40 +64,40 @@ class PolicySerializer(serializers.ModelSerializer):
 #         return user
  
 class PolicyAllocationSerializer(serializers.Serializer):
-    framework = serializers.IntegerField(required=True, error_messages={'required': 'Framework is required', 'invalid': 'Framework must be a valid integer'})
+    framework = serializers.IntegerField(required=True)
     policy = serializers.IntegerField(required=False, allow_null=True)
     subpolicy = serializers.IntegerField(required=False, allow_null=True)
-    assignee = serializers.IntegerField(required=True, error_messages={'required': 'Assignee is required', 'invalid': 'Assignee must be a valid user ID'})
-    auditor = serializers.IntegerField(required=True, error_messages={'required': 'Auditor is required', 'invalid': 'Auditor must be a valid user ID'})
+    auditor = serializers.IntegerField(required=True)
+    assignee = serializers.IntegerField(required=True)
     reviewer = serializers.IntegerField(required=False, allow_null=True)
-    duedate = serializers.DateField(required=True, error_messages={'required': 'Due date is required', 'invalid': 'Due date must be in YYYY-MM-DD format'})
-    frequency = serializers.IntegerField(required=True, error_messages={'required': 'Frequency is required', 'invalid': 'Frequency must be a valid integer'})
-    audit_type = serializers.CharField(max_length=1, required=True, error_messages={'required': 'Audit type is required', 'invalid': 'Audit type must be either Internal (I) or External (E)'})
-   
+    duedate = serializers.DateField(required=True)
+    frequency = serializers.IntegerField(required=True)
+    audit_type = serializers.CharField(required=True, max_length=1)
+    
     def validate_policy(self, value):
         # Convert empty string to null
         if value == '':
             return None
         return value
-   
+    
     def validate_subpolicy(self, value):
         # Convert empty string to null
         if value == '':
             return None
         return value
-   
+    
     def validate_reviewer(self, value):
         # Convert empty string to null
         if value == '':
             return None
         return value
- 
+
     # Custom validation for due date
     def validate_duedate(self, value):
         if value < date.today():
             raise serializers.ValidationError("Due date cannot be in the past.")
         return value
-   
+    
     def validate_audit_type(self, value):
         # Convert 'Internal' to 'I' and 'External' to 'E'
         if value == 'Internal':
@@ -95,8 +109,7 @@ class PolicyAllocationSerializer(serializers.Serializer):
             return value
         else:
             raise serializers.ValidationError("Invalid audit type. Must be 'Internal' or 'External'.")
- 
-# Serializer for SubPolicy
+
 class SubPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubPolicy
@@ -191,14 +204,8 @@ from .models import RiskAssignment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user 
-    
+        model = Users
+        fields = ['UserId', 'UserName', 'CreatedAt', 'UpdatedAt']
 
 class RiskSerializer(serializers.ModelSerializer):
     class Meta:
@@ -267,4 +274,16 @@ class RiskWorkflowSerializer(serializers.ModelSerializer):
         if assignment:
             return assignment.assigned_to.username
         return None
+
+
+class PolicyApprovalSerializer(serializers.ModelSerializer):
+    ApprovedDate = serializers.DateField(read_only=True)
+    PolicyId = serializers.PrimaryKeyRelatedField(source='PolicyId.PolicyId', read_only=True)
+    
+    class Meta:
+        model = PolicyApproval
+        fields = [
+            'ApprovalId', 'ExtractedData', 'UserId', 
+            'ReviewerId', 'Version', 'ApprovedNot', 'ApprovedDate', 'PolicyId'
+        ]
 

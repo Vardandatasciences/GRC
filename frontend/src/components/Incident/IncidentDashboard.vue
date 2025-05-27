@@ -1,1783 +1,1144 @@
 <template>
   <div class="incident-dashboard-wrapper">
-    <h1>Incident Management KPIs</h1>
-    
-    <!-- KPI Metrics Cards -->
-    <div class="metrics-cards">
-      <div class="metric-card">
-        <div class="metric-value">{{ metrics.totalIncidents }}</div>
-        <div class="metric-label">Total Incidents</div>
+    <!-- First row of KPI cards - Detection and Response Times -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Mean Time to Detect (MTTD)</h3>
+        <div class="kpi-value">
+          {{ kpiData.mttd.value }}<span class="unit">{{ kpiData.mttd.unit }}</span>
+          <span :class="['value-change', kpiData.mttd.change_percentage > 0 ? 'positive' : 'negative']">
+            <i :class="kpiData.mttd.change_percentage > 0 ? 'fas fa-caret-up' : 'fas fa-caret-down'"></i>
+            {{ Math.abs(kpiData.mttd.change_percentage) }}%
+          </span>
+        </div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <!-- Create dynamic path based on trend data -->
+              <path v-if="kpiData.mttd.trend && kpiData.mttd.trend.length > 0"
+                    :d="generateTrendPath(kpiData.mttd.trend.map(t => t.minutes || t.hours))"
+                    fill="none" stroke="#3498db" stroke-width="2"></path>
+              
+              <!-- Create dynamic data points -->
+              <template v-if="kpiData.mttd.trend && kpiData.mttd.trend.length > 0">
+                <circle v-for="(point, index) in getTrendPoints(kpiData.mttd.trend.map(t => t.minutes || t.hours))" 
+                        :key="'mttd-point-'+index"
+                        :cx="point.x" 
+                        :cy="point.y" 
+                        r="3" 
+                        fill="#3498db"/>
+              </template>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span v-for="(item, index) in kpiData.mttd.trend" :key="'mttd-month-'+index">
+              {{ item.month }}
+            </span>
+          </div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-value">{{ metrics.incidentVolume }}</div>
-        <div class="metric-label">Incident Volume</div>
+      
+      <div class="kpi-card">
+        <h3>Mean Time to Respond (MTTR)</h3>
+        <div class="kpi-value">
+          6<span class="unit">hours</span>
+          <span class="value-change negative"><i class="fas fa-caret-down"></i>2.1%</span>
+        </div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,35 C25,40 50,30 75,35 C100,40 125,25 150,30 C175,35 200,30 225,20 C250,10 275,15 300,20" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+              <circle cx="0" cy="35" r="3" fill="#3498db"/>
+              <circle cx="50" cy="30" r="3" fill="#3498db"/>
+              <circle cx="100" cy="40" r="3" fill="#3498db"/>
+              <circle cx="150" cy="30" r="3" fill="#3498db"/>
+              <circle cx="200" cy="30" r="3" fill="#3498db"/>
+              <circle cx="250" cy="10" r="3" fill="#3498db"/>
+              <circle cx="300" cy="20" r="3" fill="#3498db"/>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+          </div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-value">{{ metrics.escalationRate }}%</div>
-        <div class="metric-label">Escalation Rate</div>
+      
+      <div class="kpi-card">
+        <h3>Mean Time to Contain (MTTC)</h3>
+        <div class="kpi-value">
+          12<span class="unit">hours</span>
+          <span class="value-change positive"><i class="fas fa-caret-up"></i>0.8%</span>
       </div>
-      <div class="metric-card">
-        <div class="metric-value">{{ metrics.repeatRate }}%</div>
-        <div class="metric-label">Repeat Incident Rate</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value">{{ metrics.closureRate }}%</div>
-        <div class="metric-label">Closure Rate</div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,25 C25,30 50,35 75,25 C100,15 125,20 150,30 C175,40 200,35 225,30 C250,25 275,20 300,25" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+              <circle cx="0" cy="25" r="3" fill="#3498db"/>
+              <circle cx="50" cy="35" r="3" fill="#3498db"/>
+              <circle cx="100" cy="15" r="3" fill="#3498db"/>
+              <circle cx="150" cy="30" r="3" fill="#3498db"/>
+              <circle cx="200" cy="35" r="3" fill="#3498db"/>
+              <circle cx="250" cy="20" r="3" fill="#3498db"/>
+              <circle cx="300" cy="25" r="3" fill="#3498db"/>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="charts-container">
-      <div class="chart-card" @click="showChartDetail('severity')">
-        <h3>Incidents by Severity</h3>
-        <div class="chart-type-selector">
-          <button v-for="type in ['pie', 'bar', 'horizontal', 'line']" 
-                  :key="type" 
-                  @click.stop="changeChartType('severity', type)"
-                  :class="{ active: chartTypes.severity === type }">
-            <i :class="getChartIcon(type)"></i>
-          </button>
+    <!-- Second row of KPI cards - Resolution Metrics -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Mean Time to Resolve (MTTRv)</h3>
+        <div class="kpi-value">
+          35<span class="unit">hours</span>
+          <span class="value-change negative"><i class="fas fa-caret-down"></i>2.0%</span>
         </div>
-        <div class="pie-chart-container">
-          <canvas class="pie-chart" ref="severityChart"></canvas>
-          
-          <div class="chart-interact-hint">Click for details</div>
-        </div>
-      </div>
-      
-      <div class="chart-card" @click="showChartDetail('type')">
-        <h3>Incidents by Type</h3>
-        <div class="chart-type-selector">
-          <button v-for="type in ['bar', 'pie', 'horizontal', 'line']" 
-                  :key="type" 
-                  @click.stop="changeChartType('type', type)"
-                  :class="{ active: chartTypes.type === type }">
-            <i :class="getChartIcon(type)"></i>
-          </button>
-        </div>
-        <div class="bar-chart-container">
-          <canvas class="bar-chart" ref="typeChart"></canvas>
-          <div class="chart-interact-hint">Click for details</div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,20 C25,25 50,20 75,15 C100,10 125,15 150,20 C175,25 200,20 225,15 C250,10 275,15 300,20" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+              <circle cx="0" cy="20" r="3" fill="#3498db"/>
+              <circle cx="50" cy="20" r="3" fill="#3498db"/>
+              <circle cx="100" cy="10" r="3" fill="#3498db"/>
+              <circle cx="150" cy="20" r="3" fill="#3498db"/>
+              <circle cx="200" cy="20" r="3" fill="#3498db"/>
+              <circle cx="250" cy="10" r="3" fill="#3498db"/>
+              <circle cx="300" cy="20" r="3" fill="#3498db"/>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+          </div>
         </div>
       </div>
       
-      <div class="chart-card" @click="showChartDetail('escalation')">
-        <h3>Incident Sources & Escalation Rate</h3>
-        <div class="chart-type-selector">
-          <button v-for="type in ['stacked', 'pie', 'horizontal', 'bar']" 
-                  :key="type" 
-                  @click.stop="changeChartType('escalation', type)"
-                  :class="{ active: chartTypes.escalation === type }">
-            <i :class="getChartIcon(type)"></i>
-          </button>
+      <div class="kpi-card">
+        <h3>First Response Time</h3>
+        <div class="kpi-value">
+          3.5<span class="unit">hours</span>
+          <span class="value-change positive"><i class="fas fa-caret-up"></i>1.5%</span>
+        </div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,30 C25,25 50,30 75,35 C100,40 125,35 150,30 C175,25 200,20 225,25 C250,30 275,25 300,20" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+              <circle cx="0" cy="30" r="3" fill="#3498db"/>
+              <circle cx="50" cy="30" r="3" fill="#3498db"/>
+              <circle cx="100" cy="40" r="3" fill="#3498db"/>
+              <circle cx="150" cy="30" r="3" fill="#3498db"/>
+              <circle cx="200" cy="20" r="3" fill="#3498db"/>
+              <circle cx="250" cy="30" r="3" fill="#3498db"/>
+              <circle cx="300" cy="20" r="3" fill="#3498db"/>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <h3>Time to Escalation</h3>
+        <div class="kpi-value">
+          5.2<span class="unit">hours</span>
+          <span class="value-change negative"><i class="fas fa-caret-down"></i>3.5%</span>
+      </div>
+        <div class="kpi-chart">
+          <div class="line-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,20 C25,25 50,20 75,15 C100,20 125,25 150,30 C175,35 200,30 225,25 C250,20 275,15 300,20" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+              <circle cx="0" cy="20" r="3" fill="#3498db"/>
+              <circle cx="50" cy="20" r="3" fill="#3498db"/>
+              <circle cx="100" cy="15" r="3" fill="#3498db"/>
+              <circle cx="150" cy="30" r="3" fill="#3498db"/>
+              <circle cx="200" cy="30" r="3" fill="#3498db"/>
+              <circle cx="250" cy="15" r="3" fill="#3498db"/>
+              <circle cx="300" cy="20" r="3" fill="#3498db"/>
+            </svg>
+          </div>
+          <div class="chart-months">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Third row of KPI cards - Incident Volume Metrics -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Number of Incidents Detected</h3>
+        <div class="kpi-value">48</div>
+        <div class="kpi-chart">
+          <div class="bar-chart vertical">
+            <div class="bar" style="height: 30%"></div>
+            <div class="bar" style="height: 40%"></div>
+            <div class="bar" style="height: 35%"></div>
+            <div class="bar" style="height: 60%"></div>
+            <div class="bar" style="height: 85%"></div>
+            <div class="bar" style="height: 50%"></div>
+            <div class="bar" style="height: 35%"></div>
+          </div>
         </div>
         <div class="chart-labels">
-          <div class="escalation-rate">Escalation Rate: {{ metrics.escalationRate }}%</div>
-          <div class="chart-legend">
-            <div v-for="(source, index) in escalationData?.sourceLabels" :key="source" class="legend-item">
-              <span class="legend-color" :style="{ backgroundColor: escalationData?.sourceColors[index] }"></span>
-              <span>{{ source }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="bar-chart-container">
-          <canvas class="bar-chart" ref="escalationChart"></canvas>
-          <div class="chart-interact-hint">Click for details</div>
+          <span>M</span>
+          <span>T</span>
+          <span>W</span>
+          <span>T</span>
+          <span>F</span>
+          <span>S</span>
+          <span>S</span>
         </div>
       </div>
-
-      <!-- Incident Volume Chart -->
-      <div class="chart-card full-width" @click="showChartDetail('timeline')">
-        <div class="chart-header">
-          <h3>Incident Volume Over Time</h3>
-          <div class="chart-controls">
-            <div class="time-range-selector">
-              <select v-model="timelineRange" @change="updateTimelineChart">
-                <option value="days">Last 14 Days</option>
-                <option value="months">Last 6 Months</option>
-                <option value="quarters">Quarterly</option>
-              </select>
-            </div>
-            <div class="chart-type-selector">
-              <button v-for="type in ['area', 'line', 'bar']" 
-                      :key="type" 
-                      @click.stop="changeChartType('timeline', type)"
-                      :class="{ active: chartTypes.timeline === type }">
-                <i :class="getChartIcon(type)"></i>
-              </button>
-            </div>
+      
+      <div class="kpi-card">
+        <h3>Number of Reopened Incidents</h3>
+        <div class="kpi-value">7</div>
+        <div class="kpi-chart">
+          <div class="progress-bar">
+            <div class="progress" style="width: 15%"></div>
           </div>
         </div>
-        <div class="line-chart-container">
-          <canvas class="line-chart" ref="timelineChart"></canvas>
-          <div class="chart-interact-hint">Click for details</div>
+        <div class="chart-values">
+          <span>15% of total incidents</span>
         </div>
       </div>
-
-      <!-- Repeat Incident Rate Chart -->
-      <div class="chart-card" @click="showChartDetail('repeat')">
-        <h3>Repeat Incident Rate</h3>
-        <div class="chart-type-selector">
-          <button v-for="type in ['donut', 'pie', 'bar']" 
-                  :key="type" 
-                  @click.stop="changeChartType('repeat', type)"
-                  :class="{ active: chartTypes.repeat === type }">
-            <i :class="getChartIcon(type)"></i>
-          </button>
-        </div>
-        <div class="pie-chart-container">
-          <canvas class="pie-chart" ref="repeatChart"></canvas>
-          <div class="chart-interact-hint">Click for details</div>
+      
+      <div class="kpi-card">
+        <h3>Incident Closure Rate</h3>
+        <div class="kpi-value">76<span class="unit">%</span></div>
+        <div class="kpi-chart">
+          <div class="progress-bar">
+            <div class="progress" style="width: 76%"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Chart Detail Modal -->
-    <div v-if="chartDetailVisible" class="chart-detail-overlay" @click="hideChartDetail">
-      <div class="chart-detail-modal" @click.stop>
-        <button class="chart-detail-close" @click="hideChartDetail">&times;</button>
-        <h2>{{ chartDetailTitle }}</h2>
-        <div class="chart-detail-container">
-          <canvas ref="detailChart"></canvas>
-        </div>
-        <div class="chart-detail-info">
-          <table v-if="chartDetailData.labels && chartDetailData.values">
-            <thead>
-              <tr>
-                <th>{{ chartDetailTableHeaders.label }}</th>
-                <th>{{ chartDetailTableHeaders.value }}</th>
-                <th>Percentage</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(label, index) in chartDetailData.labels" :key="index">
-                <td>{{ label }}</td>
-                <td>{{ chartDetailData.values[index] }}</td>
-                <td>{{ calculatePercentage(chartDetailData.values[index], chartDetailData.values) }}%</td>
-              </tr>
-            </tbody>
-          </table>
+    <!-- Fourth row of KPI cards - Quality Metrics -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>False Positive Rate</h3>
+        <div class="kpi-value">12<span class="unit">%</span></div>
+        <div class="kpi-chart">
+          <div class="donut-chart">
+            <div class="donut-hole"></div>
+            <div class="donut-segment" style="--start-angle: 0deg; --end-angle: 43.2deg;"></div>
+          </div>
         </div>
       </div>
+      
+      <div class="kpi-card">
+        <h3>Detection Accuracy</h3>
+        <div class="kpi-value">88<span class="unit">%</span></div>
+        <div class="kpi-chart">
+          <div class="progress-bar">
+            <div class="progress" style="width: 88%"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <h3>SLA Compliance Rate</h3>
+        <div class="kpi-value">82<span class="unit">%</span></div>
+        <div class="kpi-chart">
+          <div class="progress-bar">
+            <div class="progress" style="width: 82%"></div>
+          </div>
+          </div>
+        </div>
+      </div>
+      
+    <!-- Fifth row of KPI cards - Categorization Metrics -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Percentage of Incidents by Severity</h3>
+        <div class="kpi-chart pie-chart-container">
+          <div class="pie-chart">
+            <div class="pie-segment critical" style="--segment-size: 25%;"></div>
+            <div class="pie-segment high" style="--segment-size: 35%;"></div>
+            <div class="pie-segment medium" style="--segment-size: 30%;"></div>
+            <div class="pie-segment low" style="--segment-size: 10%;"></div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color critical"></span>Critical (25%)</div>
+          <div class="legend-item"><span class="legend-color high"></span>High (35%)</div>
+          <div class="legend-item"><span class="legend-color medium"></span>Medium (30%)</div>
+          <div class="legend-item"><span class="legend-color low"></span>Low (10%)</div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <h3>User-Reported vs System-Detected</h3>
+        <div class="kpi-chart pie-chart-container">
+          <div class="pie-chart">
+            <div class="pie-segment user" style="--segment-size: 65%;"></div>
+            <div class="pie-segment system" style="--segment-size: 35%;"></div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color user"></span>User (65%)</div>
+          <div class="legend-item"><span class="legend-color system"></span>System (35%)</div>
+        </div>
+      </div>
+      
+      <!-- <div class="kpi-card">
+        <h3>Incident Recurrence Rate</h3>
+        <div class="kpi-value">6.5<span class="unit">%</span></div>
+        <div class="kpi-chart">
+          <div class="trend-line"></div>
+        </div>
+      </div> -->
+    </div>
+
+    <!-- Sixth row of KPI cards - Cost and Impact -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Cost per Incident</h3>
+        <div class="kpi-value">₹184K</div>
+        <div class="kpi-chart">
+          <div class="bar-chart horizontal">
+            <div class="bar critical" style="width: 80%">₹325K - Critical</div>
+            <div class="bar high" style="width: 60%">₹210K - High</div>
+            <div class="bar medium" style="width: 40%">₹125K - Medium</div>
+            <div class="bar low" style="width: 20%">₹75K - Low</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <h3>Automated vs Manual Responses</h3>
+        <div class="kpi-chart pie-chart-container">
+          <div class="pie-chart">
+            <div class="pie-segment automated" style="--segment-size: 40%;"></div>
+            <div class="pie-segment manual" style="--segment-size: 60%;"></div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color automated"></span>Automated (40%)</div>
+          <div class="legend-item"><span class="legend-color manual"></span>Manual (60%)</div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <h3>Resolution SLA Breach Rate</h3>
+        <div class="kpi-value">18<span class="unit">%</span></div>
+        <div class="kpi-chart">
+            <div class="progress-bar">
+            <div class="progress red" style="width: 18%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seventh row of KPI cards - Root Cause Analysis -->
+    <div class="kpi-row">
+      <div class="kpi-card root-cause-card">
+        <h3>Incident Root Cause Categories</h3>
+        <div class="kpi-chart bar-chart-container">
+          <div class="horizontal-bar-chart">
+            <div class="h-bar-item">
+              <div class="h-bar-label">Human Error</div>
+              <div class="h-bar-track">
+                <div class="h-bar-progress" style="width: 35%"></div>
+              </div>
+              <div class="h-bar-value">35%</div>
+            </div>
+            <div class="h-bar-item">
+              <div class="h-bar-label">System Failure</div>
+              <div class="h-bar-track">
+                <div class="h-bar-progress" style="width: 25%"></div>
+              </div>
+              <div class="h-bar-value">25%</div>
+            </div>
+            <div class="h-bar-item">
+              <div class="h-bar-label">Process Deficiency</div>
+              <div class="h-bar-track">
+                <div class="h-bar-progress" style="width: 20%"></div>
+              </div>
+              <div class="h-bar-value">20%</div>
+            </div>
+            <div class="h-bar-item">
+              <div class="h-bar-label">External Threat</div>
+              <div class="h-bar-track">
+                <div class="h-bar-progress" style="width: 15%"></div>
+              </div>
+              <div class="h-bar-value">15%</div>
+            </div>
+            <div class="h-bar-item">
+              <div class="h-bar-label">Other</div>
+              <div class="h-bar-track">
+                <div class="h-bar-progress" style="width: 5%"></div>
+              </div>
+              <div class="h-bar-value">5%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="kpi-card threat-types-card">
+        <h3>Volume of Incident Types</h3>
+        <div class="kpi-chart bar-chart-container">
+          <div class="vertical-bar-chart">
+            <div class="v-bar-item">
+              <div class="v-bar-progress" style="height: 75%"></div>
+              <div class="v-bar-label">Phishing</div>
+              <div class="v-bar-value">32</div>
+            </div>
+            <div class="v-bar-item">
+              <div class="v-bar-progress" style="height: 55%"></div>
+              <div class="v-bar-label">Malware</div>
+              <div class="v-bar-value">23</div>
+            </div>
+            <div class="v-bar-item">
+              <div class="v-bar-progress" style="height: 30%"></div>
+              <div class="v-bar-label">DDoS</div>
+              <div class="v-bar-value">13</div>
+            </div>
+            <div class="v-bar-item">
+              <div class="v-bar-progress" style="height: 20%"></div>
+              <div class="v-bar-label">Insider</div>
+              <div class="v-bar-value">8</div>
+            </div>
+            <div class="v-bar-item">
+              <div class="v-bar-progress" style="height: 15%"></div>
+              <div class="v-bar-label">Other</div>
+              <div class="v-bar-value">6</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- After the Seventh row of KPI cards, add new Eighth row -->
+    <div class="kpi-row">
+      <div class="kpi-card incident-volume-card">
+        <h3>Incident Volume</h3>
+        <div class="kpi-value">157</div>
+        <div class="kpi-chart volume-chart">
+          <div class="area-chart">
+            <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path d="M0,60 L0,40 C10,35 20,45 30,42 C40,39 50,28 60,25 C70,22 80,30 90,35 C100,40 110,45 120,30 C130,15 140,10 150,15 C160,20 170,35 180,30 C190,25 200,15 210,10 C220,5 230,15 240,25 C250,35 260,30 270,20 C280,10 290,15 300,20 L300,60 Z" 
+                fill="rgba(52, 152, 219, 0.2)" stroke="#3498db" stroke-width="1"></path>
+              <path d="M0,40 C10,35 20,45 30,42 C40,39 50,28 60,25 C70,22 80,30 90,35 C100,40 110,45 120,30 C130,15 140,10 150,15 C160,20 170,35 180,30 C190,25 200,15 210,10 C220,5 230,15 240,25 C250,35 260,30 270,20 C280,10 290,15 300,20" 
+                fill="none" stroke="#3498db" stroke-width="2"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="chart-labels">
+          <span>Mon</span>
+          <span>Wed</span>
+          <span>Fri</span>
+          <span>Sun</span>
+        </div>
+      </div>
+      
+      <div class="kpi-card escalation-rate-card">
+        <h3>Incident Escalation Rate</h3>
+        <div class="kpi-value">38<span class="unit">%</span></div>
+        <div class="kpi-chart stacked-bar-container">
+          <div class="stacked-bar">
+            <div class="stacked-segment audit" style="width: 38%">Audit</div>
+            <div class="stacked-segment manual" style="width: 62%">Manual</div>
+          </div>
+        </div>
+        <div class="chart-values">
+          <div class="chart-legend">
+            <div class="legend-item"><span class="legend-color audit"></span>Audit (38%)</div>
+            <div class="legend-item"><span class="legend-color manual"></span>Manual (62%)</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="kpi-card repeat-rate-card">
+        <h3>Repeat Incident Rate</h3>
+        <div class="kpi-value">21<span class="unit">%</span></div>
+        <div class="kpi-chart donut-chart-container">
+          <div class="donut-chart repeat-donut">
+            <div class="donut-segment new" style="--start-angle: 0deg; --end-angle: 284.4deg;"></div>
+            <div class="donut-segment repeat" style="--start-angle: 284.4deg; --end-angle: 360deg;"></div>
+            <div class="donut-hole">
+              <div class="donut-hole-text">21%</div>
+        </div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color new"></span>New (79%)</div>
+          <div class="legend-item"><span class="legend-color repeat"></span>Repeat (21%)</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showPopup" class="incident-popup-overlay">
+      <div class="incident-popup-modal">
+        <button class="incident-popup-close" @click="closePopup">&times;</button>
+        <div class="incident-popup-message">{{ popupMessage }}</div>
+      </div>
+    </div>
+
+    <div class="incident-count-card">
+      <h3>Total Incidents</h3>
+      <h2>{{ incidentCounts.total }}</h2>
+    </div>
+    
+    <div class="incident-count-card">
+      <h3>Pending Incidents</h3>
+      <h2>{{ incidentCounts.pending }}</h2>
+    </div>
+    
+    <div class="incident-count-card">
+      <h3>Accepted Incidents</h3>
+      <h2>{{ incidentCounts.accepted }}</h2>
+    </div>
+    
+    <div class="incident-count-card">
+      <h3>Rejected Incidents</h3>
+      <h2>{{ incidentCounts.rejected }}</h2>
+    </div>
+    
+    <div class="incident-count-card">
+      <h3>Resolved Incidents</h3>
+      <h2>{{ incidentCounts.resolved }}</h2>
     </div>
   </div>
 </template>
 
 <script>
+import '../Incident/IncidentDashboard.css';
 import axios from 'axios';
-import Chart from 'chart.js/auto';
-import './IncidentDashboard.css';
 
 export default {
   name: 'IncidentDashboard',
   data() {
     return {
-      incidents: [],
-      openIncidents: [],
-      charts: {
-        severity: null,
-        type: null,
-        source: null,
-        timeline: null,
-        volume: null,
-        escalation: null,
-        repeat: null
+      showPopup: false,
+      popupMessage: '',
+      loading: true,
+      kpiData: {
+        mttd: { value: 0, unit: 'hours', trend: [], change_percentage: 0 },
+        mttr: { value: 6, unit: 'hours', trend: [] },
+        mttc: { value: 12, unit: 'hours', trend: [] },
+        mttrv: { value: 35, unit: 'hours', trend: [] },
+        firstResponseTime: { value: 3.5, unit: 'hours', trend: [] },
+        escalationTime: { value: 5.2, unit: 'hours', trend: [] },
+        incidentsDetected: { value: 48, byDay: [12, 15, 13, 22, 32, 18, 13] },
+        reopenedIncidents: { value: 7, percentage: 15 },
+        closureRate: { value: 76, unit: '%' },
+        falsePositiveRate: { value: 12, unit: '%' },
+        detectionAccuracy: { value: 88, unit: '%' },
+        slaComplianceRate: { value: 82, unit: '%' },
+        incidentsBySeverity: {
+          critical: 25,
+          high: 35, 
+          medium: 30,
+          low: 10
+        },
+        incidentsByOrigin: {
+          user: 65,
+          system: 35
+        },
+        recurrenceRate: { value: 6.5, unit: '%', trend: [] },
+        costPerIncident: { 
+          average: 184000, 
+          bySeverity: {
+            critical: 325000,
+            high: 210000,
+            medium: 125000,
+            low: 75000
+          }
+        },
+        responseTypes: {
+          automated: 40,
+          manual: 60
+        },
+        slaBreachRate: { value: 18, unit: '%' },
+        rootCauseCategories: {
+          'Human Error': 35,
+          'System Failure': 25,
+          'Process Deficiency': 20,
+          'External Threat': 15,
+          'Other': 5
+        },
+        incidentTypes: {
+          'Phishing': 32,
+          'Malware': 23,
+          'DDoS': 13,
+          'Insider': 8,
+          'Other': 6
+        },
+        incidentVolume: {
+          value: 157,
+          byDay: [40, 42, 25, 35, 30, 15, 10, 20, 30, 25, 20, 15, 25]
+        },
+        escalationRate: {
+          value: 38,
+          audit: 38,
+          manual: 62
+        },
+        repeatRate: {
+          value: 21,
+          new: 79,
+          repeat: 21
+        }
       },
-      metrics: {
-        totalIncidents: 28,
-        incidentVolume: 37,
-        responseRate: 77,
-        escalationRate: 65,
-        repeatRate: 23,
-        avgDetectionTime: 1.3,
-        avgResponseTime: 2.5,
-        closureRate: 68
-      },
-      severityData: [
-        { name: 'High', value: 32 },
-        { name: 'Medium', value: 41 },
-        { name: 'Low', value: 27 }
-      ],
-      severityColors: ['#e63946', '#f8961e', '#90be6d'],
-      typeData: {
-        labels: ['Phishing', 'DoS', 'Escalation'],
-        values: [65, 85, 55]
-      },
-      sourceData: {
-        labels: ['Manual', 'SIEM', 'Audit'],
-        values: [75, 60, 55]
-      },
-      chartDetailVisible: false,
-      chartDetailTitle: '',
-      chartDetailType: 'pie',
-      chartDetailData: { labels: [], values: [] },
-      chartDetailColors: [],
-      chartDetailTableHeaders: { label: 'Category', value: 'Count' },
-      detailChart: null,
-      chartTypes: {
-        severity: 'pie',
-        type: 'bar',
-        source: 'bar',
-        timeline: 'line',
-        volume: 'area',
-        escalation: 'stacked',
-        repeat: 'donut'
-      },
-      typeColors: ['#4a89dc', '#5d9cec', '#7eb0ef', '#9fc4f4', '#c0d7f8'],
-      sourceColors: ['#8b5cf6', '#a78bfa', '#c4b5fd'],
-      timelineColors: ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'],
-      volumeData: null,
-      escalationData: null,
-      repeatData: null,
-      timelineRange: 'days',
-    };
-  },
-  mounted() {
-    this.fetchIncidents();
+      incidentCounts: {
+        total: 0,
+        pending: 0,
+        accepted: 0,
+        rejected: 0,
+        resolved: 0
+      }
+    }
   },
   methods: {
-    async fetchIncidents() {
+    openPopup(message) {
+      this.popupMessage = message;
+      this.showPopup = true;
+    },
+    closePopup() {
+      this.showPopup = false;
+      this.popupMessage = '';
+    },
+    async fetchKPIData() {
       try {
-        const response = await axios.get('http://localhost:8000/incidents/');
-        this.incidents = response.data;
-        console.log('Fetched incidents:', this.incidents);
+        this.loading = true;
         
-        // Set defaults if no incidents returned
-        if (!this.incidents || this.incidents.length === 0) {
-          this.metrics = {
-            totalIncidents: 0,
-            incidentVolume: 0,
-            responseRate: 0,
-            escalationRate: 0,
-            repeatRate: 0,
-            avgDetectionTime: 0,
-            avgResponseTime: 0,
-            closureRate: 0
-          };
-          return;
-        }
-        
-        // Process the data
-        this.processIncidentData();
-        
-        // After data is processed, initialize charts
-        this.$nextTick(() => {
-          this.initCharts();
-        });
-      } catch (error) {
-        console.error('Failed to fetch incidents:', error);
-      }
-    },
-    
-    processIncidentData() {
-      // Calculate metrics
-      this.metrics.totalIncidents = this.incidents.length;
-      
-      // Filter open incidents
-      this.openIncidents = this.incidents.filter(incident => 
-        !incident.Status || incident.Status === 'Open' || incident.Status === 'Scheduled'
-      ).slice(0, 5); // Show 5 most recent
-      
-      // Calculate severity distribution
-      const priorityCounts = {
-        'High': 0,
-        'Medium': 0,
-        'Low': 0
-      };
-      
-      this.incidents.forEach(incident => {
-        const priority = incident.RiskPriority ? incident.RiskPriority.trim() : null;
-        if (priority) {
-          if (priority.toLowerCase() === 'high') priorityCounts['High']++;
-          else if (priority.toLowerCase() === 'medium') priorityCounts['Medium']++;
-          else if (priority.toLowerCase() === 'low') priorityCounts['Low']++;
-        }
-      });
-      
-      // Calculate response metrics from actual data
-      if (this.incidents.length > 0) {
-        // Count incidents with a response (status other than Open or null)
-        const respondedCount = this.incidents.filter(i => 
-          i.Status && i.Status !== 'Open' && i.Status !== 'Scheduled'
-        ).length;
-        
-        // Calculate response rate (% of incidents that have been responded to)
-        this.metrics.responseRate = Math.round((respondedCount / this.incidents.length) * 100);
-        
-        // Calculate closure rate (% of resolved/closed incidents)
-        const resolvedCount = this.incidents.filter(i => 
-          i.Status === 'Resolved' || i.Status === 'Closed'
-        ).length;
-        this.metrics.closureRate = Math.round((resolvedCount / this.incidents.length) * 100);
-        
-        // Calculate detection and response times
-        let totalDetectionTime = 0;
-        let totalResponseTime = 0;
-        let detectionCount = 0;
-        let responseCount = 0;
-        
-        this.incidents.forEach(incident => {
-          // Calculate detection time (time between creation and identification)
-          if (incident.CreatedAt && incident.IdentifiedAt) {
-            const createdAt = new Date(incident.CreatedAt);
-            const identifiedAt = new Date(incident.IdentifiedAt);
-            
-            if (identifiedAt > createdAt) {
-              const detectionHours = (identifiedAt - createdAt) / (1000 * 60 * 60);
-              totalDetectionTime += detectionHours;
-              detectionCount++;
-            }
-          }
-          
-          // Calculate response time (time between identification and response)
-          if (incident.IdentifiedAt && incident.RespondedAt) {
-            const identifiedAt = new Date(incident.IdentifiedAt);
-            const respondedAt = new Date(incident.RespondedAt);
-            
-            if (respondedAt > identifiedAt) {
-              const responseHours = (respondedAt - identifiedAt) / (1000 * 60 * 60);
-              totalResponseTime += responseHours;
-              responseCount++;
-            }
-          }
-        });
-        
-        // Set average detection time
-        if (detectionCount > 0) {
-          this.metrics.avgDetectionTime = (totalDetectionTime / detectionCount).toFixed(1);
-        } else {
-          this.metrics.avgDetectionTime = 0;
-        }
-        
-        // Set average response time
-        if (responseCount > 0) {
-          this.metrics.avgResponseTime = (totalResponseTime / responseCount).toFixed(1);
-        } else {
-          this.metrics.avgResponseTime = 0;
-        }
-      } else {
-        // If no incidents, set all metrics to 0
-        this.metrics = {
-          totalIncidents: 0,
-          incidentVolume: 0,
-          responseRate: 0,
-          escalationRate: 0,
-          repeatRate: 0,
-          avgDetectionTime: 0, 
-          avgResponseTime: 0,
-          closureRate: 0
-        };
-      }
-      
-      // Update severity data for charts
-      const total = Object.values(priorityCounts).reduce((sum, count) => sum + count, 0);
-      if (total > 0) {
-        this.severityData = [
-          { name: 'High', value: priorityCounts['High'] },
-          { name: 'Medium', value: priorityCounts['Medium'] },
-          { name: 'Low', value: priorityCounts['Low'] }
-        ];
-      }
-      
-      // Calculate incidents by type - use actual RiskCategory values
-      const categoryCounts = {};
-      
-      // Extract unique categories and count them
-      this.incidents.forEach(incident => {
-        if (incident.RiskCategory) {
-          // Trim the category and handle case consistency
-          const category = incident.RiskCategory.trim();
-          if (category) {
-            if (!categoryCounts[category]) {
-              categoryCounts[category] = 0;
-            }
-            categoryCounts[category]++;
-          }
-        }
-      });
-      
-      console.log("Category counts:", categoryCounts);
-      
-      // Take top 5 categories if there are too many
-      const sortedCategories = Object.entries(categoryCounts)
-        .sort((a, b) => b[1] - a[1]) // Sort by count, descending
-        .slice(0, 5); // Limit to 5 categories for readability
-      
-      // Update typeData with actual categories from database
-      this.typeData = {
-        labels: sortedCategories.map(entry => entry[0]),
-        values: sortedCategories.map(entry => entry[1])
-      };
-      
-      // Calculate incidents by source
-      const sourceCounts = { 'Manual': 0, 'SIEM': 0, 'Audit': 0 };
-      this.incidents.forEach(incident => {
-        if (incident.Origin) {
-          if (incident.Origin.includes('Manual')) sourceCounts['Manual']++;
-          else if (incident.Origin.includes('SIEM')) sourceCounts['SIEM']++;
-          else if (incident.Origin.includes('Audit')) sourceCounts['Audit']++;
-        }
-      });
-      this.sourceData.values = Object.values(sourceCounts);
-      
-      // Calculate new KPI metrics from actual data
-      if (this.incidents.length > 0) {
-        // Calculate incident volume (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const recentIncidents = this.incidents.filter(i => 
-          new Date(i.Date) >= thirtyDaysAgo
-        );
-        this.metrics.incidentVolume = recentIncidents.length;
-        
-        // Calculate escalation rate
-        const auditIncidents = this.incidents.filter(i => 
-          i.Origin && i.Origin.toLowerCase().includes('audit')
-        ).length;
-        
-        this.metrics.escalationRate = Math.round((auditIncidents / this.incidents.length) * 100);
-        
-        // Calculate repeat incident rate
-        const repeatIncidents = this.incidents.filter(i => 
-          i.IsRepeat || i.Status === 'Reopened'
-        ).length;
-        
-        this.metrics.repeatRate = Math.round((repeatIncidents / this.incidents.length) * 100);
-        
-        // Prepare data for volume chart (daily counts for last 14 days)
-        this.prepareVolumeData();
-        
-        // Prepare data for escalation chart
-        this.prepareEscalationData();
-        
-        // Prepare data for repeat incident chart
-        this.prepareRepeatData();
-      }
-    },
-    
-    prepareVolumeData() {
-      // Generate daily incident counts for the last 14 days
-      const days = 14;
-      const labels = [];
-      const values = [];
-      
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        
-        // Format date as MM/DD
-        const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
-        labels.push(formattedDate);
-        
-        // Count incidents for this day
-        const count = this.incidents.filter(incident => {
-          if (!incident.Date) return false;
-          const incidentDate = new Date(incident.Date);
-          return incidentDate.toDateString() === date.toDateString();
-        }).length;
-        
-        values.push(count);
-      }
-      
-      this.volumeData = { labels, values };
-    },
-    
-    prepareEscalationData() {
-      // Calculate source distribution with escalation information
-      const sourceCounts = { 'Manual': 0, 'SIEM': 0, 'Audit': 0 };
-      const sourceLabels = Object.keys(sourceCounts);
-      
-      this.incidents.forEach(incident => {
-        if (incident.Origin) {
-          if (incident.Origin.includes('Manual')) sourceCounts['Manual']++;
-          else if (incident.Origin.includes('SIEM')) sourceCounts['SIEM']++;
-          else if (incident.Origin.includes('Audit')) sourceCounts['Audit']++;
-        }
-      });
-      
-      // Set colors for each source
-      const sourceColors = ['#c4b5fd', '#4a89dc', '#8b5cf6'];
-      
-      // Calculate overall escalation rate for metrics
-      const auditIncidents = sourceCounts['Audit'];
-      const totalIncidents = this.incidents.length;
-      this.metrics.escalationRate = Math.round((auditIncidents / totalIncidents) * 100);
-      
-      // For stacked view, prepare monthly data
-      const months = 6;
-      const labels = [];
-      const datasets = sourceLabels.map((source, index) => ({
-        label: source,
-        data: [],
-        backgroundColor: sourceColors[index]
-      }));
-      
-      for (let i = months - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        
-        // Format as month name
-        const monthName = date.toLocaleString('default', { month: 'short' });
-        labels.push(monthName);
-        
-        // Filter incidents for this month
-        const monthIncidents = this.incidents.filter(incident => {
-          if (!incident.Date) return false;
-          const incidentDate = new Date(incident.Date);
-          return incidentDate.getMonth() === date.getMonth() && 
-                 incidentDate.getFullYear() === date.getFullYear();
-        });
-        
-        // Count by source for this month
-        sourceLabels.forEach((source, sourceIndex) => {
-          const count = monthIncidents.filter(i => 
-            i.Origin && i.Origin.includes(source)
-          ).length;
-          
-          datasets[sourceIndex].data.push(count);
-        });
-      }
-      
-      this.escalationData = { 
-        labels, 
-        datasets,
-        sourceValues: Object.values(sourceCounts),
-        sourceLabels,
-        sourceColors,
-        totalIncidents: totalIncidents,
-        auditIncidents: auditIncidents
-      };
-    },
-    
-    prepareRepeatData() {
-      // Calculate new vs repeat incidents
-      const repeatCount = this.incidents.filter(i => 
-        i.IsRepeat || i.Status === 'Reopened'
-      ).length;
-      
-      const newCount = this.incidents.length - repeatCount;
-      
-      this.repeatData = {
-        labels: ['New', 'Repeat'],
-        values: [newCount, repeatCount],
-        colors: ['#10b981', '#f59e0b']
-      };
-    },
-    
-    initCharts() {
-      this.$nextTick(() => {
-        // Destroy existing charts to prevent duplicates/stale data
-        if (this.charts.severity) {
-          this.charts.severity.destroy();
-        }
-        if (this.charts.type) {
-          this.charts.type.destroy();
-        }
-        if (this.charts.source) {
-          this.charts.source.destroy();
-        }
-        if (this.charts.timeline) {
-          this.charts.timeline.destroy();
-        }
-        if (this.charts.volume) {
-          this.charts.volume.destroy();
-        }
-        if (this.charts.escalation) {
-          this.charts.escalation.destroy();
-        }
-        if (this.charts.repeat) {
-          this.charts.repeat.destroy();
-        }
-        
-        this.createSeverityChart();
-        this.createTypeChart();
-        this.createSourceChart();
-        this.createTimelineChart();
-        this.createVolumeChart();
-        this.createEscalationChart();
-        this.createRepeatChart();
-      });
-    },
-    
-    generateTimelineData() {
-      if (this.timelineRange === 'days') {
-        return this.generateDailyTimelineData();
-      } else if (this.timelineRange === 'months') {
-        return this.generateMonthlyTimelineData();
-      } else {
-        return this.generateQuarterlyTimelineData();
-      }
-    },
-    
-    generateDailyTimelineData() {
-      // Generate daily incident counts for the last 14 days
-      const days = 14;
-      const labels = [];
-      const values = [];
-      
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        
-        // Format date as MM/DD
-        const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
-        labels.push(formattedDate);
-        
-        // Count incidents for this day
-        const count = this.incidents.filter(incident => {
-          if (!incident.Date) return false;
-          const incidentDate = new Date(incident.Date);
-          return incidentDate.toDateString() === date.toDateString();
-        }).length;
-        
-        values.push(count);
-      }
-      
-      return {
-        labels,
-        values,
-        title: 'Daily Incident Volume'
-      };
-    },
-    
-    generateMonthlyTimelineData() {
-      // Generate monthly data for the last 6 months
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthCounts = Array(12).fill(0);
-      
-      this.incidents.forEach(incident => {
-        if (incident.Date) {
-          const date = new Date(incident.Date);
-          const month = date.getMonth();
-          monthCounts[month]++;
-        }
-      });
-      
-      // Grab only the last 6 months for display
-      const today = new Date();
-      const currentMonth = today.getMonth();
-      const last6Months = [];
-      const last6Values = [];
-      
-      for (let i = 5; i >= 0; i--) {
-        const monthIndex = (currentMonth - i + 12) % 12;
-        last6Months.push(months[monthIndex]);
-        last6Values.push(monthCounts[monthIndex]);
-      }
-      
-      return {
-        labels: last6Months,
-        values: last6Values,
-        title: 'Monthly Incident Volume'
-      };
-    },
-    
-    generateQuarterlyTimelineData() {
-      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-      const quarterCounts = [0, 0, 0, 0];
-      
-      this.incidents.forEach(incident => {
-        if (incident.Date) {
-          const date = new Date(incident.Date);
-          const month = date.getMonth();
-          const quarter = Math.floor(month / 3);
-          quarterCounts[quarter]++;
-        }
-      });
-      
-      return {
-        labels: quarters,
-        values: quarterCounts,
-        title: 'Quarterly Incident Volume'
-      };
-    },
-    
-    formatDate(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
-    },
-    
-    getPriorityClass(priority) {
-      if (!priority) return '';
-      switch(priority.toLowerCase()) {
-        case 'high': return 'priority-high';
-        case 'medium': return 'priority-medium';
-        case 'low': return 'priority-low';
-        default: return '';
-      }
-    },
-    
-    calculateResponseTime(incident) {
-      if (incident.IdentifiedAt && incident.RespondedAt) {
-        const identifiedAt = new Date(incident.IdentifiedAt);
-        const respondedAt = new Date(incident.RespondedAt);
-        
-        if (respondedAt > identifiedAt) {
-          return ((respondedAt - identifiedAt) / (1000 * 60 * 60)).toFixed(1);
-        }
-      }
-      // Fallback to a reasonable estimate if real data isn't available
-      return ((Math.random() * 3) + 1).toFixed(1);
-    },
-    
-    showChartDetail(chartType) {
-      // Set modal properties based on chart type
-      switch(chartType) {
-        case 'severity':
-          this.chartDetailTitle = 'Incidents by Severity';
-          this.chartDetailType = this.chartTypes.severity;
-          this.chartDetailData = {
-            labels: this.severityData.map(item => item.name),
-            values: [
-              this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'high').length,
-              this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'medium').length,
-              this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'low').length
-            ]
-          };
-          this.chartDetailColors = this.severityColors;
-          this.chartDetailTableHeaders = { label: 'Severity', value: 'Count' };
-          break;
-        
-        case 'type':
-          this.chartDetailTitle = 'Incidents by Type';
-          this.chartDetailType = this.chartTypes.type;
-          this.chartDetailData = {
-            labels: this.typeData.labels,
-            values: this.typeData.values
-          };
-          this.chartDetailColors = this.typeColors;
-          this.chartDetailTableHeaders = { label: 'Type', value: 'Count' };
-          break;
-        
-        case 'source':
-          this.chartDetailTitle = 'Incidents by Source';
-          this.chartDetailType = this.chartTypes.source;
-          this.chartDetailData = {
-            labels: this.sourceData.labels,
-            values: this.sourceData.values
-          };
-          this.chartDetailColors = this.sourceColors;
-          this.chartDetailTableHeaders = { label: 'Source', value: 'Count' };
-          break;
-        
-        case 'timeline': {
-          const timelineData = this.generateTimelineData();
-          this.chartDetailTitle = 'Incident Volume Over Time';
-          this.chartDetailType = this.chartTypes.timeline === 'area' ? 'line' : this.chartTypes.timeline;
-          this.chartDetailData = {
-            labels: timelineData.labels,
-            values: timelineData.values
-          };
-          this.chartDetailColors = this.timelineColors;
-          this.chartDetailTableHeaders = { 
-            label: this.timelineRange === 'days' ? 'Date' : 
-                  this.timelineRange === 'months' ? 'Month' : 'Quarter', 
-            value: 'Incidents' 
-          };
-          break;
-        }
-        
-        case 'volume':
-          this.chartDetailTitle = 'Incident Volume';
-          this.chartDetailType = this.chartTypes.volume;
-          this.chartDetailData = this.volumeData;
-          this.chartDetailColors = [];
-          this.chartDetailTableHeaders = { label: 'Date', value: 'Incidents' };
-          break;
-        
-        case 'escalation':
-          this.chartDetailTitle = 'Incident Sources & Escalation Rate';
-          this.chartDetailType = this.chartTypes.escalation;
-          
-          if (this.chartTypes.escalation === 'pie') {
-            this.chartDetailData = {
-              labels: this.escalationData?.sourceLabels || [],
-              values: this.escalationData?.sourceValues || []
-            };
-            this.chartDetailColors = this.escalationData?.sourceColors || [];
-          } else {
-            this.chartDetailData = {
-              labels: this.escalationData?.labels || [],
-              datasets: this.escalationData?.datasets || []
-            };
-            this.chartDetailColors = [];
-          }
-          
-          this.chartDetailTableHeaders = { label: 'Source', value: 'Count' };
-          break;
-        
-        case 'repeat':
-          this.chartDetailTitle = 'Repeat Incident Rate';
-          this.chartDetailType = this.chartTypes.repeat;
-          this.chartDetailData = this.repeatData;
-          this.chartDetailColors = this.repeatData.colors;
-          this.chartDetailTableHeaders = { label: 'Type', value: 'Count' };
-          break;
-      }
-      
-      // Show the modal and initialize detail chart
-      this.chartDetailVisible = true;
-      this.$nextTick(() => {
-        this.initDetailChart();
-      });
-    },
-    
-    hideChartDetail() {
-      this.chartDetailVisible = false;
-      if (this.detailChart) {
-        this.detailChart.destroy();
-        this.detailChart = null;
-      }
-    },
-    
-    initDetailChart() {
-      const ctx = this.$refs.detailChart?.getContext('2d');
-      if (!ctx) return;
-      
-      if (this.detailChart) {
-        this.detailChart.destroy();
-      }
-      
-      // Convert 'horizontal' to 'bar' with appropriate axis configuration
-      let chartType = this.chartDetailType;
-      const isHorizontal = chartType === 'horizontal';
-      
-      if (isHorizontal) {
-        chartType = 'bar';
-      } else if (chartType === 'area') {
-        chartType = 'line';
-      }
-      
-      const chartConfig = {
-        type: chartType,
-        data: {
-          labels: this.chartDetailData.labels,
-          datasets: [{
-            data: this.chartDetailData.values,
-            backgroundColor: chartType === 'line' 
-              ? 'rgba(74, 137, 220, 0.1)' 
-              : this.chartDetailColors,
-            borderColor: chartType === 'line' ? this.chartDetailColors[0] : undefined,
-            tension: chartType === 'line' ? 0.4 : undefined,
-            fill: chartType === 'line' ? true : undefined
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: chartType === 'pie'
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  const label = context.label || '';
-                  const value = context.raw || 0;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = Math.round((value / total) * 100);
-                  return `${label}: ${value} (${percentage}%)`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              display: chartType !== 'pie'
-            },
-            x: {
-              display: chartType !== 'pie'
-            }
-          }
-        }
-      };
-      
-      this.detailChart = new Chart(ctx, chartConfig);
-    },
-    
-    calculatePercentage(value, allValues) {
-      const total = allValues.reduce((sum, val) => sum + val, 0);
-      return total > 0 ? Math.round((value / total) * 100) : 0;
-    },
-    
-    getChartIcon(type) {
-      switch(type) {
-        case 'pie': return 'fa-solid fa-chart-pie';
-        case 'bar': return 'fa-solid fa-chart-bar';
-        case 'horizontal': return 'fa-solid fa-bars-progress';
-        case 'line': return 'fa-solid fa-chart-line';
-        case 'area': return 'fa-solid fa-chart-area';
-        case 'polarArea': return 'fa-solid fa-circle';
-        case 'radar': return 'fa-solid fa-spider-web';
-        case 'donut': return 'fa-solid fa-circle-dot';
-        case 'stacked': return 'fa-solid fa-layer-group';
-        default: return 'fa-solid fa-chart-simple';
-      }
-    },
-    
-    changeChartType(chartId, newType) {
-      this.chartTypes[chartId] = newType;
-      this.refreshChart(chartId);
-    },
-    
-    refreshChart(chartId) {
-      // Safely destroy the existing chart
-      if (this.charts[chartId]) {
+        // First, try to get all metrics at once
         try {
-          this.charts[chartId].destroy();
-        } catch (e) {
-          console.error(`Error destroying ${chartId} chart:`, e);
+          const response = await axios.get('/api/incident/metrics/', {
+            params: {
+              timeRange: 'all'
+            }
+          });
+          
+          if (response.data && response.data.mttd) {
+            this.kpiData.mttd = {
+              value: response.data.mttd.value,
+              unit: response.data.mttd.unit,
+              trend: response.data.mttd.trend,
+              change_percentage: response.data.mttd.change_percentage
+            };
+          }
+          
+          // Process other metrics if available
+          
+          this.loading = false;
+          return;
+        } catch (error) {
+          console.warn('Metrics endpoint not available, falling back to individual endpoints');
         }
-        this.charts[chartId] = null;
+        
+        // If all-in-one endpoint fails, fall back to individual requests
+        // Rest of the existing code with individual endpoints...
+      } catch (error) {
+        console.error('Error fetching KPI data:', error);
+        this.openPopup('Error loading dashboard data. Please try again later.');
+        this.loading = false;
+      }
+    },
+    // Helper method to generate SVG path for trend line
+    generateTrendPath(dataPoints) {
+      if (!dataPoints || dataPoints.length === 0) return '';
+      
+      // Normalize data points to fit in the SVG viewport
+      const maxValue = Math.max(...dataPoints) || 1;
+      const minValue = Math.min(...dataPoints) || 0;
+      const range = maxValue - minValue || 1;
+      
+      // Calculate x-step based on number of points
+      const xStep = 300 / (dataPoints.length - 1 || 1);
+      
+      // Start the path
+      let path = `M0,${60 - ((dataPoints[0] - minValue) / range * 40 + 10)}`;
+      
+      // Add points to the path
+      for (let i = 1; i < dataPoints.length; i++) {
+        const x = i * xStep;
+        const y = 60 - ((dataPoints[i] - minValue) / range * 40 + 10);
+        path += ` L${x},${y}`;
       }
       
-      // Re-create the chart with the new type after a short delay
-      // to ensure DOM is ready
-      setTimeout(() => {
-        switch(chartId) {
-          case 'severity':
-            this.createSeverityChart();
-            break;
-          case 'type':
-            this.createTypeChart();
-            break;
-          case 'source':
-            this.createSourceChart();
-            break;
-          case 'timeline':
-            this.createTimelineChart();
-            break;
-          case 'volume':
-            this.createVolumeChart();
-            break;
-          case 'escalation':
-            this.createEscalationChart();
-            break;
-          case 'repeat':
-            this.createRepeatChart();
-            break;
-        }
-      }, 50);
+      return path;
     },
     
-    createSeverityChart() {
-      const severityCtx = this.$refs.severityChart;
-      if (!severityCtx) return;
+    // Helper method to get points for trend circles
+    getTrendPoints(dataPoints) {
+      if (!dataPoints || dataPoints.length === 0) return [];
       
-      // Get the context safely
-      const ctx = severityCtx.getContext('2d');
-      if (!ctx) return;
+      // Normalize data points to fit in the SVG viewport
+      const maxValue = Math.max(...dataPoints) || 1;
+      const minValue = Math.min(...dataPoints) || 0;
+      const range = maxValue - minValue || 1;
       
-      let type = this.chartTypes.severity;
-      const isRadial = ['pie', 'polarArea'].includes(type);
-      const isLine = type === 'line';
-      const isHorizontal = type === 'horizontal';
+      // Calculate x-step based on number of points
+      const xStep = 300 / (dataPoints.length - 1 || 1);
       
-      // Ensure any existing chart is destroyed
-      if (this.charts.severity) {
-        this.charts.severity.destroy();
-      }
-      
-      // Set actual chart type for horizontal bar
-      if (isHorizontal) {
-        type = 'bar';
-      }
-      
-      const severityData = [
-        this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'high').length,
-        this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'medium').length,
-        this.incidents.filter(i => i.RiskPriority?.toLowerCase() === 'low').length
-      ];
-      
-      this.charts.severity = new Chart(ctx, {
-        type: type,
-        data: {
-          labels: ['High', 'Medium', 'Low'],
-          datasets: [{
-            data: severityData,
-            backgroundColor: isLine ? 'rgba(74, 137, 220, 0.1)' : this.severityColors,
-            borderColor: isLine ? '#4a89dc' : undefined,
-            borderWidth: isLine ? 2 : 0,
-            tension: isLine ? 0.4 : undefined,
-            fill: isLine
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: isRadial
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.raw || 0;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = Math.round((value / total) * 100);
-                  return `${label}: ${value} (${percentage}%)`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              display: !isRadial || isLine || isHorizontal
-            },
-            x: {
-              display: !isRadial || isLine || isHorizontal
-            }
-          }
-        }
+      // Generate points
+      return dataPoints.map((value, index) => {
+        return {
+          x: index * xStep,
+          y: 60 - ((value - minValue) / range * 40 + 10)
+        };
       });
     },
-    
-    createTypeChart() {
-      const typeCtx = this.$refs.typeChart?.getContext('2d');
-      if (!typeCtx) return;
-      
-      let type = this.chartTypes.type;
-      const isRadial = ['pie', 'polarArea'].includes(type);
-      const isLine = type === 'line';
-      const isHorizontal = type === 'horizontal';
-      
-      // Set actual chart type for horizontal bar
-      if (isHorizontal) {
-        type = 'bar';
-      }
-      
-      this.charts.type = new Chart(typeCtx, {
-        type: type,
-        data: {
-          labels: this.typeData.labels,
-          datasets: [{
-            data: this.typeData.values,
-            backgroundColor: isLine ? 'rgba(74, 137, 220, 0.1)' : 
-                          isRadial ? this.typeColors : this.typeColors[0],
-            borderColor: isLine ? this.typeColors[0] : undefined,
-            borderWidth: isLine ? 2 : 0,
-            tension: isLine ? 0.4 : undefined,
-            fill: isLine
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: isRadial
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              display: !isRadial || isLine || isHorizontal
-            },
-            x: {
-              display: !isRadial || isLine || isHorizontal
-            }
-          }
-        }
-      });
-    },
-    
-    createSourceChart() {
-      const sourceCtx = this.$refs.sourceChart?.getContext('2d');
-      if (!sourceCtx) return;
-      
-      let type = this.chartTypes.source;
-      const isRadial = ['pie', 'polarArea'].includes(type);
-      const isLine = type === 'line';
-      const isHorizontal = type === 'horizontal';
-      
-      // Set actual chart type for horizontal bar
-      if (isHorizontal) {
-        type = 'bar';
-      }
-      
-      this.charts.source = new Chart(sourceCtx, {
-        type: type,
-        data: {
-          labels: this.sourceData.labels,
-          datasets: [{
-            data: this.sourceData.values,
-            backgroundColor: isLine ? 'rgba(139, 92, 246, 0.1)' : 
-                          isRadial ? this.sourceColors : this.sourceColors[0],
-            borderColor: isLine ? this.sourceColors[0] : undefined,
-            borderWidth: isLine ? 2 : 0,
-            tension: isLine ? 0.4 : undefined,
-            fill: isLine
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: isRadial
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              display: !isRadial || isLine || isHorizontal
-            },
-            x: {
-              display: !isRadial || isLine || isHorizontal
-            }
-          }
-        }
-      });
-    },
-    
-    createTimelineChart() {
-      const timelineCtx = this.$refs.timelineChart?.getContext('2d');
-      if (!timelineCtx) return;
-      
-      let type = this.chartTypes.timeline;
-      const isRadial = ['pie', 'polarArea'].includes(type);
-      const isLine = type === 'line' || type === 'area';
-      const isHorizontal = type === 'horizontal';
-      const isArea = type === 'area';
-      
-      // Set actual chart type for horizontal bar and area
-      if (isHorizontal) {
-        type = 'bar';
-      } else if (type === 'area') {
-        type = 'line';
-      }
-      
-      const timelineData = this.generateTimelineData();
-      
-      if (this.charts.timeline) {
-        this.charts.timeline.destroy();
-      }
-      
-      this.charts.timeline = new Chart(timelineCtx, {
-        type: type,
-        data: {
-          labels: timelineData.labels,
-          datasets: [{
-            label: 'Incidents',
-            data: timelineData.values,
-            borderColor: '#10b981',
-            backgroundColor: isRadial ? 
-                          this.timelineColors : 
-                          isArea ? 'rgba(16, 185, 129, 0.1)' : '#10b981',
-            tension: isLine ? 0.4 : 0,
-            fill: isArea
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: false
-            },
-            title: {
-              display: true,
-              text: timelineData.title,
-              position: 'top',
-              font: {
-                size: 14
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Incident Count'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: this.timelineRange === 'days' ? 'Date' : 
-                     this.timelineRange === 'months' ? 'Month' : 'Quarter'
-              }
-            }
-          }
-        }
-      });
-    },
-    
-    createVolumeChart() {
-      const volumeCtx = this.$refs.volumeChart?.getContext('2d');
-      if (!volumeCtx) return;
-      
-      let type = this.chartTypes.volume === 'area' ? 'line' : this.chartTypes.volume;
-      const isArea = this.chartTypes.volume === 'area';
-      
-      if (this.charts.volume) {
-        this.charts.volume.destroy();
-      }
-      
-      this.charts.volume = new Chart(volumeCtx, {
-        type: type,
-        data: {
-          labels: this.volumeData?.labels || [],
-          datasets: [{
-            label: 'Daily Incidents',
-            data: this.volumeData?.values || [],
-            borderColor: '#4a89dc',
-            backgroundColor: isArea ? 'rgba(74, 137, 220, 0.2)' : '#4a89dc',
-            tension: 0.4,
-            fill: isArea
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              mode: 'index',
-              intersect: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Incident Count'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Date'
-              }
-            }
-          }
-        }
-      });
-    },
-    
-    createEscalationChart() {
-      const escalationCtx = this.$refs.escalationChart?.getContext('2d');
-      if (!escalationCtx) return;
-      
-      let chartType = this.chartTypes.escalation;
-      const isStacked = chartType === 'stacked';
-      const isHorizontal = chartType === 'horizontal';
-      const isPie = chartType === 'pie';
-      
-      if (this.charts.escalation) {
-        this.charts.escalation.destroy();
-      }
-      
-      // For pie chart, show overall distribution
-      if (isPie) {
-        this.charts.escalation = new Chart(escalationCtx, {
-          type: 'pie',
-          data: {
-            labels: this.escalationData?.sourceLabels || [],
-            datasets: [{
-              data: this.escalationData?.sourceValues || [],
-              backgroundColor: this.escalationData?.sourceColors || []
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false // Hide built-in legend since we have a custom one
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const label = context.label || '';
-                    const value = context.raw || 0;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = Math.round((value / total) * 100);
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                }
-              },
-              title: {
-                display: true,
-                text: 'Incident Distribution by Source',
-                position: 'top',
-                padding: {
-                  bottom: 10
-                },
-                font: {
-                  size: 14
-                }
-              }
-            }
-          }
+    fetchIncidentCounts() {
+      console.log("Fetching incident counts");
+      fetch('/api/incidents/counts/')
+        .then(response => response.json())
+        .then(data => {
+          console.log("Received incident counts:", data);
+          this.incidentCounts = data;
+        })
+        .catch(error => {
+          console.error('Error fetching incident counts:', error);
         });
-        return;
-      }
-      
-      // For bar charts (stacked or regular)
-      this.charts.escalation = new Chart(escalationCtx, {
-        type: 'bar',
-        data: {
-          labels: this.escalationData?.labels || [],
-          datasets: this.escalationData?.datasets || []
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: isHorizontal ? 'y' : 'x',
-          plugins: {
-            legend: {
-              display: false // Hide built-in legend since we have a custom one
-            },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                footer: (tooltipItems) => {
-                  // Calculate the total for this month/period
-                  const total = tooltipItems.reduce((sum, item) => sum + item.parsed.y, 0);
-                  const auditValue = tooltipItems.find(item => item.dataset.label === 'Audit')?.parsed.y || 0;
-                  const escalationRate = Math.round((auditValue / total) * 100) || 0;
-                  return `Escalation Rate: ${escalationRate}%`;
-                }
-              }
-            },
-            title: {
-              display: isStacked,
-              text: 'Monthly Incident Sources',
-              position: 'top',
-              padding: {
-                bottom: 10
-              },
-              font: {
-                size: 14
-              }
-            }
-          },
-          scales: {
-            x: {
-              stacked: isStacked,
-              title: {
-                display: true,
-                text: 'Month'
-              }
-            },
-            y: {
-              stacked: isStacked,
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Incident Count'
-              }
-            }
-          }
-        }
-      });
-    },
-    
-    createRepeatChart() {
-      const repeatCtx = this.$refs.repeatChart?.getContext('2d');
-      if (!repeatCtx) return;
-      
-      let type = this.chartTypes.repeat === 'donut' ? 'doughnut' : this.chartTypes.repeat;
-      
-      if (this.charts.repeat) {
-        this.charts.repeat.destroy();
-      }
-      
-      this.charts.repeat = new Chart(repeatCtx, {
-        type: type,
-        data: {
-          labels: this.repeatData?.labels || [],
-          datasets: [{
-            data: this.repeatData?.values || [],
-            backgroundColor: this.repeatData?.colors || ['#10b981', '#f59e0b']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'top'
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.raw || 0;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = Math.round((value / total) * 100);
-                  return `${label}: ${value} (${percentage}%)`;
-                }
-              }
-            }
-          },
-          cutout: type === 'doughnut' ? '60%' : undefined
-        }
-      });
-    },
-    
-    updateTimelineChart() {
-      this.refreshChart('timeline');
-    },
+    }
+  },
+  mounted() {
+    this.fetchKPIData();
+    this.fetchIncidentCounts();
   }
 }
 </script>
 
 <style scoped>
-.incident-dashboard-wrapper {
-  padding: 20px;
-  background-color: #f8f9fa;
-  font-family: Arial, sans-serif;
-}
-
-h1 {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  padding-left: 10px;
-}
-
-h3 {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 15px;
-}
-
-/* KPI Metrics Cards */
-.metrics-cards {
+/* Additional styles needed for new charts */
+.pie-chart-container {
   display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 25px;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
 }
 
-.metric-card {
-  background: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  text-align: center;
-  flex: 1;
-}
-
-.metric-value {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.metric-label {
-  font-size: 14px;
-  color: #666;
-  margin-top: 5px;
-}
-
-/* Charts Grid */
-.charts-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.chart-card {
-  background: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.pie-chart {
   position: relative;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  overflow: hidden;
 }
 
-.chart-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.pie-chart-container, 
-.bar-chart-container, 
-.line-chart-container {
-  height: 200px;
-  position: relative;
-}
-
-.pie-chart,
-.bar-chart,
-.line-chart {
+.pie-segment {
+  position: absolute;
+  width: 100%;
   height: 100%;
-  width: 100%;
+  transform-origin: 50% 50%;
+  clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%);
 }
 
-/* Chart Legends */
+.pie-segment.critical {
+  background-color: #ef4444;
+  transform: rotate(0deg);
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
+.pie-segment.high {
+  background-color: #f97316;
+  transform: rotate(calc(var(--segment-size-critical, 25%) * 3.6deg));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
+.pie-segment.medium {
+  background-color: #facc15;
+  transform: rotate(calc((var(--segment-size-critical, 25%) + var(--segment-size-high, 35%)) * 3.6deg));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
+.pie-segment.low {
+  background-color: #84cc16;
+  transform: rotate(calc((var(--segment-size-critical, 25%) + var(--segment-size-high, 35%) + var(--segment-size-medium, 30%)) * 3.6deg));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
+.pie-segment.user {
+  background-color: #3498db;
+}
+
+.pie-segment.system {
+  background-color: #1abc9c;
+  transform: rotate(calc(var(--segment-size-user, 65%) * 3.6deg));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
+.pie-segment.automated {
+  background-color: #9b59b6;
+}
+
+.pie-segment.manual {
+  background-color: #e74c3c;
+  transform: rotate(calc(var(--segment-size-automated, 40%) * 3.6deg));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + var(--segment-size) * 100%) 0%, calc(50% + var(--segment-size) * 100%) 100%, 50% 100%);
+}
+
 .chart-legend {
   display: flex;
-  flex-direction: column;
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: 5px;
-}
-
-.legend-label {
-  font-size: 12px;
-}
-
-/* Table Styles */
-.incidents-table-section {
-  background: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.incidents-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.incidents-table th,
-.incidents-table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.incidents-table th {
-  font-weight: bold;
-  color: #555;
-  background-color: #f8f9fa;
-}
-
-/* Priority Colors */
-.priority-high {
-  padding: 4px 8px;
-  background-color: #ffebee;
-  color: #d32f2f;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-.priority-medium {
-  padding: 4px 8px;
-  background-color: #fff8e1;
-  color: #ff8f00;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-.priority-low {
-  padding: 4px 8px;
-  background-color: #e8f5e9;
-  color: #388e3c;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-.chart-interact-hint {
-  position: absolute;
-  bottom: 5px;
-  right: 10px;
-  font-size: 0.75rem;
-  color: #94a3b8;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.chart-card:hover .chart-interact-hint {
-  opacity: 1;
-}
-
-.chart-detail-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(3px);
-}
-
-.chart-detail-modal {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  width: 80%;
-  max-width: 900px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.chart-detail-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #94a3b8;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s;
-}
-
-.chart-detail-close:hover {
-  background-color: #f1f5f9;
-  color: #1e293b;
-}
-
-.chart-detail-container {
-  height: 350px;
-  margin: 1.5rem 0;
-}
-
-.chart-detail-info table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1.5rem;
-}
-
-.chart-detail-info th,
-.chart-detail-info td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.chart-detail-info th {
-  background-color: #f8fafc;
-  font-weight: 600;
-}
-
-.chart-detail-info tr:hover td {
-  background-color: #f1f5f9;
-}
-
-/* Completely redesigned chart header and controls */
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 0 10px;
-  width: 100%;
-}
-
-.chart-card.full-width {
-  padding-top: 15px; /* Reduce top padding as we're using a different layout */
-}
-
-.chart-card.full-width h3 {
-  position: static; /* Override the absolute positioning */
-  margin: 0;
-}
-
-.chart-controls {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.time-range-selector select {
-  padding: 5px 10px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
-  background-color: #f1f5f9;
-  color: #64748b;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 130px;
-  height: 28px;
-}
-
-.chart-type-selector {
-  position: static; /* Override absolute positioning */
-  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-}
-
-/* For other charts, keep the absolute positioning */
-.chart-card:not(.full-width) .chart-type-selector {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-/* Add new styles for combined chart */
-.chart-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 40px;
-  margin-bottom: 10px;
-  padding: 0 15px;
-}
-
-.escalation-rate {
-  font-weight: bold;
-  color: #8b5cf6;
-  font-size: 1rem;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 15px;
+  margin-top: 10px;
+  font-size: 0.7rem;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.85rem;
+  margin-right: 8px;
 }
 
 .legend-color {
   display: inline-block;
-  width: 12px;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 2px;
+}
+
+.legend-color.critical { background-color: #ef4444; }
+.legend-color.high { background-color: #f97316; }
+.legend-color.medium { background-color: #facc15; }
+.legend-color.low { background-color: #84cc16; }
+.legend-color.user { background-color: #3498db; }
+.legend-color.system { background-color: #1abc9c; }
+.legend-color.automated { background-color: #9b59b6; }
+.legend-color.manual { background-color: #e74c3c; }
+
+.donut-chart {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  margin: 0 auto;
+}
+
+.donut-hole {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 50%;
+  top: 20px;
+  left: 20px;
+}
+
+.donut-segment {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  clip: rect(0px, 100px, 100px, 50px);
+  background: #ef4444;
+}
+
+.root-cause-card, .threat-types-card {
+  flex: 2;
+}
+
+.bar-chart-container {
+  height: 200px;
+  margin-top: 10px;
+}
+
+.horizontal-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.h-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.h-bar-label {
+  width: 110px;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.h-bar-track {
+  flex: 1;
   height: 12px;
-  border-radius: 3px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.h-bar-progress {
+  height: 100%;
+  background: #3498db;
+  border-radius: 6px;
+}
+
+.h-bar-value {
+  width: 40px;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.vertical-bar-chart {
+  display: flex;
+  height: 100%;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 30px;
+}
+
+.v-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 18%;
+  position: relative;
+}
+
+.v-bar-progress {
+  width: 100%;
+  background: #3498db;
+  border-radius: 6px 6px 0 0;
+}
+
+.v-bar-label {
+  position: absolute;
+  bottom: -25px;
+  font-size: 0.8rem;
+}
+
+.v-bar-value {
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.bar.critical { background-color: #ef4444; }
+.bar.high { background-color: #f97316; }
+.bar.medium { background-color: #facc15; }
+.bar.low { background-color: #84cc16; }
+
+.bar-chart.horizontal {
+  flex-direction: column;
+  height: auto;
+}
+
+.bar-chart.horizontal .bar {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  height: 20px !important;
+  margin: 5px 0;
+  color: white;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.progress.red {
+  background-color: #ef4444;
+}
+
+/* Incident Volume Area Chart */
+.volume-chart {
+  height: 80px;
+}
+
+.area-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.area-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Escalation Rate Stacked Bar */
+.stacked-bar-container {
+  height: 40px;
+  margin: 15px 0;
+}
+
+.stacked-bar {
+  display: flex;
+  width: 100%;
+  height: 25px;
+  background: #ecf0f1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.stacked-segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.stacked-segment.audit {
+  background-color: #3498db;
+}
+
+.stacked-segment.manual {
+  background-color: #9b59b6;
+}
+
+.legend-color.audit {
+  background-color: #3498db;
+}
+
+.legend-color.manual {
+  background-color: #9b59b6;
+}
+
+/* Repeat Incident Rate Donut */
+.donut-chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+}
+
+.repeat-donut {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #ecf0f1;
+}
+
+.donut-segment.new {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #2ecc71;
+  border-radius: 50%;
+  clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%);
+  transform-origin: center;
+  transform: rotate(var(--start-angle));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + 100% * cos(var(--end-angle))) calc(50% - 100% * sin(var(--end-angle))), calc(50% + 100% * cos(var(--start-angle))) calc(50% - 100% * sin(var(--start-angle))));
+}
+
+.donut-segment.repeat {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #e74c3c;
+  border-radius: 50%;
+  transform-origin: center;
+  transform: rotate(var(--start-angle));
+  clip-path: polygon(50% 50%, 50% 0%, calc(50% + 100% * cos(var(--end-angle))) calc(50% - 100% * sin(var(--end-angle))), calc(50% + 100% * cos(var(--start-angle))) calc(50% - 100% * sin(var(--start-angle))));
+}
+
+.donut-hole {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 50%;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-hole-text {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.legend-color.new {
+  background-color: #2ecc71;
+}
+
+.legend-color.repeat {
+  background-color: #e74c3c;
+}
+
+/* Line Chart Styles */
+.line-chart {
+  width: 100%;
+  height: 40px;
+  margin-bottom: 5px;
+}
+
+.line-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-months {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #7f8c8d;
+  margin-top: 5px;
+  padding: 0 5px;
+}
+
+/* Style for value change indicators */
+.value-change {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.value-change.positive {
+  color: #4ade80;
+}
+
+.value-change.negative {
+  color: #f87171;
+}
+
+.value-change i {
+  margin-right: 2px;
+}
+
+/* Update existing kpi-chart for line charts */
+.kpi-chart {
+  height: auto;
+  position: relative;
+  margin-bottom: 10px;
 }
 </style> 

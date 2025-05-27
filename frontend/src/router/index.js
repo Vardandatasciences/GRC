@@ -5,7 +5,13 @@ import PerformancePage from '../components/Policy/PerformancePage.vue'
 import PolicyApprover from '../components/Policy/PolicyApprover.vue'
 import AllPolicies from '../components/Policy/AllPolicies.vue'
 import AssignAudit from '../components/Auditor/AssignAudit.vue'
-import AuditorDashboard from '../components/Auditor/AuditorDashboard.vue'
+import ActivePolicies from '../components/Policy/ActivePolicies.vue'
+import Framework from '../components/Policy/Framework.vue'
+import Tailoring from '../components/Policy/Tailoring.vue'
+import Versioning from '../components/Policy/Versioning.vue'
+import TreePolicies from '../components/Policy/TreePolicies.vue'
+
+// import AuditorDashboard from '../components/Auditor/AuditorDashboard.vue'
 import Reviewer from '../components/Auditor/Reviewer.vue'
 import CreateIncident from '../components/Incident/CreateIncident.vue'
 import IncidentDashboard from '../components/Incident/IncidentDashboard.vue'
@@ -20,6 +26,17 @@ import RiskInstances from '../components/Risk/RiskInstances.vue'
 import ApprovalAndHandling from '../components/Risk/ApprovalAndHandling.vue'
 import Notifications from '../components/Risk/Notifications.vue'
 import UserTasks from '../components/Risk/UserTasks.vue'
+import TaskView from '../components/Auditor/TaskView.vue'
+import ReviewTaskView from '../components/Auditor/ReviewTaskView.vue'
+import Audits from '../components/Auditor/Audits.vue'
+
+// import AllCompliance from '../components/Compliance/AllCompliance.vue'
+// import ComplianceDashboard from '../components/Compliance/ComplianceDashboard.vue'
+import CreateCompliance from '../components/Compliance/CreateCompliance.vue'
+// import ComplianceVersioning from '../components/Compliance/ComplianceVersioning.vue'
+// import ComplianceApprover from '../components/Compliance/ComplianceApprover.vue'
+// import ComplianceVersionList from '../components/Compliance/ComplianceVersionList.vue'
+ 
 
 const routes = [
   {
@@ -31,11 +48,7 @@ const routes = [
     name: 'PolicyDashboard',
     component: PolicyDashboard
   },
-  {
-    path: '/create-policy',
-    name: 'CreatePolicy',
-    component: CreatePolicy
-  },
+
   {
     path: '/policy/performance',
     name: 'PerformancePage',
@@ -54,19 +67,63 @@ const routes = [
   {
     path: '/policies-list/active',
     name: 'ActivePolicies',
-    component: PolicyDashboard,
-    props: { filter: 'active' }
+    component: ActivePolicies
+  },
+  {
+    path: '/create-policy/create',
+    name: 'CreatePolicy',
+    component: CreatePolicy
+  },
+  {
+    path: '/create-policy/framework',
+    name: 'Framework',
+    component: Framework
+  },
+  {
+    path: '/create-policy/tailoring',
+    name: 'Tailoring',
+    component: Tailoring
+  },
+  {
+    path: '/create-policy/versioning',
+    name: 'Versioning',
+    component: Versioning
   },
   {
     path: '/tree-policies',
     name: 'TreePolicies',
-    component: PolicyDashboard,
-    props: { view: 'tree' }
+    component: TreePolicies
   },
+  {
+    path: '/compliance/create',
+    name: 'CreateCompliance',
+    component: CreateCompliance
+  },
+  // {
+  //   path: '/compliance/versioning',
+  //   name: 'ComplianceVersioning',
+  //   component: ComplianceVersioning
+  // },
+  {
+    path: '/compliance/approver',
+    name: 'ComplianceApprover',
+    component: ComplianceApprover
+  },
+  // {
+  //   path: '/compliance/version-list',
+  //   name: 'ComplianceVersionList',
+  //   component: ComplianceVersionList
+  // },
+  // {
+  //   path: '/compliance/list',
+  //   name: 'AllCompliance',
+  //   component: AllCompliance
+  // },
+ 
   {
     path: '/auditor/dashboard',
     name: 'AuditorDashboard',
-    component: AuditorDashboard
+    component: () => import('../components/Auditor/AuditorDashboard.vue')
   },
   {
     path: '/auditor/assign',
@@ -74,9 +131,36 @@ const routes = [
     component: AssignAudit
   },
   {
+    path: '/auditor/reviews',
+    name: 'ReviewAudits',
+    component: Reviewer
+  },
+  {
     path: '/auditor/reviewer',
     name: 'AuditorReviewer',
     component: Reviewer
+  },
+  {
+    path: '/audit/:auditId/tasks',
+    name: 'TaskView',
+    component: TaskView,
+    props: true
+  },
+  {
+    path: '/reviewer/task/:auditId',
+    name: 'ReviewTaskView',
+    component: ReviewTaskView,
+    props: true
+  },
+  {
+    path: '/auditor/audits',
+    name: 'Audits',
+    component: Audits
+  },
+  {
+    path: '/auditor/kpi',
+    name: 'AuditorKPI',
+    component: () => import('../components/Auditor/AuditorDashboard.vue')
   },
   {
     path: '/incident/create',

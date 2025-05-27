@@ -1,228 +1,551 @@
 <template>
-  <div class="auditor-dashboard-container">
-    <div class="auditor-status-row">
-      <div v-for="(s, i) in statusSummary" :key="i" class="auditor-status-box" :style="{ borderColor: s.color }">
-        <span class="auditor-status-count" :style="{ color: s.color }">{{ s.count }}</span>
-        <span class="auditor-status-label">{{ s.label }}</span>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h2 class="dashboard-heading">Auditor Dashboard</h2>
+      <div class="dashboard-actions">
+        <button class="action-btn"><i class="fas fa-sync-alt"></i></button>
+        <button class="action-btn"><i class="fas fa-download"></i></button>
+        <!-- <button class="action-btn primary"><i class="fas fa-plus"></i> New Policy</button> -->
       </div>
     </div>
-    <div class="auditor-filters-row">
-      <input class="auditor-search" placeholder="Search Policy" />
-      <select class="auditor-filter"><option>All Framework</option></select>
-      <select class="auditor-filter"><option>All Status</option></select>
-      <select class="auditor-filter"><option>All created by</option></select>
-      <select class="auditor-filter"><option>Sort by status</option></select>
-      <div class="auditor-view-toggle">
-        <button :class="{ active: view === 'grid' }" @click="view = 'grid'">Grid</button>
-        <button :class="{ active: view === 'list' }" @click="view = 'list'">List</button>
+    
+    <!-- Performance Summary Cards -->
+    <div class="performance-summary">
+      <div class="summary-card growth">
+        <div class="summary-icon"><i class="fas fa-clipboard-check"></i></div>
+        <div class="summary-content">
+          <div class="summary-label">Audit Completion Rate</div>
+          <div class="summary-value">+8.2% <span class="period">this month</span></div>
+          <div class="summary-trend positive">+18.67% vs last month</div>
+        </div>
       </div>
-    </div>
-    <div :class="view === 'grid' ? 'auditor-cards-grid' : 'auditor-cards-list'">
-      <div v-for="(audit, idx) in audits" :key="idx" class="auditor-card">
-        <div class="auditor-card-framework" :style="{ background: audit.framework.startsWith('ISO') ? '#ff5c5c' : '#ff5c5c' }">
-          {{ audit.framework }}
+      
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fas fa-tasks"></i></div>
+        <div class="summary-content">
+          <div class="summary-label">Total Audits</div>
+          <div class="summary-value">42</div>
+          <div class="summary-trend positive">+5 this month</div>
         </div>
-        <div class="auditor-card-policy">{{ audit.policy }}</div>
-        <div class="auditor-card-user">{{ audit.user }}</div>
-        <div class="auditor-card-status-row">
-          <button v-if="audit.statusType === 'start'" class="auditor-card-status start" @click="openPopup(idx)">Start</button>
-          <button v-else-if="auditStatuses[idx] === 'Completed'" class="auditor-card-status complete">Completed</button>
-          <select
-            v-else
-            class="auditor-card-status review"
-            :value="auditStatuses[idx]"
-            @change="handleStatusChange(idx, $event.target.value)"
-          >
-            <option value="Work In Progress">Work In Progress</option>
-            <option value="Under review">Under review</option>
-          </select>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="summary-content">
+          <div class="summary-label">Pending Reviews</div>
+          <div class="summary-value">8</div>
+          <div class="summary-trend negative">+2 since last week</div>
         </div>
-        <div class="auditor-card-donut-row">
-          <div class="auditor-card-donut">
-            <CircleProgress
-              :percent="audit.progress"
-              :size="80"
-              :border-width="10"
-              :border-bg-width="10"
-              fill-color="#4f7cff"
-              empty-color="#e0e0e0"
-            >
-              <template #default="{ percent }">
-                <span class="progress-text">{{ percent }}%</span>
-              </template>
-            </CircleProgress>
-          </div>
-        </div>
-        <div class="auditor-card-date-row">
-          <i class="fas fa-calendar-alt auditor-card-date-icon"></i>
-          <span class="auditor-card-date">{{ audit.date }}</span>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="summary-content">
+          <div class="summary-label">Critical Findings</div>
+          <div class="summary-value">7</div>
+          <div class="summary-trend negative">+2 this week</div>
         </div>
       </div>
     </div>
 
-    <!-- Popup Modal -->
-    <div v-if="showPopup" class="audit-popup-overlay">
-      <div class="audit-popup-modal">
-        <button class="popup-close" @click="closePopup">&times;</button>
-        <div class="popup-header">
-          <select v-model="popupData.framework" class="popup-select">
-            <option disabled value="">Frame work</option>
-            <option v-for="fw in frameworks" :key="fw">{{ fw }}</option>
-          </select>
-          <select v-model="popupData.policy" class="popup-select">
-            <option disabled value="">Policy</option>
-            <option v-for="p in policies" :key="p">{{ p }}</option>
-          </select>
-        </div>
-        <div v-for="(sub, sIdx) in popupData.subpolicies" :key="sIdx" class="popup-subpolicy-block">
-          <div class="popup-subpolicy-header">
-            <span>Subpolicy</span>
-            <input type="checkbox" v-model="sub.checked" class="popup-subpolicy-checkbox" />
-          </div>
-          <div class="popup-compliance-list">
-            <div v-for="(compliance, cIdx) in sub.compliances" :key="cIdx" class="popup-compliance-row">
-              <span class="popup-compliance-label">Compliance {{ cIdx + 1 }}</span>
-              <input type="checkbox" v-model="compliance.checked" />
-              <input class="popup-comment-input" v-model="compliance.comment" placeholder="Comment" />
-              <input type="checkbox" v-model="compliance.commentChecked" />
+    <!-- Main Row: Asset Performance and Recent Activity -->
+    <div class="dashboard-main-row dashboard-main-row-3col" style="display: flex; width: 100%;">
+      <!-- Left: Asset Performance Card -->
+      <div class="dashboard-main-col asset-performance-col" style="width: 70%;">
+        <div class="chart-card tabbed-chart-card">
+          <div class="card-header">
+            <span class="chart-title">Asset performance</span>
+            
+            <div class="chart-controls">
+              <div class="axis-selectors">
+                <select v-model="selectedXAxis" class="axis-select">
+                  <option value="time">Time</option>
+                  <option value="frameworks">Frameworks</option>
+                  <option value="categories">Categories</option>
+                  <option value="status">Status</option>
+                </select>
+                <select v-model="selectedYAxis" class="axis-select">
+                  <option value="completion">Performance</option>
+                  <option value="compliance">Compliance Rate</option>
+                  <option value="findings">Finding Count</option>
+                </select>
+              </div>
+              
+              <div class="chart-tabs">
+                <button 
+                  v-for="tab in chartTypes"
+                  :key="tab.type"
+                  :class="['chart-tab-btn', { active: activeChart === tab.type }]"
+                  @click="activeChart = tab.type"
+                  :title="tab.label"
+                >
+                  <i :class="tab.icon"></i>
+                </button>
+              </div>
             </div>
-            <button class="popup-add-btn" @click="addCompliance(sIdx)">Add</button>
+          </div>
+          <div class="chart-container">
+            <Line v-if="activeChart === 'line'" :data="lineChartData" :options="lineChartOptions" />
+            <Bar v-if="activeChart === 'bar'" :data="barChartData" :options="barChartOptions" />
+            <Doughnut v-if="activeChart === 'doughnut'" :data="donutChartData" :options="donutChartOptions" />
+            <Bar v-if="activeChart === 'horizontalBar'" :data="horizontalBarChartData" :options="horizontalBarChartOptions" />
           </div>
         </div>
-        <button class="popup-submit-btn" @click="submitPopup">Submit</button>
+      </div>
+
+      <!-- Right: Recent Activity Card -->
+      <div class="dashboard-main-col recent-activity-col" style="width: 30%;">
+        <div class="activity-card">
+          <div class="card-header">
+            <h3>Recent Audit Activity</h3>
+            <button class="card-action"><i class="fas fa-ellipsis-v"></i></button>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon"><i class="fas fa-check-circle"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Audit Completed</div>
+                <div class="activity-desc">ISO 27001 - Information Security</div>
+                <div class="activity-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon update"><i class="fas fa-sync-alt"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Review Received</div>
+                <div class="activity-desc">NIST 800-53 Compliance Audit</div>
+                <div class="activity-time">Yesterday</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon alert"><i class="fas fa-exclamation-circle"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Due Date Approaching</div>
+                <div class="activity-desc">GDPR Data Protection Assessment</div>
+                <div class="activity-time">2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import CircleProgress from 'vue3-circle-progress'
-import 'vue3-circle-progress/dist/circle-progress.css'
-import './AuditorDashboard.css'
+import { ref, reactive, watch } from 'vue'
+import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js'
+import { Doughnut, Bar, Line } from 'vue-chartjs'
+import '@fortawesome/fontawesome-free/css/all.min.css'
+
+Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
 export default {
   name: 'AuditorDashboard',
   components: {
-    CircleProgress
+    Doughnut,
+    Bar,
+    Line
   },
-  data() {
-    return {
-      view: 'grid',
-      auditStatuses: [],
-      statusSummary: [
-        { label: 'Yet to start', count: 1, color: '#1aaf5d' },
-        { label: 'Work In Progress', count: 2, color: '#2d7be5' },
-        { label: 'Under review', count: 3, color: '#e5a12d' },
-        { label: 'Completed', count: 1, color: '#1aaf5d' }
-      ],
-      audits: [
-        {
-          framework: 'ISO 27001',
-          policy: 'Employee Code of Conduct',
-          user: 'Susheel CTO',
-          status: 'Yet to start',
-          statusType: 'start',
-          date: '24/02/2025',
-          progress: 0
-        },
-        {
-          framework: 'NIST 8000',
-          policy: 'Loan Policy recovery',
-          user: 'Khairu shaik',
-          status: 'Active',
-          statusType: 'active',
-          date: '24/02/2025',
-          progress: 60
-        },
-        {
-          framework: 'ISO 27001',
-          policy: 'Data Security Policy',
-          user: 'Kkhairu',
-          status: 'work in progress',
-          statusType: 'progress',
-          date: '24/02/2025',
-          progress: 40
-        },
-        {
-          framework: 'NIST 8000',
-          policy: 'Loan Policy recovery',
-          user: 'Praharshitha',
-          status: 'Review',
-          statusType: 'review',
-          date: '24/02/2025',
-          progress: 80
-        }
-      ],
-      showPopup: false,
-      popupData: {
-        framework: '',
-        policy: '',
-        subpolicies: [
+  setup() {
+    const selectedXAxis = ref('time')
+    const selectedYAxis = ref('completion')
+    
+    // Watch for axis changes and update chart data accordingly
+    watch([selectedXAxis, selectedYAxis], ([newXAxis, newYAxis]) => {
+      // Update chart data based on selected axes
+      updateChartData(newXAxis, newYAxis)
+    })
+
+    // --- AUDIT STATUS DATA BY CATEGORY ---
+    const auditStatusData = {
+      'ISO 27001': { completed: 12, inProgress: 3, yetToStart: 2 },
+      'NIST 800-53': { completed: 10, inProgress: 4, yetToStart: 1 },
+      'GDPR': { completed: 8, inProgress: 6, yetToStart: 2 },
+      'PCI DSS': { completed: 14, inProgress: 2, yetToStart: 1 },
+      'HIPAA': { completed: 9, inProgress: 5, yetToStart: 3 }
+    }
+
+    const updateChartData = (xAxis, yAxis) => {
+      const labels = getLabelsForXAxis(xAxis)
+      let data = getDataForYAxis(yAxis)
+      
+      // If frameworks, use status split
+      if (xAxis === 'frameworks') {
+        // For donut: sum all completed/inProgress/yetToStart
+        const completed = Object.values(auditStatusData).reduce((a, c) => a + c.completed, 0)
+        const inProgress = Object.values(auditStatusData).reduce((a, c) => a + c.inProgress, 0)
+        const yetToStart = Object.values(auditStatusData).reduce((a, c) => a + c.yetToStart, 0)
+        donutChartData.labels = ['Completed', 'In Progress', 'Yet To Start']
+        donutChartData.datasets[0].data = [completed, inProgress, yetToStart]
+        donutChartData.datasets[0].backgroundColor = ['#4ade80', '#fbbf24', '#f87171']
+
+        // For bar/horizontal bar: show each framework split
+        barChartData.labels = labels
+        barChartData.datasets = [
           {
-            name: '',
-            compliances: [
-              { checked: false, comment: '', commentChecked: false },
-              { checked: false, comment: '', commentChecked: false },
-              { checked: false, comment: '', commentChecked: false }
-            ]
+            label: 'Completed',
+            data: labels.map(l => auditStatusData[l]?.completed || 0),
+            backgroundColor: '#4ade80',
+            stack: 'Stack 0',
+            borderRadius: 4
           },
           {
-            name: '',
-            compliances: [
-              { checked: false, comment: '', commentChecked: false },
-              { checked: false, comment: '', commentChecked: false },
-              { checked: false, comment: '', commentChecked: false }
-            ]
+            label: 'In Progress',
+            data: labels.map(l => auditStatusData[l]?.inProgress || 0),
+            backgroundColor: '#fbbf24',
+            stack: 'Stack 0',
+            borderRadius: 4
+          },
+          {
+            label: 'Yet To Start',
+            data: labels.map(l => auditStatusData[l]?.yetToStart || 0),
+            backgroundColor: '#f87171',
+            stack: 'Stack 0',
+            borderRadius: 4
           }
         ]
-      },
-      frameworks: ['ISO 27001', 'NIST 8000'],
-      policies: ['Employee Code of Conduct', 'Loan Policy recovery', 'Data Security Policy']
+        horizontalBarChartData.labels = labels
+        horizontalBarChartData.datasets = [
+          {
+            label: 'Completed',
+            data: labels.map(l => auditStatusData[l]?.completed || 0),
+            backgroundColor: '#4ade80',
+            borderRadius: 6,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          },
+          {
+            label: 'In Progress',
+            data: labels.map(l => auditStatusData[l]?.inProgress || 0),
+            backgroundColor: '#fbbf24',
+            borderRadius: 6,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          },
+          {
+            label: 'Yet To Start',
+            data: labels.map(l => auditStatusData[l]?.yetToStart || 0),
+            backgroundColor: '#f87171',
+            borderRadius: 6,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          }
+        ]
+        // For line: show only completed for demo
+        lineChartData.labels = labels
+        lineChartData.datasets[0].data = labels.map(l => auditStatusData[l]?.completed || 0)
+        lineChartData.datasets[0].label = 'Completed'
+        return
+      }
+      // If status, show Completed/InProgress/YetToStart as X axis
+      if (xAxis === 'status') {
+        const statusLabels = ['Completed', 'In Progress', 'Yet To Start']
+        // Sum for each status across all frameworks
+        const completed = Object.values(auditStatusData).reduce((a, c) => a + c.completed, 0)
+        const inProgress = Object.values(auditStatusData).reduce((a, c) => a + c.inProgress, 0)
+        const yetToStart = Object.values(auditStatusData).reduce((a, c) => a + c.yetToStart, 0)
+        const statusData = [completed, inProgress, yetToStart]
+        // Donut
+        donutChartData.labels = statusLabels
+        donutChartData.datasets[0].data = statusData
+        donutChartData.datasets[0].backgroundColor = ['#4ade80', '#fbbf24', '#f87171']
+        // Bar
+        barChartData.labels = statusLabels
+        barChartData.datasets = [
+          {
+            label: getYAxisLabel(yAxis),
+            data: statusData,
+            backgroundColor: ['#4ade80', '#fbbf24', '#f87171'],
+            borderRadius: 4
+          }
+        ]
+        // Horizontal Bar
+        horizontalBarChartData.labels = statusLabels
+        horizontalBarChartData.datasets = [
+          {
+            label: getYAxisLabel(yAxis),
+            data: statusData,
+            backgroundColor: ['#4ade80', '#fbbf24', '#f87171'],
+            borderRadius: 6,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          }
+        ]
+        // Line
+        lineChartData.labels = statusLabels
+        lineChartData.datasets[0].data = statusData
+        lineChartData.datasets[0].label = getYAxisLabel(yAxis)
+        return
+      }
+      // Default (non-category, non-status) logic
+      // Update Line Chart
+      lineChartData.labels = labels
+      lineChartData.datasets[0].data = data
+      lineChartData.datasets[0].label = getYAxisLabel(yAxis)
+
+      // Update Bar Chart
+      barChartData.labels = labels
+      barChartData.datasets = getBarChartDatasets(yAxis)
+
+      // Update Donut Chart
+      donutChartData.labels = labels
+      donutChartData.datasets[0].data = data
+
+      // Update Horizontal Bar Chart
+      horizontalBarChartData.labels = labels
+      horizontalBarChartData.datasets[0].data = data
+      horizontalBarChartData.datasets[0].label = getYAxisLabel(yAxis)
     }
-  },
-  created() {
-    // Initialize auditStatuses with the initial statuses from audits
-    this.auditStatuses = this.audits.map(a => a.status)
-  },
-  methods: {
-    handleStatusChange(idx, newStatus) {
-      this.auditStatuses[idx] = newStatus
-    },
-    openPopup(idx) {
-      // Optionally, you can prefill popupData based on the audit card
-      const audit = this.audits[idx]
-      this.popupData.framework = audit.framework
-      this.popupData.policy = audit.policy
-      // Reset subpolicies and compliances
-      this.popupData.subpolicies = [
+
+    const getYAxisLabel = (yAxis) => {
+      switch(yAxis) {
+        case 'completion': return 'Completion Rate'
+        case 'compliance': return 'Compliance Rate'
+        case 'findings': return 'Finding Count'
+        default: return 'Value'
+      }
+    }
+
+    const getBarChartDatasets = (yAxis) => {
+      const baseData = getDataForYAxis(yAxis)
+      return [
         {
-          name: '',
-          compliances: [
-            { checked: false, comment: '', commentChecked: false },
-            { checked: false, comment: '', commentChecked: false },
-            { checked: false, comment: '', commentChecked: false }
-          ]
+          label: 'Major Findings',
+          data: baseData.map(val => Math.round(val * 0.35)),
+          backgroundColor: '#f87171',
+          stack: 'Stack 0',
+          borderRadius: 4
         },
         {
-          name: '',
-          compliances: [
-            { checked: false, comment: '', commentChecked: false },
-            { checked: false, comment: '', commentChecked: false },
-            { checked: false, comment: '', commentChecked: false }
-          ]
+          label: 'Minor Findings',
+          data: baseData.map(val => Math.round(val * 0.65)),
+          backgroundColor: '#fbbf24',
+          stack: 'Stack 0',
+          borderRadius: 4
         }
       ]
-      this.showPopup = true
-    },
-    closePopup() {
-      this.showPopup = false
-    },
-    addCompliance(subIdx) {
-      this.popupData.subpolicies[subIdx].compliances.push({ checked: false, comment: '', commentChecked: false })
-    },
-    submitPopup() {
-      // You can handle the popupData here (send to backend, etc.)
-      this.closePopup()
+    }
+
+    const getLabelsForXAxis = (xAxis) => {
+      switch(xAxis) {
+        case 'time':
+          return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
+        case 'frameworks':
+          return ['ISO 27001', 'NIST 800-53', 'GDPR', 'PCI DSS', 'HIPAA']
+        case 'categories':
+          return ['Information Security', 'Data Protection', 'Risk Assessment', 'Access Control', 'Change Management']
+        case 'status':
+          return ['Completed', 'In Progress', 'Yet To Start']
+        default:
+          return []
+      }
+    }
+
+    const getDataForYAxis = (yAxis) => {
+      switch(yAxis) {
+        case 'completion':
+          return [65, 70, 75, 78, 82, 85, 88]
+        case 'compliance':
+          return [92, 90, 88, 86, 89, 91, 93]
+        case 'findings':
+          return [15, 12, 18, 22, 16, 14, 17]
+        default:
+          return []
+      }
+    }
+
+    // Chart tab logic
+    const chartTypes = [
+      { type: 'line', icon: 'fas fa-chart-line', label: 'Line' },
+      { type: 'bar', icon: 'fas fa-chart-bar', label: 'Bar' },
+      { type: 'doughnut', icon: 'fas fa-dot-circle', label: 'Donut' },
+      { type: 'horizontalBar', icon: 'fas fa-align-left', label: 'Horizontal Bar' }
+    ];
+    const activeChart = ref('line');
+    
+    // Line Chart Data
+    const lineChartData = reactive({
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+      datasets: [{
+        label: 'Audit Completion Rate',
+        data: [65, 70, 75, 78, 82, 85, 88],
+        fill: false,
+        borderColor: '#4f6cff',
+        tension: 0.4,
+        pointBackgroundColor: '#4f6cff',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    })
+    
+    const lineChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            display: true,
+            color: 'rgba(0,0,0,0.05)'
+          },
+          ticks: {
+            font: { size: 11 }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: { size: 11 }
+          }
+        }
+      },
+      animation: {
+        duration: 1500,
+        easing: 'easeOutQuart'
+      }
+    }
+    
+    // Donut Chart Data
+    const donutChartData = reactive({
+      labels: ['Completed', 'In Progress', 'Yet To Start'],
+      datasets: [{
+        data: [53, 32, 15],
+        backgroundColor: ['#4ade80', '#fbbf24', '#f87171'],
+        borderWidth: 0,
+        hoverOffset: 5
+      }]
+    })
+    
+    const donutChartOptions = {
+      cutout: '70%',
+      plugins: {
+        legend: { display: false }
+      },
+      maintainAspectRatio: false,
+      animation: {
+        animateRotate: true,
+        animateScale: true,
+        duration: 1000,
+        easing: 'easeOutCubic'
+      }
+    }
+    
+    // Bar Chart Data
+    const barChartData = reactive({
+      labels: ['ISO 27001', 'NIST 800-53'],
+      datasets: [
+        {
+          label: 'Completed',
+          data: [12, 10],
+          backgroundColor: '#4ade80',
+          stack: 'Stack 0',
+          borderRadius: 4
+        },
+        {
+          label: 'In Progress',
+          data: [3, 4],
+          backgroundColor: '#fbbf24',
+          stack: 'Stack 0',
+          borderRadius: 4
+        },
+        {
+          label: 'Yet To Start',
+          data: [2, 1],
+          backgroundColor: '#f87171',
+          stack: 'Stack 0',
+          borderRadius: 4
+        }
+      ]
+    })
+    
+    const barChartOptions = {
+      plugins: { legend: { display: false } },
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { 
+          stacked: true, 
+          grid: { display: false },
+          ticks: { color: '#222', font: { size: 10 } }
+        },
+        y: { 
+          stacked: true, 
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#222', font: { size: 10 } }
+        }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeInOutQuart'
+      }
+    }
+    
+    // Horizontal Bar Chart Data
+    const horizontalBarChartData = reactive({
+      labels: [
+        'Information Security',
+        'Data Protection',
+        'Risk Assessment',
+        'Access Control',
+        'Change Management'
+      ],
+      datasets: [{
+        label: 'Completion Rate (%)',
+        data: [86, 92, 78, 84, 73],
+        backgroundColor: '#4ade80',
+        borderRadius: 6,
+        barPercentage: 0.5,
+        categoryPercentage: 0.7
+      }]
+    })
+    
+    const horizontalBarChartOptions = {
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#222', font: { size: 10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#222', font: { size: 10 } }
+        }
+      },
+      maintainAspectRatio: false,
+      animation: {
+        duration: 1000,
+        easing: 'easeInOutQuart'
+      }
+    }
+
+    // Initialize chart data
+    updateChartData(selectedXAxis.value, selectedYAxis.value)
+
+    return {
+      lineChartData,
+      lineChartOptions,
+      donutChartData,
+      donutChartOptions,
+      barChartData,
+      barChartOptions,
+      horizontalBarChartData,
+      horizontalBarChartOptions,
+      chartTypes,
+      activeChart,
+      selectedXAxis,
+      selectedYAxis
     }
   }
 }
@@ -230,113 +553,40 @@ export default {
 
 <style scoped>
 @import './AuditorDashboard.css';
-
-.progress-text {
-  font-size: 1.1rem;
-  color: #4f7cff;
-}
-
-.audit-popup-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.2);
+.chart-tabs {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.audit-popup-modal {
-  background: #f5f5f5;
-  border: 3px solid #222;
-  border-radius: 8px;
-  padding: 32px 24px 24px 24px;
-  min-width: 700px;
-  max-width: 90vw;
-  position: relative;
-}
-.popup-close {
-  position: absolute;
-  top: 10px;
-  right: 18px;
+.chart-tab-btn {
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 1.2rem;
+  color: #888;
   cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
 }
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 18px;
+.chart-tab-btn.active, .chart-tab-btn:hover {
+  background: #eef2ff;
+  color: #4f6cff;
 }
-.popup-select {
-  font-size: 1.3rem;
-  padding: 8px 24px 8px 12px;
+.tabbed-chart-card {
+  max-width: 900px;
+  min-width: 480px;
+  min-height: 300px;
+  margin: 0 auto 32px auto;
+  padding: 32px 32px 24px 32px;
   border-radius: 16px;
-  border: 2px solid #222;
-  margin: 0 12px;
-}
-.popup-subpolicy-block {
-  border: 2px solid #222;
-  margin-bottom: 18px;
-  padding: 12px 18px 18px 18px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.04);
   background: #fff;
 }
-.popup-subpolicy-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.popup-subpolicy-checkbox {
-  margin-left: 8px;
-  font-size: 1.1rem;
-  border-radius: 4px;
-  border: 1.5px solid #222;
-  padding: 2px 8px;
-  width: 120px;
-}
-.popup-compliance-list {
-  margin-left: 12px;
-}
-.popup-compliance-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.popup-compliance-label {
-  font-size: 1.2rem;
-  margin-right: 8px;
-  min-width: 120px;
-}
-.popup-comment-input {
-  margin: 0 8px;
-  border-radius: 8px;
-  border: 2px solid #222;
-  padding: 4px 12px;
-  font-size: 1.1rem;
-  width: 140px;
-}
-.popup-add-btn {
-  background: #5a1aff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 8px 32px;
-  font-size: 1.1rem;
-  margin-top: 8px;
-  cursor: pointer;
-  float: right;
-}
-.popup-submit-btn {
-  background: #4f7cff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 40px;
-  font-size: 1.2rem;
+.chart-performance-summary {
   margin-top: 18px;
-  cursor: pointer;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 1rem;
+}
+.dashboard-main-row {
+  margin-top: 32px;
 }
 </style> 

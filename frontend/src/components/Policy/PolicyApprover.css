@@ -620,7 +620,22 @@ h1.page-title::after {
 }
 
 .policy-detail-row {
-  margin-bottom: 10px;
+  margin: 10px 0;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+}
+
+.policy-detail-row strong {
+  min-width: 120px;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.policy-detail-row span {
+  color: #2d3748;
+  flex: 1;
 }
 
 .badge {
@@ -1073,4 +1088,350 @@ h1.page-title::after {
   object-fit: cover;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.new-badge {
+  background-color: #22c55e;  /* Brighter green */
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+  animation: pulse-new 2s infinite;
+}
+
+.new-badge::before {
+  content: "●";  /* Add a dot before NEW */
+  font-size: 8px;
+  margin-right: 2px;
+}
+
+@keyframes pulse-new {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.approvals-list li.new-policy {
+  border-left: 3px solid #22c55e;
+  background-color: rgba(34, 197, 94, 0.05);
+  position: relative;
+}
+
+.approvals-list li.new-policy::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #22c55e;
+  animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* Date info styling */
+.date-info {
+  font-size: 0.85rem;
+  color: #666;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+/* Enhanced new badge styling */
+.new-badge {
+  background-color: #22c55e;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+  animation: pulse-new 2s infinite;
+  position: relative;
+}
+
+.new-badge::before {
+  content: "●";
+  color: white;
+  font-size: 8px;
+  margin-right: 4px;
+}
+
+@keyframes pulse-new {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Enhanced new policy highlighting */
+.approvals-list li.new-policy {
+  border-left: 3px solid #22c55e;
+  background-color: rgba(34, 197, 94, 0.05);
+  position: relative;
+  padding-left: 12px;
+}
+
+.approvals-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  transition: all 0.2s ease;
+}
+
+.approvals-list li:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+/* Adjust the layout of policy items */
+.policy-scope {
+  flex: 1;
+  margin: 0 12px;
+  color: #4a5568;
+}
+
+.assigned-by {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+}
+
+/* Status badges */
+.approval-status {
+  min-width: 100px;
+  text-align: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.approval-status.pending {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.approval-status.approved {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.approval-status.rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Styling for the edit subpolicy modal */
+.edit-modal {
+  max-width: 600px;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input, 
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+}
+
+.rejection-reason {
+  padding: 10px;
+  background-color: #fff3f3;
+  border-left: 3px solid #ff6b6b;
+  color: #333;
+}
+
+/* Button styles */
+.approve-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.reject-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.resubmit-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+/* Subpolicy actions container */
+.subpolicy-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Role toggle switch */
+.role-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #f0f0f0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.role-toggle label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.role-toggle input {
+  margin-right: 8px;
+}
+
+/* Tabs styling */
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.7;
+  transition: all 0.3s;
+}
+
+.tabs button.active {
+  opacity: 1;
+  border-bottom: 3px solid #2196F3;
+  font-weight: bold;
+}
+
+.tab-content {
+  padding: 20px 0;
+}
+
+/* Rejected items list */
+.rejected-list {
+  list-style: none;
+  padding: 0;
+}
+
+.rejected-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.rejected-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.rejected-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.status.rejected {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.rejected-details {
+  margin-bottom: 15px;
+}
+
+.rejected-details p {
+  margin: 5px 0;
+}
+
+.rejected-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.no-items {
+  padding: 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  color: #666;
+  font-style: italic;
+}
+
+.debug-info {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+  background-color: #f0f0f0;
+  padding: 3px 6px;
+  border-radius: 3px;
+  text-align: center;
 } 
