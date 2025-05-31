@@ -82,7 +82,7 @@
                 <input
                   type="text"
                   placeholder="Enter Identifier"
-                  v-model="newFramework.Version"
+                  v-model="newFramework.Identifier"
                 />
               </div>
             </div>
