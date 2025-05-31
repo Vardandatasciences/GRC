@@ -46,6 +46,14 @@ from .routes.policy import (
     list_policy_approvals_for_reviewer,
     list_rejected_policy_approvals_for_user
 )
+from .routes.frameworks import (
+    create_framework_approval,
+    get_framework_approvals,
+    update_framework_approval,
+    submit_framework_review,
+    get_latest_framework_approval,
+    resubmit_framework
+)
 
 urlpatterns = [
     path('frameworks/', framework_list, name='framework-list'),
@@ -60,6 +68,8 @@ urlpatterns = [
     path('subpolicies/<int:pk>/', subpolicy_detail, name='subpolicy-detail'),
     path('api/frameworks/<int:framework_id>/policies/', add_policy_to_framework, name='add-policy-to-framework'),
     path('policies/<int:policy_id>/subpolicies/', add_subpolicy_to_policy, name='add-subpolicy-to-policy'),
+    path('api/subpolicies/<int:pk>/review/', submit_subpolicy_review, name='submit-subpolicy-review'),
+    path('api/subpolicies/<int:pk>/resubmit/', resubmit_subpolicy, name='resubmit-subpolicy'),
     path('api/policy-approvals/reviewer/', list_policy_approvals_for_reviewer, name='policy-approvals-for-reviewer'),
     path('api/policy-approvals/<int:approval_id>/', update_policy_approval, name='update_policy_approval'),
     path('api/policy-approvals/<int:approval_id>/review/', submit_policy_review, name='submit_policy_review'),
@@ -91,13 +101,18 @@ urlpatterns = [
     path('api/acknowledge-policy/<int:policy_id>/', acknowledge_policy, name='acknowledge-policy'),      
     path('api/frameworks/<int:framework_id>/get-policies/', get_policies_by_framework, name='get-policies-by-framework'),
     path('api/policies/<int:policy_id>/get-subpolicies/', get_subpolicies_by_policy, name='get-subpolicies-by-policy'),
-    path('api/subpolicies/<int:pk>/review/', submit_subpolicy_review, name='submit-subpolicy-review'),
-    path('api/subpolicies/<int:pk>/resubmit/', resubmit_subpolicy, name='resubmit-subpolicy'),
     path('api/policies/<int:policy_id>/version/', get_policy_version, name='get-policy-version'),
     path('api/subpolicies/<int:subpolicy_id>/version/', get_subpolicy_version, name='get-subpolicy-version'),
     path('api/policy-approvals/latest/<int:policy_id>/', get_latest_policy_approval, name='get-latest-policy-approval'),
     path('api/policy-approvals/latest-by-role/<int:policy_id>/<str:role>/', get_latest_policy_approval_by_role, name='get-latest-policy-approval-by-role'),
     path('api/policies/<int:policy_id>/reviewer-version/', get_latest_reviewer_version, name='get-policy-reviewer-version'),
     path('api/policies/<int:policy_id>/submit-review/', submit_policy_approval_review, name='submit-policy-approval-review'),
-    path('api/policies/<int:policy_id>/version-history/', get_policy_version_history, name='get-policy-version-history')
+    path('api/policies/<int:policy_id>/version-history/', get_policy_version_history, name='get-policy-version-history'),
+    path('api/frameworks/<int:framework_id>/create-approval/', create_framework_approval, name='create-framework-approval'),
+    path('api/framework-approvals/', get_framework_approvals, name='get-framework-approvals'),
+    path('api/framework-approvals/<int:framework_id>/', get_framework_approvals, name='get-framework-approvals-by-id'),
+    path('api/framework-approvals/<int:approval_id>/update/', update_framework_approval, name='update-framework-approval'),
+    path('api/frameworks/<int:framework_id>/submit-review/', submit_framework_review, name='submit-framework-review'),
+    path('api/framework-approvals/latest/<int:framework_id>/', get_latest_framework_approval, name='get-latest-framework-approval'),
+    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework')
 ]

@@ -3,17 +3,24 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from ..models import Framework, Policy, SubPolicy, FrameworkVersion, PolicyVersion, PolicyApproval, Users
+from ..models import Framework, Policy, SubPolicy, FrameworkVersion, PolicyVersion, PolicyApproval, Users, FrameworkApproval
 from ..serializers import FrameworkSerializer, PolicySerializer, SubPolicySerializer, PolicyApprovalSerializer, UserSerializer   
 from django.db import transaction
 import traceback
 import sys
-import datetime
+from datetime import datetime
+
 import re
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Avg, Case, When, Value, FloatField, F
 from django.db.models.functions import Coalesce, Cast
+import pandas as pd
+import json
+import os
+from pathlib import Path
+from django.utils.dateparse import parse_date
+
 
 # Framework CRUD operations
 
@@ -63,126 +70,143 @@ Example payload:
   ]
 }
 """
+
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def framework_list(request):
     if request.method == 'GET':
-        frameworks = Framework.objects.filter(Status='Approved', ActiveInactive='Active')
-        serializer = FrameworkSerializer(frameworks, many=True)
-        return Response(serializer.data)
+        frameworks = Framework.objects.all()
+        framework_data = []
+        for framework in frameworks:
+            framework_data.append({
+                'FrameworkId': framework.FrameworkId,
+                'FrameworkName': framework.FrameworkName,
+                'CurrentVersion': framework.CurrentVersion,
+                'FrameworkDescription': framework.FrameworkDescription,
+                'EffectiveDate': framework.EffectiveDate,
+                'CreatedByName': framework.CreatedByName,
+                'CreatedByDate': framework.CreatedByDate,
+                'Category': framework.Category,
+                'DocURL': framework.DocURL,
+                'Identifier': framework.Identifier,
+                'StartDate': framework.StartDate,
+                'EndDate': framework.EndDate,
+                'Status': framework.Status,
+                'ActiveInactive': framework.ActiveInactive,
+                'Reviewer': framework.Reviewer
+            })
+        return Response(framework_data)
  
     elif request.method == 'POST':
         try:
+            data = request.data
+
+            # Parse date fields safely using parse_date
+            effective_date = parse_date(data.get('EffectiveDate'))
+            start_date = parse_date(data.get('StartDate'))
+            end_date = parse_date(data.get('EndDate'))
+
+            framework_data = {
+                'FrameworkName': data.get('FrameworkName'),
+                'FrameworkDescription': data.get('FrameworkDescription', ''),
+                'EffectiveDate': effective_date,
+                'CreatedByName': data.get('CreatedByName'),
+                'CreatedByDate': datetime.now().date(),
+                'Category': data.get('Category', ''),
+                'DocURL': data.get('DocURL', ''),
+                'Identifier': data.get('Identifier', ''),
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'Status': 'Under Review',
+                'ActiveInactive': 'Active',
+                'Reviewer': data.get('Reviewer', ''),
+                'CurrentVersion': 1.0
+            }
+
             with transaction.atomic():
-                # Prepare incoming data
-                data = request.data.copy()
- 
-                # Set default values if not provided
-                data.setdefault('Status', 'Under Review')
-                data.setdefault('ActiveInactive', 'Inactive')
-               
-                # Always set CreatedByDate to current date
-                data['CreatedByDate'] = datetime.date.today()
- 
-                # Set version to 1.0 for all new frameworks
-                new_version = 1.0
- 
-                # Create Framework
-                framework_serializer = FrameworkSerializer(data=data)
-                if not framework_serializer.is_valid():
-                    return Response(framework_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
-                framework = framework_serializer.save()
-                framework.CurrentVersion = new_version
-                framework.save()
- 
-                # Create FrameworkVersion
-                framework_version = FrameworkVersion(
+                framework = Framework.objects.create(**framework_data)
+
+                # Process policies
+                if 'policies' in data and isinstance(data['policies'], list):
+                    for policy_data in data['policies']:
+                        # Parse policy dates
+                        policy_start_date = parse_date(policy_data.get('StartDate'))
+                        policy_end_date = parse_date(policy_data.get('EndDate'))
+
+                        policy = Policy.objects.create(
                     FrameworkId=framework,
-                    Version=framework.CurrentVersion,
-                    FrameworkName=framework.FrameworkName,
-                    CreatedBy=framework.CreatedByName,
-                    CreatedDate=datetime.date.today(),  # Always use current date
-                    PreviousVersionId=None
-                )
-                framework_version.save()
- 
-                # Handle Policies if provided
-                policies_data = request.data.get('policies', [])
-                created_policies_count = 0
-                created_subpolicies_count = 0
-               
-                for policy_data in policies_data:
-                    policy_data = policy_data.copy()
-                    policy_data['FrameworkId'] = framework.FrameworkId
-                    policy_data['CurrentVersion'] = framework.CurrentVersion
-                    policy_data.setdefault('Status', 'Under Review')
-                    policy_data.setdefault('ActiveInactive', 'Inactive')
-                    policy_data.setdefault('CreatedByName', framework.CreatedByName)
-                    policy_data['CreatedByDate'] = datetime.date.today()  # Always use current date
-                   
-                    # Get reviewer's name if reviewer ID is provided
-                    reviewer_id = policy_data.get('Reviewer')
-                    if reviewer_id:
-                        reviewer_obj = Users.objects.filter(UserId=reviewer_id).first()
-                        if reviewer_obj:
-                            # Store the reviewer's name in the policy
-                            policy_data['Reviewer'] = reviewer_obj.UserName
- 
-                    policy_serializer = PolicySerializer(data=policy_data)
-                    if not policy_serializer.is_valid():
-                        return Response(policy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
-                    policy = policy_serializer.save()
-                    created_policies_count += 1
- 
-                    policy_version = PolicyVersion(
+                            PolicyName=policy_data.get('PolicyName', ''),
+                            PolicyDescription=policy_data.get('PolicyDescription', ''),
+                            Status='Under Review',
+                            StartDate=policy_start_date,
+                            EndDate=policy_end_date,
+                            Department=policy_data.get('Department', ''),
+                            CreatedByName=policy_data.get('CreatedByName', ''),
+                            CreatedByDate=datetime.now().date(),
+                            Applicability=policy_data.get('Applicability', ''),
+                            DocURL=policy_data.get('DocURL', ''),
+                            Scope=policy_data.get('Scope', ''),
+                            Objective=policy_data.get('Objective', ''),
+                            Identifier=policy_data.get('Identifier', ''),
+                            PermanentTemporary=policy_data.get('PermanentTemporary', 'Permanent'),
+                            ActiveInactive='Active',
+                            Reviewer=policy_data.get('Reviewer', ''),
+                            CoverageRate=policy_data.get('CoverageRate')
+                        )
+
+                        # Process subpolicies
+                        if 'subpolicies' in policy_data and isinstance(policy_data['subpolicies'], list):
+                            for subpolicy_data in policy_data['subpolicies']:
+                                SubPolicy.objects.create(
                         PolicyId=policy,
-                        Version=policy.CurrentVersion,
-                        PolicyName=policy.PolicyName,
-                        CreatedBy=policy.CreatedByName,
-                        CreatedDate=datetime.date.today(),  # Always use current date
-                        PreviousVersionId=None
+                                    SubPolicyName=subpolicy_data.get('SubPolicyName', ''),
+                                    CreatedByName=subpolicy_data.get('CreatedByName', ''),
+                                    CreatedByDate=datetime.now().date(),
+                                    Identifier=subpolicy_data.get('Identifier', ''),
+                                    Description=subpolicy_data.get('Description', ''),
+                                    Status='Under Review',
+                                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', 'Permanent'),
+                                    Control=subpolicy_data.get('Control', '')
+                                )
+
+                # Create framework approval record
+                try:
+                    user_id = data.get('CreatedById', 1)
+                    reviewer_id = data.get('Reviewer') if data.get('Reviewer') else 2
+
+                    extracted_data = {
+                        "FrameworkName": framework.FrameworkName,
+                        "FrameworkDescription": framework.FrameworkDescription,
+                        "Category": framework.Category,
+                        "EffectiveDate": framework.EffectiveDate.isoformat() if framework.EffectiveDate else None,
+                        "StartDate": framework.StartDate.isoformat() if framework.StartDate else None,
+                        "EndDate": framework.EndDate.isoformat() if framework.EndDate else None,
+                        "CreatedByName": framework.CreatedByName,
+                        "Identifier": framework.Identifier,
+                        "Status": framework.Status,
+                        "ActiveInactive": framework.ActiveInactive,
+                        "type": "framework"
+                    }
+
+                    FrameworkApproval.objects.create(
+                        FrameworkId=framework,
+                        ExtractedData=extracted_data,
+                        UserId=user_id,
+                        ReviewerId=reviewer_id,
+                        Version="u1",
+                        ApprovedNot=None
                     )
-                    policy_version.save()
-                   
-                    # Handle SubPolicies if provided
-                    subpolicies_data = policy_data.get('subpolicies', [])
-                    for subpolicy_data in subpolicies_data:
-                        subpolicy_data = subpolicy_data.copy()
-                        subpolicy_data['PolicyId'] = policy.PolicyId
-                        subpolicy_data.setdefault('Status', 'Under Review')
-                        subpolicy_data.setdefault('CreatedByName', policy.CreatedByName)
-                        subpolicy_data['CreatedByDate'] = datetime.date.today()  # Always use current date
- 
-                        subpolicy_serializer = SubPolicySerializer(data=subpolicy_data)
-                        if not subpolicy_serializer.is_valid():
-                            return Response(subpolicy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                        subpolicy_serializer.save()
-                        created_subpolicies_count += 1
- 
-                # Create a detailed success message
-                message = f'Framework "{framework.FrameworkName}" created successfully'
-                if created_policies_count > 0:
-                    message += f' with {created_policies_count} policies'
-                    if created_subpolicies_count > 0:
-                        message += f' and {created_subpolicies_count} subpolicies'
-                message += '!'
-               
-                return Response({
-                    'message': message,
-                    'FrameworkId': framework.FrameworkId,
-                    'Version': framework.CurrentVersion
-                }, status=status.HTTP_201_CREATED)
+                except Exception as approval_error:
+                    print(f"Error creating framework approval: {str(approval_error)}")
+                    traceback.print_exc()
+
+                return Response({"message": "Framework created successfully", "FrameworkId": framework.FrameworkId}, status=status.HTTP_201_CREATED)
  
         except Exception as e:
-            return Response({
-                'error': 'Error creating framework',
-                'details': {
-                    'message': str(e),
-                    'traceback': traceback.format_exc()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            print("Exception in framework_list POST:", str(e))
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
  
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -501,310 +525,110 @@ Example payload:
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def add_policy_to_framework(request, framework_id):
-    framework = get_object_or_404(Framework, FrameworkId=framework_id)
-   
     try:
-        with transaction.atomic():
-            # Set framework ID and default values in the request data
-            policy_data = request.data.copy()
-            policy_data['FrameworkId'] = framework.FrameworkId
-            policy_data['CurrentVersion'] = framework.CurrentVersion  # Use framework's version
+        framework = Framework.objects.get(FrameworkId=framework_id)
+        
+        # Extract policy data from request
+        policy_data = request.data
+        
+        # Create policy
+        policy = Policy.objects.create(
+            FrameworkId=framework,
+            PolicyName=policy_data.get('PolicyName', ''),
+            PolicyDescription=policy_data.get('PolicyDescription', ''),
+            Status='Under Review',
+            StartDate=policy_data.get('StartDate'),
+            EndDate=policy_data.get('EndDate'),
+            Department=policy_data.get('Department', ''),
+            CreatedByName=policy_data.get('CreatedByName', ''),
+            CreatedByDate=datetime.now().date(),
+            Applicability=policy_data.get('Applicability', ''),
+            DocURL=policy_data.get('DocURL', ''),
+            Scope=policy_data.get('Scope', ''),
+            Objective=policy_data.get('Objective', ''),
+            Identifier=policy_data.get('Identifier', ''),
+            PermanentTemporary=policy_data.get('PermanentTemporary', 'Permanent'),
+            ActiveInactive='Active',
+            Reviewer=policy_data.get('Reviewer', ''),
+            CoverageRate=policy_data.get('CoverageRate')
+        )
+        
+        # Process subpolicies if they exist
+        if 'subpolicies' in policy_data and isinstance(policy_data['subpolicies'], list):
+            for subpolicy_data in policy_data['subpolicies']:
+                SubPolicy.objects.create(
+                PolicyId=policy,
+                    SubPolicyName=subpolicy_data.get('SubPolicyName', ''),
+                    CreatedByName=subpolicy_data.get('CreatedByName', ''),
+                    CreatedByDate=datetime.now().date(),
+                    Identifier=subpolicy_data.get('Identifier', ''),
+                    Description=subpolicy_data.get('Description', ''),
+                    Status='Under Review',
+                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', 'Permanent'),
+                    Control=subpolicy_data.get('Control', '')
+                )
+        
+        # Create policy approval record
+        try:
+            # Extract data for the approval
+            user_id = policy_data.get('CreatedById', 1)  # Default to 1 if not provided
+            reviewer_id = policy_data.get('Reviewer') if policy_data.get('Reviewer') else 2  # Default to 2
             
-            # Set default values if not provided
-            if 'Status' not in policy_data:
-                policy_data['Status'] = 'Under Review'
-            if 'ActiveInactive' not in policy_data:
-                policy_data['ActiveInactive'] = 'Inactive'
-            if 'CreatedByName' not in policy_data or not policy_data['CreatedByName']:
-                policy_data['CreatedByName'] = framework.CreatedByName
-            if 'CreatedByDate' not in policy_data:
-                policy_data['CreatedByDate'] = datetime.date.today()
-            if 'Reviewer' not in policy_data:
-                policy_data['Reviewer'] = None
-           
-            print("DEBUG: Policy data before serialization:", policy_data)
-            policy_serializer = PolicySerializer(data=policy_data)
-            print("DEBUG: validating policy serializer")
-            if not policy_serializer.is_valid():
-                print("Policy serializer errors:", policy_serializer.errors)
-                return Response({
-                    'error': 'Policy validation failed',
-                    'details': policy_serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
-            print("DEBUG: serializer is valid")
- 
-            policy = policy_serializer.save()
- 
-            # Get reviewer ID directly from the request data
-            reviewer_id = policy_data.get('Reviewer')  # This should be a UserId (number)
-           
-            # Get reviewer's name for the Policy table
-            reviewer_name = None
-            if reviewer_id:
-                try:
-                    reviewer_id = int(reviewer_id)  # Ensure reviewer_id is an integer
-                    reviewer_obj = Users.objects.filter(UserId=reviewer_id).first()
-                    if reviewer_obj:
-                        reviewer_name = reviewer_obj.UserName
-                        # Store reviewer name in the policy object
-                        policy.Reviewer = reviewer_name
-                        policy.save()
-                except (ValueError, TypeError):
-                    print(f"Warning: Invalid reviewer ID format: {reviewer_id}")
- 
-            # Get user id from CreatedByName
-            created_by_name = policy_data.get('CreatedByName')
-            user_obj = Users.objects.filter(UserName=created_by_name).first()
-            user_id = user_obj.UserId if user_obj else None
- 
-            if user_id is None:
-                print(f"Warning: CreatedBy user not found for: {created_by_name}")
-            if reviewer_id is None:
-                print("Warning: Reviewer id missing in request data")
-
-            try:
-                print("Creating PolicyVersion with:", {
-                    "PolicyId": policy.PolicyId,
-                    "Version": policy.CurrentVersion,
-                    "PolicyName": policy.PolicyName,
-                    "CreatedBy": policy.CreatedByName,
-                    "CreatedDate": policy.CreatedByDate,
-                    "PreviousVersionId": None
-                })
- 
-                policy_version = PolicyVersion(
-                    PolicyId=policy,
-                    Version=policy.CurrentVersion,
-                    PolicyName=policy.PolicyName,
-                    CreatedBy=policy.CreatedByName,
-                    CreatedDate=policy.CreatedByDate,
-                    PreviousVersionId=None
-                )
-                policy_version.save()
-            except Exception as e:
-                print("Error creating PolicyVersion:", str(e))
-                raise
- 
-           
-            # Create subpolicies if provided
-            subpolicies_data = request.data.get('subpolicies', [])
-            created_subpolicies_count = 0
-           
-            for subpolicy_data in subpolicies_data:
-                # Set policy ID and default values
-                subpolicy_data = subpolicy_data.copy() if isinstance(subpolicy_data, dict) else {}
-                subpolicy_data['PolicyId'] = policy.PolicyId
-                if 'CreatedByName' not in subpolicy_data or not subpolicy_data['CreatedByName']:
-                    subpolicy_data['CreatedByName'] = policy.CreatedByName
-                if 'CreatedByDate' not in subpolicy_data:
-                    subpolicy_data['CreatedByDate'] = datetime.date.today()
-                if 'Status' not in subpolicy_data:
-                    subpolicy_data['Status'] = 'Under Review'
-                if 'PermanentTemporary' not in subpolicy_data:
-                    subpolicy_data['PermanentTemporary'] = 'Permanent'
-               
-                print("DEBUG: SubPolicy data before serialization:", subpolicy_data)
-                subpolicy_serializer = SubPolicySerializer(data=subpolicy_data)
-                if not subpolicy_serializer.is_valid():
-                    print("SubPolicy serializer errors:", subpolicy_serializer.errors)
-                    return Response({
-                        'error': 'SubPolicy validation failed',
-                        'details': subpolicy_serializer.errors
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                subpolicy_serializer.save()
-                created_subpolicies_count += 1
-               
-            # Create a detailed success message
-            message = 'Policy added to framework successfully'
-            if created_subpolicies_count > 0:
-                message += f' with {created_subpolicies_count} subpolicies'
-            message += '!'
-           
-            return Response({
-                'message': message,
-                'PolicyId': policy.PolicyId,
-                'FrameworkId': framework.FrameworkId,
-                'Version': policy.CurrentVersion
-            }, status=status.HTTP_201_CREATED)
+            # Get all subpolicies for this policy
+            subpolicies = SubPolicy.objects.filter(PolicyId=policy)
+            subpolicies_data = []
+            
+            for subpolicy in subpolicies:
+                subpolicy_data = {
+                    "SubPolicyId": subpolicy.SubPolicyId,
+                    "SubPolicyName": subpolicy.SubPolicyName,
+                    "CreatedByName": subpolicy.CreatedByName,
+                    "CreatedByDate": subpolicy.CreatedByDate.isoformat() if subpolicy.CreatedByDate else None,
+                    "Identifier": subpolicy.Identifier,
+                    "Description": subpolicy.Description,
+                    "Status": subpolicy.Status,
+                    "PermanentTemporary": subpolicy.PermanentTemporary,
+                    "Control": subpolicy.Control
+                }
+                subpolicies_data.append(subpolicy_data)
+            
+            # Create extracted data JSON
+            extracted_data = {
+                "PolicyName": policy.PolicyName,
+                "PolicyDescription": policy.PolicyDescription,
+                "Status": policy.Status,
+                "StartDate": policy.StartDate.isoformat() if policy.StartDate else None,
+                "EndDate": policy.EndDate.isoformat() if policy.EndDate else None,
+                "Department": policy.Department,
+                "CreatedByName": policy.CreatedByName,
+                "CreatedByDate": policy.CreatedByDate.isoformat() if policy.CreatedByDate else None,
+                "Applicability": policy.Applicability,
+                "Scope": policy.Scope,
+                "Objective": policy.Objective,
+                "Identifier": policy.Identifier,
+                "type": "policy",
+                "subpolicies": subpolicies_data
+            }
+            
+            # Create the policy approval
+            PolicyApproval.objects.create(
+                PolicyId=policy,
+                ExtractedData=extracted_data,
+                UserId=user_id,
+                ReviewerId=reviewer_id,
+                Version="u1",  # Default initial version
+                ApprovedNot=None  # Not yet approved
+            )
+        except Exception as approval_error:
+            print(f"Error creating policy approval: {str(approval_error)}")
+            # Continue with policy creation even if approval creation fails
+        
+        return Response({"message": "Policy added successfully", "PolicyId": policy.PolicyId}, status=status.HTTP_201_CREATED)
+    
+    except Framework.DoesNotExist:
+        return Response({"error": "Framework not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        error_info = {
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }
-        print("DEBUG: Error details:", error_info)
-        return Response({
-            'error': 'Error adding policy to framework',
-            'details': error_info
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-"""
-@api POST /api/policies/{policy_id}/subpolicies/
-Adds a new subpolicy to an existing policy.
-New subpolicies are created with Status='Under Review' by default.
-
-Example payload:
-{
-  "SubPolicyName": "Multi-Factor Authentication",
-  "Identifier": "MFA-001",
-  "Description": "Requirements for multi-factor authentication",
-  "PermanentTemporary": "Permanent",
-  "Control": "Implement MFA for all admin access and sensitive operations"
-}
-"""
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def add_policy_to_framework(request, framework_id):
-    framework = get_object_or_404(Framework, FrameworkId=framework_id)
-   
-    try:
-        with transaction.atomic():
-            # Set framework ID and default values in the request data
-            policy_data = request.data.copy()
-            policy_data['FrameworkId'] = framework.FrameworkId
-            policy_data['CurrentVersion'] = framework.CurrentVersion  # Use framework's version
-            if 'Status' not in policy_data:
-                policy_data['Status'] = 'Under Review'
-            if 'ActiveInactive' not in policy_data:
-                policy_data['ActiveInactive'] = 'Inactive'
-            if 'CreatedByName' not in policy_data:
-                policy_data['CreatedByName'] = framework.CreatedByName
-            if 'CreatedByDate' not in policy_data:
-                policy_data['CreatedByDate'] = datetime.date.today()
-           
-            policy_serializer = PolicySerializer(data=policy_data)
-            print("DEBUG: validating policy serializer")
-            if not policy_serializer.is_valid():
-                print("Policy serializer errors:", policy_serializer.errors)
-                return Response(policy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            print("DEBUG: serializer is valid")
- 
-            policy = policy_serializer.save()
- 
-            # Get reviewer ID directly from the request data
-            reviewer_id = policy_data.get('Reviewer')  # Changed from request.data to policy_data
-           
-            # Get reviewer's name for the Policy table
-            reviewer_name = None
-            if reviewer_id:
-                reviewer_obj = Users.objects.filter(UserId=reviewer_id).first()
-                if reviewer_obj:
-                    reviewer_name = reviewer_obj.UserName
-                    # Store reviewer name in the policy object
-                    policy.Reviewer = reviewer_name
-                    policy.save()
- 
-            # Get user id from CreatedByName
-            created_by_name = policy_data.get('CreatedByName')
-            user_obj = Users.objects.filter(UserName=created_by_name).first()
-            user_id = user_obj.UserId if user_obj else None
- 
-            if user_id is None:
-                print(f"Warning: CreatedBy user not found for: {created_by_name}")
-            if reviewer_id is None:
-                print("Warning: Reviewer id missing in request data")
- 
-            # No policy approval logic here - removed completely
- 
-            try:
-                print("Creating PolicyVersion with:", {
-                    "PolicyId": policy.PolicyId,
-                    "Version": policy.CurrentVersion,
-                    "PolicyName": policy.PolicyName,
-                    "CreatedBy": policy.CreatedByName,
-                    "CreatedDate": policy.CreatedByDate,
-                    "PreviousVersionId": None
-                })
- 
-                policy_version = PolicyVersion(
-                    PolicyId=policy,
-                    Version=policy.CurrentVersion,
-                    PolicyName=policy.PolicyName,
-                    CreatedBy=policy.CreatedByName,
-                    CreatedDate=policy.CreatedByDate,
-                    PreviousVersionId=None
-                )
-                policy_version.save()
-            except Exception as e:
-                print("Error creating PolicyVersion:", str(e))
-                raise
- 
-            # Create subpolicies if provided
-            subpolicies_data = request.data.get('subpolicies', [])
-            created_subpolicies_count = 0
-           
-            for subpolicy_data in subpolicies_data:
-                # Set policy ID and default values
-                subpolicy_data = subpolicy_data.copy() if isinstance(subpolicy_data, dict) else {}
-                subpolicy_data['PolicyId'] = policy.PolicyId
-                if 'CreatedByName' not in subpolicy_data:
-                    subpolicy_data['CreatedByName'] = policy.CreatedByName
-                if 'CreatedByDate' not in subpolicy_data:
-                    subpolicy_data['CreatedByDate'] = policy.CreatedByDate
-                if 'Status' not in subpolicy_data:
-                    subpolicy_data['Status'] = 'Under Review'
-               
-                subpolicy_serializer = SubPolicySerializer(data=subpolicy_data)
-                if not subpolicy_serializer.is_valid():
-                    print("SubPolicy serializer errors:", subpolicy_serializer.errors)  # Add this debug
-                    return Response(subpolicy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                subpolicy_serializer.save()
-                created_subpolicies_count += 1
-               
-            # Create a detailed success message
-            message = 'Policy added to framework successfully'
-            if created_subpolicies_count > 0:
-                message += f' with {created_subpolicies_count} subpolicies'
-            message += '!'
-           
-            return Response({
-                'message': message,
-                'PolicyId': policy.PolicyId,
-                'FrameworkId': framework.FrameworkId,
-                'Version': policy.CurrentVersion
-            }, status=status.HTTP_201_CREATED)
-    except Exception as e:
-        error_info = {
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }
-        return Response({'error': 'Error adding policy to framework', 'details': error_info}, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def list_policy_approvals_for_reviewer(request):
-#     # For now, reviewer_id is hardcoded as 2
-#     reviewer_id = 2
-   
-#     # Get the latest version of each policy by identifier
-#     unique_identifiers = PolicyApproval.objects.values('Identifier').distinct()
-#     latest_approvals = []
-   
-#     for identifier_obj in unique_identifiers:
-#         identifier = identifier_obj['Identifier']
-#         # Find the latest approval record for this identifier
-#         latest = PolicyApproval.objects.filter(
-#             Identifier=identifier,
-#             ReviewerId=reviewer_id
-#         ).order_by('-ApprovalId').first()
-       
-#         if latest:
-#             latest_approvals.append(latest)
-   
-#     # Serialize the data
-#     data = [
-#         {
-#             "ApprovalId": a.ApprovalId,
-#             "Identifier": a.Identifier,
-#             "ExtractedData": a.ExtractedData,
-#             "UserId": a.UserId,
-#             "ReviewerId": a.ReviewerId,
-#             "ApprovedNot": a.ApprovedNot,
-#             "Version": a.Version
-#         }
-#         for a in latest_approvals
-#     ]
-   
-#     return Response(data)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
  
 @api_view(['PUT'])
 @permission_classes([AllowAny])
@@ -1156,73 +980,28 @@ Soft-deletes a subpolicy by setting Status='Inactive'.
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])
 def subpolicy_detail(request, pk):
-    subpolicy = get_object_or_404(SubPolicy, SubPolicyId=pk)
+    """
+    Retrieve, update or delete a subpolicy.
+    """
+    try:
+        subpolicy = SubPolicy.objects.get(SubPolicyId=pk)
+    except SubPolicy.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
     
     if request.method == 'GET':
-        # Only return details if subpolicy is Approved
-        if subpolicy.Status != 'Approved':
-            return Response({'error': 'Subpolicy is not approved'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Get policy to check if it's approved and active
-        policy = subpolicy.PolicyId
-        if policy.Status != 'Approved' or policy.ActiveInactive != 'Active':
-            return Response({'error': 'Policy is not approved or active'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Get framework to check if it's approved and active
-        framework = policy.FrameworkId
-        if framework.Status != 'Approved' or framework.ActiveInactive != 'Active':
-            return Response({'error': 'Framework is not approved or active'}, status=status.HTTP_403_FORBIDDEN)
-        
         serializer = SubPolicySerializer(subpolicy)
         return Response(serializer.data)
     
     elif request.method == 'PUT':
-        # Check if subpolicy is approved before allowing update
-        if subpolicy.Status != 'Approved':
-            return Response({'error': 'Only approved subpolicies can be updated'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Check if policy is approved and active
-        policy = subpolicy.PolicyId
-        if policy.Status != 'Approved' or policy.ActiveInactive != 'Active':
-            return Response({'error': 'Policy is not approved or active'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Check if framework is approved and active
-        framework = policy.FrameworkId
-        if framework.Status != 'Approved' or framework.ActiveInactive != 'Active':
-            return Response({'error': 'Framework is not approved or active'}, status=status.HTTP_403_FORBIDDEN)
-        
-        try:
-            with transaction.atomic():
-                serializer = SubPolicySerializer(subpolicy, data=request.data, partial=True)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({
-                        'message': 'Subpolicy updated successfully',
-                        'SubPolicyId': subpolicy.SubPolicyId
-                    })
-                else:
-                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            error_info = {
-                'error': str(e),
-                'traceback': traceback.format_exc()
-            }
-            return Response({'error': 'Error updating subpolicy', 'details': error_info}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = SubPolicySerializer(subpolicy, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
-        try:
-            with transaction.atomic():
-                # Instead of deleting, set Status to 'Inactive'
-                subpolicy.Status = 'Inactive'
-                subpolicy.save()
-                
-                return Response({'message': 'Subpolicy marked as inactive'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            error_info = {
-                'error': str(e),
-                'traceback': traceback.format_exc()
-            }
-            return Response({'error': 'Error marking subpolicy as inactive', 'details': error_info}, status=status.HTTP_400_BAD_REQUEST)
+        subpolicy.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 @api_view(['PUT'])
 @permission_classes([AllowAny])
 def submit_subpolicy_review(request, pk):
@@ -3209,48 +2988,18 @@ def export_policies_to_excel(request, framework_id):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def policy_list(request):
-    try:
-        # Get query parameters
-        framework_id = request.GET.get('framework_id')
-        status = request.GET.get('status')
-        active_inactive = request.GET.get('active_inactive')
-
-        # Base queryset
-        policies_query = Policy.objects.all()
-
-        # Apply filters if provided
-        if framework_id:
-            policies_query = policies_query.filter(FrameworkId=framework_id)
-        if status:
-            policies_query = policies_query.filter(Status=status)
-        if active_inactive:
-            policies_query = policies_query.filter(ActiveInactive=active_inactive)
-
-        # Get all policies
-        policies = policies_query.select_related('FrameworkId')
-
-        # Calculate summary counts
-        summary_counts = {
-            'active': Policy.objects.filter(ActiveInactive='Active').count(),
-            'inactive': Policy.objects.filter(ActiveInactive='Inactive').count(),
-            'approved': Policy.objects.filter(Status='Approved').count(),
-            'rejected': Policy.objects.filter(Status='Rejected').count(),
-            'under_review': Policy.objects.filter(Status='Under Review').count()
-        }
-
-        # Serialize policies
-        serializer = PolicySerializer(policies, many=True)
-
-        return Response({
-            'policies': serializer.data,
-            'summary_counts': summary_counts
-        })
-
-    except Exception as e:
-        return Response({
-            'error': 'Error fetching policies',
-            'details': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    """
+    List all policies, or filter by status
+    """
+    status_param = request.query_params.get('status', None)
+    
+    if status_param is not None:
+        policies = Policy.objects.filter(Status=status_param)
+    else:
+        policies = Policy.objects.all()
+    
+    serializer = PolicySerializer(policies, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

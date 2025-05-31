@@ -68,6 +68,10 @@
           <i class="fas fa-check-circle icon"></i>
           <span>Policy Approval</span>
         </div>
+        <div class="menu-item" @click="navigate('/framework-approval')">
+          <i class="fas fa-check-circle icon"></i>
+          <span>Framework Approval</span>
+        </div>
 
         <!-- 4. Performance Analysis -->
         <div @click="toggleSubmenu('performanceAnalysis')" class="menu-item has-submenu" :class="{'expanded': openMenus.performanceAnalysis}">

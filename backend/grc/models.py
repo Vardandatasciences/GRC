@@ -107,7 +107,26 @@ class PolicyApproval(models.Model):
  
     class Meta:
         db_table = 'policyapproval'
- 
+
+
+class FrameworkApproval(models.Model):
+    ApprovalId = models.AutoField(primary_key=True)
+    FrameworkId = models.ForeignKey('Framework', on_delete=models.CASCADE, db_column='FrameworkId', null=True)
+    # Identifier field is optional, uncomment if needed
+    # Identifier = models.CharField(max_length=45, null=True, blank=True)
+    ExtractedData = models.JSONField(null=True, blank=True)
+    UserId = models.IntegerField()
+    ReviewerId = models.IntegerField(null=True, blank=True)
+    Version = models.CharField(max_length=50, null=True, blank=True)
+    ApprovedNot = models.BooleanField(null=True)
+    ApprovedDate = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"FrameworkApproval {self.FrameworkId_id} (Version {self.Version})"
+
+    class Meta:
+        db_table = 'frameworkapproval'
+
 # Users model (Django built-in User model is used)
 class Users(models.Model):
     UserId = models.AutoField(primary_key=True)

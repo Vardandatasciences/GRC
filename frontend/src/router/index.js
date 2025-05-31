@@ -12,6 +12,7 @@ import CreatePolicy from '../components/Policy/CreatePolicy.vue'
 import FrameworkExplorer from '../components/Policy/FrameworkExplorer.vue'
 import FrameworkPolicies from '../components/Policy/FrameworkPolicies.vue'
 import KPIDashboard from '../components/Policy/KPIDashboard.vue'
+import FrameworkApprover from '../components/Framework/FrameworkApprover.vue'
 
 const routes = [
   {
@@ -86,6 +87,11 @@ const routes = [
     component: PolicyApprover
   },
   {
+    path: '/framework-approval',
+    name: 'FrameworkApprover',
+    component: FrameworkApprover
+  },
+  {
     path: '/policy/performance/dashboard',
     name: 'PolicyPerformanceDashboard',
     component: PolicyDashboard
@@ -94,7 +100,7 @@ const routes = [
     path: '/policy/performance/kpis',
     name: 'KPIDashboard',
     component: KPIDashboard
-  }
+  },
   
   
 ]
