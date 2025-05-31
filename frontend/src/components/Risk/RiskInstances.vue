@@ -198,42 +198,79 @@ export default {
     formatDate(dateString) {
       if (!dateString) return 'Not set';
       
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
+      try {
+        // Handle ISO format and other string formats
+        const date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          console.warn(`Invalid date format: ${dateString}`);
+          return dateString; // Return as is if can't parse
+        }
+        
+        return date.toLocaleDateString();
+      } catch (e) {
+        console.error(`Error formatting date: ${e}`);
+        return dateString; // Return original string if there's an error
+      }
     },
     getDueStatusClass(dateString) {
       if (!dateString) return '';
       
-      const dueDate = new Date(dateString);
-      const today = new Date();
-      
-      // Reset the time part for accurate day comparison
-      dueDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
-      
-      if (daysLeft < 0) return 'overdue';
-      if (daysLeft <= 3) return 'urgent';
-      if (daysLeft <= 7) return 'warning';
-      return 'on-track';
+      try {
+        const dueDate = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(dueDate.getTime())) {
+          console.warn(`Invalid date for status class: ${dateString}`);
+          return '';
+        }
+        
+        const today = new Date();
+        
+        // Reset the time part for accurate day comparison
+        dueDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        
+        const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysLeft < 0) return 'overdue';
+        if (daysLeft <= 3) return 'urgent';
+        if (daysLeft <= 7) return 'warning';
+        return 'on-track';
+      } catch (e) {
+        console.error(`Error calculating due status class: ${e}`);
+        return '';
+      }
     },
     getDueStatusText(dateString) {
       if (!dateString) return '';
       
-      const dueDate = new Date(dateString);
-      const today = new Date();
-      
-      // Reset the time part for accurate day comparison
-      dueDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
-      
-      if (daysLeft < 0) return `(Delayed by ${Math.abs(daysLeft)} days)`;
-      if (daysLeft === 0) return '(Due today)';
-      if (daysLeft === 1) return '(Due tomorrow)';
-      return `(${daysLeft} days left)`;
+      try {
+        const dueDate = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(dueDate.getTime())) {
+          console.warn(`Invalid date for status text: ${dateString}`);
+          return '';
+        }
+        
+        const today = new Date();
+        
+        // Reset the time part for accurate day comparison
+        dueDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        
+        const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysLeft < 0) return `(Delayed by ${Math.abs(daysLeft)} days)`;
+        if (daysLeft === 0) return '(Due today)';
+        if (daysLeft === 1) return '(Due tomorrow)';
+        return `(${daysLeft} days left)`;
+      } catch (e) {
+        console.error(`Error calculating due status text: ${e}`);
+        return '';
+      }
     }
   }
 }

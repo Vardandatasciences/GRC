@@ -39,4 +39,9 @@ urlpatterns = [
     path('api/risk-form-details/<int:risk_id>/', views.get_risk_form_details, name='risk-form-details'),
     path('api/logs/', views.GRCLogList.as_view(), name='log-list'),
     path('api/logs/<int:pk>/', views.GRCLogDetail.as_view(), name='log-detail'),
+    path('api/get-previous-versions/<int:risk_id>/', views.get_previous_versions, name='get-previous-versions'),
+    path('api/save-uploaded-file/', views.save_uploaded_file, name='save-uploaded-file'),
+    path('api/save-uploaded-file-simple/', views.save_uploaded_file_simple, name='save-uploaded-file-simple'),
+    path('api/export-risks/', views.export_risks, name='export-risks'),
+    path('api/risk-due-reminders/', views.send_due_date_reminders, name='risk-due-reminders'),
 ]

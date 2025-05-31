@@ -948,247 +948,710 @@ h3 {
 }
 
 .mitigation-review-item {
-  margin-bottom: 20px;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  margin-bottom: 32px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eaecef;
+  transition: all 0.3s ease;
+  background-color: #fff;
 }
 
-.mitigation-description {
-  padding: 16px;
-  border-bottom: 1px solid var(--border-color);
+.mitigation-review-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
 }
 
-.mitigation-description h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  color: var(--header-color);
-  font-size: 16px;
-}
-
-.approval-controls {
-  padding: 16px;
-  background-color: #f9f9f9;
-}
-
-.approval-buttons {
+.mitigation-heading {
+  background: linear-gradient(135deg, #f0f5ff, #ffffff);
+  padding: 16px 24px;
+  border-bottom: 1px solid #eaecef;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.approve-btn, .reject-btn {
-  padding: 8px 16px;
-  font-weight: 500;
+.mitigation-heading h4 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
 }
 
-.approve-btn {
-  background-color: var(--success-color);
-  color: white;
+.mitigation-heading h4::before {
+  content: '\f07c';
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  margin-right: 12px;
+  color: #1890ff;
+  font-size: 18px;
 }
 
-.approve-btn:hover {
-  background-color: #68d030;
-}
-
-.reject-btn {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.reject-btn:hover {
-  background-color: #ff4d4f;
-}
-
-.remarks-field {
-  margin-top: 15px;
-  width: 100%;
-}
-
-.remarks-input {
-  width: 100%;
-  min-height: 100px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  font-family: inherit;
+.mitigation-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 14px;
-  resize: vertical;
-}
-
-.save-remarks-btn {
-  margin-top: 10px;
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.change-decision-btn {
-  background-color: #f5f5f5;
-  color: var(--text-secondary);
-  border: 1px solid #ddd;
-  font-size: 13px;
-  margin-top: 8px;
-}
-
-.change-decision-btn:hover {
-  background-color: #e6e6e6;
-}
-
-.review-actions {
-  margin-top: 30px;
-    display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-    align-items: center;
-  }
-  
-.submit-review-btn, .reject-review-btn {
-  padding: 12px 24px;
-  font-weight: 500;
-  flex: 1;
-  min-width: 180px;
-}
-
-.submit-review-btn {
-  background-color: var(--success-color);
-    color: white;
-}
-
-.reject-review-btn {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.review-warning {
-  flex-basis: 100%;
-  margin-top: 15px;
-  color: var(--danger-color);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
   gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.review-complete-notice {
-  flex-basis: 100%;
-  margin-top: 15px;
-  font-style: italic;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-/* Step Approval Indicators */
-.step-approval {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-  gap: 10px;
-  font-weight: 500;
-  margin-bottom: 15px;
-}
-
-.step-approval.approved {
+.mitigation-status-badge.approved {
   background-color: #f6ffed;
-  color: var(--success-color);
+  color: #52c41a;
   border: 1px solid #b7eb8f;
 }
 
-.step-approval.rejected {
+.mitigation-status-badge.rejected {
   background-color: #fff1f0;
-  color: var(--danger-color);
+  color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
-.step-approval.pending {
-  background-color: #fff7e6;
-  color: var(--warning-color);
-  border: 1px solid #ffd591;
+.mitigation-status-badge.pending {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
 }
 
-.reviewer-remarks {
-  margin-top: 10px;
-  font-size: 14px;
-  padding: 12px;
-  background-color: #fff9f9;
-  border-radius: var(--radius);
-  color: var(--text-color);
-  border: 1px solid #ffa39e;
+/* Split content container */
+.mitigation-split-content {
+  display: flex;
+  border-bottom: 1px solid #eaecef;
 }
 
-/* User comments and evidence sections */
-.user-comments, .uploaded-evidence {
-    margin-top: 15px;
-  padding: 12px;
-  border-radius: var(--radius);
+.mitigation-previous, 
+.mitigation-current {
+  flex: 1;
+  padding: 24px;
+  position: relative;
 }
 
-.user-comments {
-  background-color: #f0f8ff;
-  border-left: 3px solid var(--primary-color);
+.mitigation-previous {
+  background-color: #f8fafc;
+  border-right: 1px dashed #eaecef;
 }
 
-.uploaded-evidence {
-  background-color: #f6ffed;
-  border-left: 3px solid var(--success-color);
+.mitigation-current {
+  background-color: #fff;
 }
 
-.user-comments h5, .uploaded-evidence h5 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  font-size: 14px;
+/* Version labels */
+.version-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 600;
+  color: #64748b;
+  background-color: rgba(0,0,0,0.03);
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.user-comments h5 {
-  color: var(--primary-color);
+/* Content styling */
+.mitigation-content {
+  margin-top: 30px;
 }
 
-.uploaded-evidence h5 {
-  color: var(--success-color);
+.mitigation-content h5 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  border-left: 3px solid #1890ff;
+  padding-left: 10px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.mitigation-content p {
+  margin: 0 0 20px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1e293b;
+  padding: 16px;
+  background-color: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.mitigation-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #94a3b8;
+}
+
+.mitigation-empty i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.mitigation-empty p {
+  font-style: italic;
+  background: none;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Date and metadata styling */
+.metadata-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.metadata-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  border-left: 3px solid #faad14;
+  padding-left: 10px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.metadata-item {
+  display: flex;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.metadata-label {
+  min-width: 120px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.metadata-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Evidence and comments styling */
+.evidence-section, 
+.comments-section {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.evidence-section {
+  background-color: #f6ffed;
+  border: 1px solid #d9f7be;
+}
+
+.comments-section {
+  background-color: #e6f7ff;
+  border: 1px solid #bae7ff;
+}
+
+.evidence-section h5, 
+.comments-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.evidence-section h5 {
+  color: #52c41a;
+}
+
+.comments-section h5 {
+  color: #1890ff;
+}
+
+.evidence-section h5 i, 
+.comments-section h5 i {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.comments-text {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #334155;
+  margin: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
 }
 
 .evidence-link {
   display: inline-flex;
   align-items: center;
-  color: var(--success-color);
-  text-decoration: none;
   gap: 8px;
-  font-weight: 500;
+  padding: 8px 16px;
+  background-color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1890ff;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .evidence-link:hover {
-  text-decoration: underline;
+  background-color: #f0f9ff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
-/* Status banner for reviews */
-  .review-status-banner {
-    width: 100%;
-  padding: 16px;
-  margin-bottom: 25px;
-  border-radius: var(--radius);
+/* Approval controls styling */
+.approval-controls {
+  padding: 24px;
+  background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+  border-top: 1px solid #eaecef;
+}
+
+.approval-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.approve-btn, .reject-btn, .change-decision-btn, .save-remarks-btn {
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 500;
-    text-align: center;
-  font-size: 16px;
-  }
-  
-  .review-status-banner.approved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.approve-btn {
+  background-color: #52c41a;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #73d13d;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.reject-btn {
+  background-color: #f5222d;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #ff4d4f;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.change-decision-btn {
+  background-color: #faad14;
+  color: white;
+}
+
+.change-decision-btn:hover {
+  background-color: #ffc53d;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.save-remarks-btn {
+  background-color: #1890ff;
+  color: white;
+}
+
+.save-remarks-btn:hover {
+  background-color: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.remarks-field {
+  margin-top: 16px;
+}
+
+.remarks-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.remarks-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all 0.3s;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.remarks-input:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.reviewer-remarks-display {
+  background-color: #fff2f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  border-left: 3px solid #f5222d;
+}
+
+.reviewer-remarks-display h5 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f5222d;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-remarks-display p {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.6;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Decision tag */
+.decision-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.decision-tag.approved {
   background-color: #f6ffed;
-  color: var(--success-color);
+  color: #52c41a;
   border: 1px solid #b7eb8f;
-  }
-  
-  .review-status-banner.rejected {
+}
+
+.decision-tag.rejected {
   background-color: #fff1f0;
-  color: var(--danger-color);
+  color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
-/* Animation */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Form details review styling */
+.form-details-review {
+  margin-top: 40px;
+  padding: 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eaecef;
+  position: relative;
+}
+
+.form-details-review h4 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: #1f2937;
+  font-size: 22px;
+  font-weight: 600;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 15px;
+  position: relative;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.form-details-review h4::before {
+  content: '\f046';
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  margin-right: 12px;
+  color: #1890ff;
+  font-size: 20px;
+}
+
+/* Approval status in form review */
+.form-details-review .approval-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.form-details-review .approval-status.approved {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.form-details-review .approval-status.rejected {
+  background-color: #fff2f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.form-details-review .approval-status i {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+/* Form split view styling */
+.form-split-content {
+  margin-bottom: 28px;
+  border-bottom: 1px dashed #eaecef;
+  padding-bottom: 20px;
+}
+
+.form-split-content:last-child {
+  border-bottom: none;
+  margin-bottom: 20px;
+}
+
+.form-field-label h5 {
+  margin: 0 0 15px 0;
+  color: #334155;
+  font-size: 17px;
+  font-weight: 600;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.form-field-split {
+  display: flex;
+  gap: 20px;
+}
+
+.form-field-previous,
+.form-field-current {
+  flex: 1;
+  position: relative;
+  padding: 28px 15px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.form-field-previous {
+  background-color: #f8fafc;
+  border: 1px solid #eaecef;
+}
+
+.form-field-current {
+  background-color: #f9fafb;
+  border: 1px solid #e8e8e8;
+}
+
+.form-field-current.highlight-changed {
+  background-color: #fff9f0;
+  border: 1px solid #ffd591;
+  box-shadow: 0 2px 8px rgba(250, 173, 20, 0.12);
+}
+
+.form-field-previous p,
+.form-field-current p {
+  margin: 0;
+  padding: 12px 15px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1e293b;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.form-field-current.highlight-changed p {
+  border-left: 3px solid #faad14;
+}
+
+.form-details-review .version-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  background-color: rgba(0,0,0,0.03);
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Submission dates styling */
+.submission-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.submission-date {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  width: fit-content;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.submission-date.user-date {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.submission-date.reviewer-date {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+/* Review actions styling */
+.review-actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid #eaecef;
+}
+
+.submit-review-btn, .reject-review-btn {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.submit-review-btn {
+  background-color: #52c41a;
+  color: white;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.submit-review-btn:hover:not(:disabled) {
+  background-color: #73d13d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.reject-review-btn {
+  background-color: #f5222d;
+  color: white;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.reject-review-btn:hover:not(:disabled) {
+  background-color: #ff4d4f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submit-review-btn:disabled, .reject-review-btn:disabled {
+  background-color: #d9d9d9;
+  color: #8c8c8c;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.review-complete-notice {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background-color: #f6ffed;
+  color: #52c41a;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.review-complete-notice::before {
+  content: '\f058';
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+}
+
+.review-warning {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background-color: #fff7e6;
+  color: #fa8c16;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.review-warning i {
+  font-size: 16px;
 }
 
 /* Responsive adjustments */
@@ -1938,121 +2401,210 @@ h3 {
 
 /* Add these styles for the form details review */
 .form-details-review {
-  margin: 30px 0;
-  padding: 20px;
-  background-color: #f6f8fa;
-  border-radius: 8px;
+  margin-top: 40px;
+  padding: 25px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #eaecef;
+  position: relative;
 }
 
 .form-details-review h4 {
   margin-top: 0;
   margin-bottom: 20px;
   color: #2c3e50;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
-  padding-bottom: 10px;
   border-bottom: 1px solid #eaecef;
+  padding-bottom: 15px;
+  position: relative;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.form-details-review h4::before {
+  content: '\f046';
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  margin-right: 12px;
+  color: #1890ff;
+  font-size: 20px;
 }
 
 .form-review-item {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 1px dashed #eaecef;
 }
 
 .form-review-item:last-child {
   border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+  margin-bottom: 20px;
 }
 
 .form-review-item h5 {
-  margin: 0 0 8px 0;
-  color: #606266;
-  font-size: 14px;
+  margin: 0 0 10px 0;
+  color: #5c6b77;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .form-review-item p {
   margin: 0;
-  color: #2c3e50;
-  font-size: 14px;
-  line-height: 1.5;
-  background-color: white;
-  padding: 10px;
-  border-radius: 4px;
-  border-left: 3px solid #1890ff;
+  padding: 12px 15px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  color: #3c4858;
+  font-size: 15px;
+  line-height: 1.6;
+  position: relative;
+  padding-left: 20px;
 }
 
-/* Add these styles for questionnaire approval */
+.form-review-item.approved p {
+  background-color: #f6ffed;
+  border-left: 4px solid #52c41a;
+}
+
+.form-review-item.rejected p {
+  background-color: #fff2f0;
+  border-left: 4px solid #f5222d;
+}
+
+.submission-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+/* Questionnaire approval section */
 .questionnaire-approval {
-  margin-top: 20px;
-  padding-top: 15px;
+  margin-top: 25px;
+  padding-top: 20px;
   border-top: 1px solid #eaecef;
 }
 
-.approval-status {
-  padding: 10px 15px;
-  margin-bottom: 15px;
-  border-radius: 6px;
+/* Approval status in form review */
+.form-details-review .approval-status {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.approval-status.approved {
+.form-details-review .approval-status.approved {
   background-color: #f6ffed;
   color: #52c41a;
   border: 1px solid #b7eb8f;
 }
 
-.approval-status.rejected {
-  background-color: #fff1f0;
+.form-details-review .approval-status.rejected {
+  background-color: #fff2f0;
   color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
-.approval-actions {
-  display: flex;
-  gap: 10px;
+.form-details-review .approval-status i {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+/* Reviewer remarks styling */
+.reviewer-remarks {
   margin-top: 10px;
-}
-
-.approval-warning {
-  color: #fa8c16;
-  font-size: 14px;
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.approval-warning i {
-  font-size: 16px;
-}
-
-.questionnaire-feedback {
-  margin-top: 20px;
-  padding: 15px;
+  padding: 12px 15px;
   background-color: #fff2f0;
-  border-radius: 6px;
-  border-left: 4px solid #ff4d4f;
-}
-
-.questionnaire-feedback h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #ff4d4f;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-}
-
-.questionnaire-feedback p {
-  margin: 0;
+  border-radius: 8px;
+  border-left: 3px solid #f5222d;
   font-size: 14px;
-  color: #434343;
-  line-height: 1.5;
+  color: #5c6b77;
+}
+
+.reviewer-remarks strong {
+  color: #f5222d;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Form split view styling */
+.form-split-content {
+  margin-bottom: 25px;
+  border-bottom: 1px dashed #eaecef;
+  padding-bottom: 15px;
+}
+
+.form-split-content:last-child {
+  border-bottom: none;
+  margin-bottom: 20px;
+}
+
+.form-field-label h5 {
+  margin: 0 0 10px 0;
+  color: #5c6b77;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.form-field-split {
+  display: flex;
+  gap: 20px;
+}
+
+.form-field-previous,
+.form-field-current {
+  flex: 1;
+  position: relative;
+  padding: 25px 15px 15px;
+  border-radius: 8px;
+}
+
+.form-field-previous {
+  background-color: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.form-field-current {
+  background-color: #f9fafb;
+  border: 1px solid #e8e8e8;
+}
+
+.form-field-current.highlight-changed {
+  background-color: #fff9f0;
+  border: 1px solid #ffd591;
+}
+
+.form-field-previous p,
+.form-field-current p {
+  margin: 0;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #262626;
+}
+
+.form-field-current.highlight-changed p {
+  border-left: 3px solid #faad14;
+}
+
+.form-details-review .version-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8c8c8c;
+  background-color: rgba(0,0,0,0.02);
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
 }

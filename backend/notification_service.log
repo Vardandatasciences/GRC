@@ -1,0 +1,39 @@
+2025-06-01 01:47:56,138 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 01:48:25,011 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 01:48:55,941 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 01:49:04,254 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 01:49:18,451 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:03,057 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:12,607 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:21,215 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:28,699 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\urls.py changed, reloading.
+2025-06-01 02:25:36,193 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:45,943 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:25:57,842 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:26:53,463 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\urls.py changed, reloading.
+2025-06-01 02:28:08,723 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskMitigationAssigned
+2025-06-01 02:41:25,881 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:41:40,540 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:41:47,499 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:42:13,775 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:42:49,471 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:42:57,124 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:43:39,498 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:46:08,251 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\notification_service.py changed, reloading.
+2025-06-01 02:48:00,396 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:48:07,970 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:50:30,018 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:50:51,242 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:51:04,271 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:51:12,471 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:51:57,736 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskScoreUpdated
+2025-06-01 02:52:01,625 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskScoreUpdated
+2025-06-01 02:52:04,170 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskScoreUpdated
+2025-06-01 02:52:07,806 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskScoreUpdated
+2025-06-01 02:53:24,754 - django.request - ERROR - Internal Server Error: /api/assign-reviewer/
+2025-06-01 02:54:25,188 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:54:33,347 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:54:53,294 - django.request - ERROR - Internal Server Error: /api/assign-reviewer/
+2025-06-01 02:56:27,761 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:56:35,336 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
+2025-06-01 02:56:57,336 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskMitigationCompleted

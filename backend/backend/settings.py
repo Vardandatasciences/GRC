@@ -126,7 +126,7 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -150,4 +150,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
+    'DATE_FORMAT': '%Y-%m-%d',
+    'DATE_INPUT_FORMATS': ['%Y-%m-%d', 'iso-8601'],
+    'DATETIME_INPUT_FORMATS': ['%Y-%m-%dT%H:%M:%S', 'iso-8601'],
+    'COERCE_DECIMAL_TO_STRING': False,
 }

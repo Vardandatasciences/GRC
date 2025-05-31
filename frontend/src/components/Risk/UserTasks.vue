@@ -86,6 +86,9 @@
             <p><strong>Priority:</strong> {{ risk.RiskPriority }}</p>
             <p><strong>Assigned To:</strong> {{ getUserName(risk.UserId) }}</p>
             
+            <!-- Add the last submitted date if available -->
+            <p v-if="risk.last_submitted"><strong>Last Submitted:</strong> {{ formatDateTime(risk.last_submitted) }}</p>
+            
             <!-- Show rejection message if applicable -->
             <div v-if="risk.RiskStatus === 'Revision Required'" class="rejection-notice">
               <p><strong>Your submission requires revision.</strong></p>
@@ -180,6 +183,9 @@
             </p>
             <p><strong>Priority:</strong> {{ task.RiskPriority }}</p>
             <p><strong>Submitted By:</strong> {{ getUserName(task.UserId) }}</p>
+            
+            <!-- Add the submission date from ExtractedInfo -->
+            <p v-if="getSubmissionDate(task)"><strong>Submitted Date:</strong> {{ formatDateTime(getSubmissionDate(task)) }}</p>
           </div>
           
           <div class="action-buttons">
@@ -235,6 +241,14 @@
                 <!-- Step content -->
                 <div class="step-box">
                   <h3>{{ step.description }}</h3>
+                  
+                  <!-- Add submission dates when available -->
+                  <div v-if="step.user_submitted_date" class="submission-date user-date">
+                    <i class="fas fa-clock"></i> Submitted: {{ formatDateTime(step.user_submitted_date) }}
+                  </div>
+                  <div v-if="step.reviewer_submitted_date" class="submission-date reviewer-date">
+                    <i class="fas fa-clock"></i> Reviewed: {{ formatDateTime(step.reviewer_submitted_date) }}
+                  </div>
                   
                   <!-- Status indicators -->
                   <div v-if="step.approved === true" class="status-tag approved">
@@ -320,9 +334,24 @@
               </div>
             </div>
             
-            <!-- Add this after the timeline and before the submission area -->
+            <!-- Update the mitigation-questionnaire div in the mitigation modal -->
             <div class="mitigation-questionnaire" v-if="allStepsCompleted">
               <h3>Risk Mitigation Questionnaire</h3>
+              
+              <!-- Add questionnaire status indicator -->
+              <div v-if="questionnaireReviewed" class="questionnaire-status" :class="{ 'approved': questionnaireApproved, 'rejected': !questionnaireApproved }">
+                <i class="fas" :class="questionnaireApproved ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                {{ questionnaireApproved ? 'Approved' : 'Revision Required' }}
+                
+                <!-- Add submission dates when available -->
+                <div v-if="formDetails.user_submitted_date" class="submission-date user-date">
+                  <i class="fas fa-clock"></i> Submitted: {{ formatDateTime(formDetails.user_submitted_date) }}
+                </div>
+                <div v-if="formDetails.reviewer_submitted_date" class="submission-date reviewer-date">
+                  <i class="fas fa-clock"></i> Reviewed: {{ formatDateTime(formDetails.reviewer_submitted_date) }}
+                </div>
+              </div>
+              
               <p class="questionnaire-note">Please complete all fields to proceed with submission</p>
               
               <div class="question-group">
@@ -331,49 +360,49 @@
                   id="cost-input" 
                   v-model="formDetails.cost" 
                   placeholder="Describe the cost..."
-                  :disabled="!allStepsCompleted"
+                  :disabled="questionnaireApproved || !allStepsCompleted"
                   @input="validateQuestionnaire"
                 ></textarea>
               </div>
               
-              <div class="question-group" :class="{ 'disabled': !formDetails.cost }">
+              <div class="question-group" :class="{ 'disabled': !formDetails.cost && !questionnaireApproved }">
                 <label for="impact-input">What is the impact for this mitigation?</label>
                 <textarea 
                   id="impact-input" 
                   v-model="formDetails.impact" 
                   placeholder="Describe the impact..."
-                  :disabled="!formDetails.cost"
+                  :disabled="(questionnaireApproved || !formDetails.cost) && !questionnaireRejected"
                   @input="validateQuestionnaire"
                 ></textarea>
               </div>
               
-              <div class="question-group" :class="{ 'disabled': !formDetails.impact }">
+              <div class="question-group" :class="{ 'disabled': !formDetails.impact && !questionnaireApproved }">
                 <label for="financial-impact-input">What is the financial impact for this mitigation?</label>
                 <textarea 
                   id="financial-impact-input" 
                   v-model="formDetails.financialImpact" 
                   placeholder="Describe the financial impact..."
-                  :disabled="!formDetails.impact"
+                  :disabled="(questionnaireApproved || !formDetails.impact) && !questionnaireRejected"
                   @input="validateQuestionnaire"
                 ></textarea>
               </div>
               
-              <div class="question-group" :class="{ 'disabled': !formDetails.financialImpact }">
+              <div class="question-group" :class="{ 'disabled': !formDetails.financialImpact && !questionnaireApproved }">
                 <label for="reputational-impact-input">What is the reputational impact for this mitigation?</label>
                 <textarea 
                   id="reputational-impact-input" 
                   v-model="formDetails.reputationalImpact" 
                   placeholder="Describe the reputational impact..."
-                  :disabled="!formDetails.financialImpact"
+                  :disabled="(questionnaireApproved || !formDetails.financialImpact) && !questionnaireRejected"
                   @input="validateQuestionnaire"
                 ></textarea>
               </div>
-            </div>
-            
-            <!-- Add to the mitigation-questionnaire div, after the questionnaire fields -->
-            <div v-if="questionnaireRejected" class="questionnaire-feedback">
-              <h4><i class="fas fa-exclamation-circle"></i> Reviewer Feedback</h4>
-              <p>{{ questionnaireRemarks }}</p>
+              
+              <!-- Add to the mitigation-questionnaire div, after the questionnaire fields -->
+              <div v-if="questionnaireRejected" class="questionnaire-feedback">
+                <h4><i class="fas fa-exclamation-circle"></i> Reviewer Feedback</h4>
+                <p>{{ questionnaireRemarks }}</p>
+              </div>
             </div>
             
             <!-- Update the submission-area div to check for questionnaire completion -->
@@ -439,6 +468,7 @@
               </div>
             </div>
             
+            <!-- Mitigation review list with split view design -->
             <div class="mitigation-review-list">
               <div 
                 v-for="(mitigation, id) in mitigationReviewData" 
@@ -446,33 +476,145 @@
                 class="mitigation-review-item"
                 :data-id="id"
               >
-                <div class="mitigation-description">
+                <!-- Mitigation header with status badge -->
+                <div class="mitigation-heading">
                   <h4>Mitigation #{{ id }}</h4>
-                  <p>{{ mitigation.description }}</p>
                   
-                  <!-- Display user comments if available -->
-                  <div v-if="mitigation.comments" class="user-comments">
-                    <h5>User Comments:</h5>
-                    <p class="comment-text">{{ mitigation.comments }}</p>
-                  </div>
-                  
-                  <!-- Display uploaded file if available -->
-                  <div v-if="mitigation.fileData" class="uploaded-evidence">
-                    <h5>Uploaded Evidence:</h5>
-                    <a :href="mitigation.fileData" download :filename="mitigation.fileName" class="evidence-link">
-                      <i class="fas fa-file-download"></i> {{ mitigation.fileName }}
-                    </a>
-                  </div>
-                  
-                  <!-- Add a status indicator when approved -->
-                  <div v-if="mitigation.approved === true" class="approval-status approved">
-                    <i class="fas fa-check-circle"></i> Approved
+                  <!-- Status badge -->
+                  <div v-if="mitigation.approved !== undefined" 
+                      class="mitigation-status-badge" 
+                      :class="{ 
+                        'approved': mitigation.approved === true, 
+                        'rejected': mitigation.approved === false,
+                        'pending': mitigation.approved === undefined
+                      }">
+                    <i class="fas" :class="{
+                      'fa-check-circle': mitigation.approved === true,
+                      'fa-times-circle': mitigation.approved === false,
+                      'fa-clock': mitigation.approved === undefined
+                    }"></i>
+                    {{ mitigation.approved === true ? 'Approved' : 
+                       mitigation.approved === false ? 'Rejected' : 'Pending Review' }}
                   </div>
                 </div>
                 
+                <!-- Split view container -->
+                <div class="mitigation-split-content">
+                  <!-- Previous version (left side) -->
+                  <div class="mitigation-previous">
+                    <div class="version-label">Previous Version</div>
+                    
+                    <div v-if="getPreviousMitigation(id)" class="mitigation-content">
+                      <h5>Description</h5>
+                      <p>{{ getPreviousMitigation(id).description || 'No description available' }}</p>
+                      
+                      <!-- Previous metadata section -->
+                      <div class="metadata-section">
+                        <h5>Metadata</h5>
+                        <div class="metadata-item">
+                          <div class="metadata-label">Status:</div>
+                          <div class="metadata-value">{{ getPreviousMitigation(id).status || 'Not specified' }}</div>
+                        </div>
+                        <div v-if="getPreviousMitigation(id).user_submitted_date" class="metadata-item">
+                          <div class="metadata-label">Submitted:</div>
+                          <div class="metadata-value">{{ formatDateTime(getPreviousMitigation(id).user_submitted_date) }}</div>
+                        </div>
+                      </div>
+                      
+                      <!-- Previous comments -->
+                      <div v-if="getPreviousMitigation(id).comments" class="comments-section">
+                        <h5><i class="fas fa-comment-alt"></i> User Comments</h5>
+                        <p class="comments-text">{{ getPreviousMitigation(id).comments }}</p>
+                      </div>
+                      
+                      <!-- Previous evidence -->
+                      <div v-if="getPreviousMitigation(id).fileData" class="evidence-section">
+                        <h5><i class="fas fa-file-alt"></i> Evidence</h5>
+                        <a :href="getPreviousMitigation(id).fileData" download :filename="getPreviousMitigation(id).fileName" class="evidence-link">
+                          <i class="fas fa-download"></i> {{ getPreviousMitigation(id).fileName }}
+                        </a>
+                      </div>
+                      
+                      <!-- Previous decision -->
+                      <div v-if="getPreviousMitigation(id).approved !== undefined" class="decision-tag" 
+                           :class="{ 
+                             'approved': getPreviousMitigation(id).approved === true, 
+                             'rejected': getPreviousMitigation(id).approved === false 
+                           }">
+                        <i class="fas" :class="{
+                          'fa-check-circle': getPreviousMitigation(id).approved === true,
+                          'fa-times-circle': getPreviousMitigation(id).approved === false
+                        }"></i>
+                        {{ getPreviousMitigation(id).approved ? 'Approved' : 'Rejected' }}
+                      </div>
+                    </div>
+                    
+                    <!-- Empty state for no previous version -->
+                    <div v-else class="mitigation-empty">
+                      <i class="fas fa-history"></i>
+                      <p>No previous version available</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Current version (right side) -->
+                  <div class="mitigation-current">
+                    <div class="version-label">Current Version</div>
+                    
+                    <div class="mitigation-content">
+                      <h5>Description</h5>
+                      <p>{{ mitigation.description }}</p>
+                      
+                      <!-- Current metadata -->
+                      <div class="metadata-section">
+                        <h5>Metadata</h5>
+                        <div class="metadata-item">
+                          <div class="metadata-label">Status:</div>
+                          <div class="metadata-value">{{ mitigation.status || 'Not specified' }}</div>
+                        </div>
+                        <div v-if="mitigation.user_submitted_date" class="metadata-item">
+                          <div class="metadata-label">Submitted:</div>
+                          <div class="metadata-value">{{ formatDateTime(mitigation.user_submitted_date) }}</div>
+                        </div>
+                        <div v-if="mitigation.reviewer_submitted_date" class="metadata-item">
+                          <div class="metadata-label">Reviewed:</div>
+                          <div class="metadata-value">{{ formatDateTime(mitigation.reviewer_submitted_date) }}</div>
+                        </div>
+                      </div>
+                      
+                      <!-- Current comments -->
+                      <div v-if="mitigation.comments" class="comments-section">
+                        <h5><i class="fas fa-comment-alt"></i> User Comments</h5>
+                        <p class="comments-text">{{ mitigation.comments }}</p>
+                      </div>
+                      
+                      <!-- Current evidence -->
+                      <div v-if="mitigation.fileData" class="evidence-section">
+                        <h5><i class="fas fa-file-alt"></i> Evidence</h5>
+                        <a :href="mitigation.fileData" download :filename="mitigation.fileName" class="evidence-link">
+                          <i class="fas fa-download"></i> {{ mitigation.fileName }}
+                        </a>
+                      </div>
+                      
+                      <!-- Current decision -->
+                      <div v-if="mitigation.approved !== undefined" class="decision-tag" 
+                           :class="{ 
+                             'approved': mitigation.approved === true, 
+                             'rejected': mitigation.approved === false 
+                           }">
+                        <i class="fas" :class="{
+                          'fa-check-circle': mitigation.approved === true,
+                          'fa-times-circle': mitigation.approved === false
+                        }"></i>
+                        {{ mitigation.approved ? 'Approved' : 'Rejected' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Approval controls section -->
                 <div class="approval-controls">
                   <!-- Only show approval buttons if not yet approved or rejected -->
-                  <div v-if="mitigation.approved !== true && mitigation.approved !== false" class="approval-buttons">
+                  <div v-if="mitigation.approved !== true && mitigation.approved !== false && !reviewCompleted" class="approval-buttons">
                     <button 
                       @click="approveMitigation(id, true)" 
                       class="approve-btn"
@@ -488,18 +630,18 @@
                   </div>
                   
                   <!-- Show remarks field only when rejected -->
-                  <div v-if="mitigation.approved === false" class="remarks-field">
-                    <label for="remarks">Remarks (required for rejection):</label>
+                  <div v-if="mitigation.approved === false && !reviewCompleted" class="remarks-field">
+                    <label for="remarks">Feedback (required for rejection):</label>
                     <textarea 
                       id="remarks" 
                       v-model="mitigation.remarks" 
                       class="remarks-input" 
-                      placeholder="Provide feedback for the rejected mitigation..."
+                      placeholder="Provide feedback explaining why this mitigation was rejected..."
                     ></textarea>
                     
                     <!-- Add a button to save remarks -->
                     <button @click="updateRemarks(id)" class="save-remarks-btn">
-                      <i class="fas fa-save"></i> Save Remarks
+                      <i class="fas fa-save"></i> Save Feedback
                     </button>
                     
                     <!-- Allow changing decision -->
@@ -509,10 +651,16 @@
                   </div>
                   
                   <!-- Show status and action buttons for approved items -->
-                  <div v-if="mitigation.approved === true" class="approved-actions">
+                  <div v-if="mitigation.approved === true && !reviewCompleted" class="approved-actions">
                     <button @click="approveMitigation(id, false)" class="change-decision-btn">
                       <i class="fas fa-exchange-alt"></i> Change to Reject
                     </button>
+                  </div>
+                  
+                  <!-- Show remarks if already rejected and submitted -->
+                  <div v-if="mitigation.approved === false && reviewCompleted && mitigation.remarks" class="reviewer-remarks-display">
+                    <h5><i class="fas fa-comment-exclamation"></i> Rejection Feedback</h5>
+                    <p>{{ mitigation.remarks }}</p>
                   </div>
                 </div>
               </div>
@@ -522,28 +670,48 @@
             <div class="form-details-review">
               <h4>Risk Mitigation Questionnaire</h4>
               
-              <div class="form-review-item">
-                <h5>Cost for Mitigation:</h5>
-                <p>{{ formDetails.cost || 'Not specified' }}</p>
+              <!-- Add status badge at the top -->
+              <div v-if="formDetails.approved !== undefined" class="approval-status" :class="{ 
+                'approved': formDetails.approved, 
+                'rejected': formDetails.approved === false 
+              }">
+                <i class="fas" :class="formDetails.approved ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                {{ formDetails.approved ? 'Questionnaire Approved' : 'Revisions Requested' }}
               </div>
               
-              <div class="form-review-item">
-                <h5>Impact for Mitigation:</h5>
-                <p>{{ formDetails.impact || 'Not specified' }}</p>
+              <!-- Add submission dates when available -->
+              <div class="submission-dates">
+                <div v-if="formDetails.user_submitted_date" class="submission-date user-date">
+                  <i class="fas fa-clock"></i> Submitted: {{ formatDateTime(formDetails.user_submitted_date) }}
+                </div>
+                <div v-if="formDetails.reviewer_submitted_date" class="submission-date reviewer-date">
+                  <i class="fas fa-check-circle"></i> Reviewed: {{ formatDateTime(formDetails.reviewer_submitted_date) }}
+                </div>
               </div>
               
-              <div class="form-review-item">
-                <h5>Financial Impact:</h5>
-                <p>{{ formDetails.financialImpact || 'Not specified' }}</p>
-              </div>
-              
-              <div class="form-review-item">
-                <h5>Reputational Impact:</h5>
-                <p>{{ formDetails.reputationalImpact || 'Not specified' }}</p>
+              <!-- Split view for each form item -->
+              <div class="form-split-content" v-for="field in ['cost', 'impact', 'financialImpact', 'reputationalImpact']" :key="field">
+                <div class="form-field-label">
+                  <h5>{{ getFieldLabel(field) }}:</h5>
+                </div>
+                
+                <div class="form-field-split">
+                  <!-- Previous version -->
+                  <div class="form-field-previous" v-if="previousFormDetails">
+                    <div class="version-label">Previous Version</div>
+                    <p>{{ getPreviousFormDetail(field) }}</p>
+                  </div>
+                  
+                  <!-- Current version -->
+                  <div class="form-field-current" :class="{ 'highlight-changed': hasFormFieldChanged(field) }">
+                    <div class="version-label">Current Version</div>
+                    <p>{{ formDetails[field] || 'Not specified' }}</p>
+                  </div>
+                </div>
               </div>
               
               <!-- Add questionnaire approval controls -->
-              <div class="questionnaire-approval">
+              <div class="questionnaire-approval" v-if="!reviewCompleted">
                 <div v-if="formDetails.approved === undefined" class="approval-buttons">
                   <button @click="approveQuestionnaire(true)" class="approve-btn">
                     <i class="fas fa-check"></i> Approve Questionnaire
@@ -650,7 +818,8 @@ export default {
         financialImpact: '',
         reputationalImpact: ''
       },
-      latestReview: null
+      previousVersions: {},
+      previousFormDetails: null
     }
   },
   computed: {
@@ -675,6 +844,17 @@ export default {
         (this.formDetails.approved === false && this.formDetails.remarks && this.formDetails.remarks.trim() !== '');
       
       return allMitigationsReviewed && questionnaireReviewed;
+    },
+    questionnaireReviewed() {
+      return this.latestReview && 
+             this.latestReview.risk_form_details && 
+             (this.latestReview.risk_form_details.approved === true || 
+              this.latestReview.risk_form_details.approved === false);
+    },
+    questionnaireApproved() {
+      return this.latestReview && 
+             this.latestReview.risk_form_details && 
+             this.latestReview.risk_form_details.approved === true;
     },
     questionnaireRejected() {
       return this.latestReview && 
@@ -724,6 +904,21 @@ export default {
       .then(([userResponse, reviewerResponse]) => {
         this.userRisks = userResponse.data;
         this.reviewerTasks = reviewerResponse.data;
+        
+        // Add last submitted date to user risks by fetching latest review
+        this.userRisks.forEach(risk => {
+          axios.get(`http://localhost:8000/api/latest-review/${risk.RiskInstanceId}/`)
+            .then(response => {
+              if (response.data && response.data.user_submitted_date) {
+                this.$set(risk, 'last_submitted', response.data.user_submitted_date);
+              } else if (response.data && response.data.submission_date) {
+                this.$set(risk, 'last_submitted', response.data.submission_date);
+              }
+            })
+            .catch(error => {
+              console.error(`Error fetching latest review for risk ${risk.RiskInstanceId}:`, error);
+            });
+        });
         
         console.log('User risks:', this.userRisks); // Log to verify data
         
@@ -830,6 +1025,17 @@ export default {
                   // Store the latest review
                   this.latestReview = reviewData;
                   
+                  // Update form details with submission dates from the review data
+                  if (reviewData && reviewData.risk_form_details) {
+                    this.formDetails = {
+                      ...this.formDetails,
+                      approved: reviewData.risk_form_details.approved,
+                      remarks: reviewData.risk_form_details.remarks || '',
+                      user_submitted_date: reviewData.user_submitted_date || reviewData.submission_date,
+                      reviewer_submitted_date: reviewData.reviewer_submitted_date || reviewData.review_date
+                    };
+                  }
+                  
                   if (reviewData && reviewData.mitigations) {
                     // Create new steps array with proper boolean values for approved
                     const updatedSteps = [];
@@ -852,7 +1058,9 @@ export default {
                         remarks: mitigation.remarks || '',
                         comments: mitigation.comments || '',
                         fileData: mitigation.fileData,
-                        fileName: mitigation.fileName
+                        fileName: mitigation.fileName,
+                        user_submitted_date: mitigation.user_submitted_date,  // Add user submission date
+                        reviewer_submitted_date: mitigation.reviewer_submitted_date  // Add reviewer submission date
                       });
                     });
                     
@@ -1037,12 +1245,18 @@ export default {
         }
       });
       
+      // Add timestamp to form details
+      const formDetailsWithTimestamp = {
+        ...this.formDetails,
+        user_submitted_date: new Date().toISOString()
+      };
+      
       axios.post('http://localhost:8000/api/assign-reviewer/', {
         risk_id: this.selectedRiskId,
         reviewer_id: this.selectedReviewer,
         user_id: this.selectedUserId,
         mitigations: mitigationData,
-        risk_form_details: this.formDetails  // Add the form details here
+        risk_form_details: formDetailsWithTimestamp  // Use the updated form details with timestamp
       })
       .then(response => {
         console.log('Reviewer assigned:', response.data);
@@ -1078,28 +1292,36 @@ export default {
       this.mitigationReviewData = {};
     },
     approveMitigation(id, approved) {
-      // Update the mitigation approval status locally
-      this.mitigationReviewData[id].approved = approved;
+      // Don't use this.$set directly - modify the object properly for Vue reactivity
       
-      // If approved, clear any existing remarks (no need for remarks on approved items)
+      // Create a new object with all existing properties
+      const updatedMitigation = {
+        ...this.mitigationReviewData[id],
+        approved: approved,
+        reviewer_submitted_date: new Date().toISOString()
+      };
+      
+      // If approved, clear any existing remarks
       if (approved) {
-        this.mitigationReviewData[id].remarks = '';
+        updatedMitigation.remarks = '';
       }
       
-      // Find the mitigation element without declaring unused statusText variable
+      // Update the entire object at once (Vue will detect this change)
+      this.mitigationReviewData = {
+        ...this.mitigationReviewData,
+        [id]: updatedMitigation
+      };
+      
+      // Find the mitigation element and update visual feedback
       const mitigationElement = document.querySelector(`.mitigation-review-item[data-id="${id}"]`);
       if (mitigationElement) {
         // Update visual feedback
-        if (approved) {
-          const approvalStatus = mitigationElement.querySelector('.approval-status') || 
-            document.createElement('div');
-          approvalStatus.className = 'approval-status approved';
-          approvalStatus.innerHTML = '<i class="fas fa-check-circle"></i> Approved';
-          
-          // Add it if not already present
-          if (!mitigationElement.querySelector('.approval-status')) {
-            mitigationElement.querySelector('.mitigation-description').appendChild(approvalStatus);
-          }
+        const statusBadge = mitigationElement.querySelector('.mitigation-status-badge');
+        if (statusBadge) {
+          statusBadge.className = `mitigation-status-badge ${approved ? 'approved' : 'rejected'}`;
+          statusBadge.innerHTML = approved ? 
+            '<i class="fas fa-check-circle"></i> Approved' : 
+            '<i class="fas fa-times-circle"></i> Rejected';
         }
       }
     },
@@ -1157,37 +1379,13 @@ export default {
         return;
       }
       
-      // Now update the backend with rejection and remarks
-      this.updateMitigationOnServer(id);
-    },
-    updateMitigationOnServer(id) {
-      const mitigation = this.mitigationReviewData[id];
+      // Create a new object with spread operator to trigger reactivity
+      this.mitigationReviewData = {
+        ...this.mitigationReviewData
+      };
       
-      // Instead of sending to server, just update locally
-      console.log(`Mitigation ${id} approval status updated locally: approved=${mitigation.approved}, remarks=${mitigation.remarks}`);
-      
-      // Create visual confirmation without using the statusText variable
-      const icon = document.createElement('span');
-      icon.className = `status-update-confirmation ${mitigation.approved ? 'approved' : 'rejected'}`;
-      icon.innerHTML = mitigation.approved ? 
-        '<i class="fas fa-check"></i> Saved' : 
-        '<i class="fas fa-times"></i> Saved';
-      
-      // Find the mitigation element and append the confirmation
-      const mitigationElement = document.querySelector(`.mitigation-review-item[data-id="${id}"]`);
-      if (mitigationElement) {
-        // Remove any existing confirmation
-        const existingConfirmation = mitigationElement.querySelector('.status-update-confirmation');
-        if (existingConfirmation) {
-          existingConfirmation.remove();
-        }
-        mitigationElement.querySelector('.approval-controls').appendChild(icon);
-        
-        // Remove the confirmation after 2 seconds
-        setTimeout(() => {
-          icon.remove();
-        }, 2000);
-      }
+      // Show visual confirmation
+      console.log(`Mitigation ${id} remarks updated successfully`);
     },
     handleFileUpload(event, index) {
       const file = event.target.files[0];
@@ -1202,9 +1400,32 @@ export default {
       
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Store file data as base64 string
+        // Store file data as base64 string for preview
         this.mitigationSteps[index].fileData = e.target.result;
         this.mitigationSteps[index].fileName = file.name;
+        
+        // First save locally, then upload to S3
+        axios.post('http://localhost:8000/api/save-uploaded-file/', {
+          fileData: e.target.result,
+          fileName: file.name,
+          riskId: this.selectedRiskId,
+          category: this.userRisks.find(r => r.RiskInstanceId === this.selectedRiskId)?.Category || 'general',
+          mitigationNumber: index + 1
+        })
+        .then(response => {
+          console.log('File processed successfully:', response.data);
+          
+          // Store the S3 information
+          this.mitigationSteps[index].savedFileName = response.data.savedFileName;
+          this.mitigationSteps[index].s3FileInfo = response.data.s3FileInfo;
+          
+          // Optional: Add alert or notification
+          alert('File uploaded successfully');
+        })
+        .catch(error => {
+          console.error('Error processing file:', error);
+          alert('Error uploading file. Please try again.');
+        });
       };
       reader.readAsDataURL(file);
     },
@@ -1360,6 +1581,7 @@ export default {
       this.selectedRiskId = task.RiskInstanceId;
       this.loadingMitigations = true;
       this.showReviewerModal = true;
+      this.previousVersions = {}; // Initialize empty object for previous versions
       
       try {
         // Extract the mitigations from the ExtractedInfo JSON
@@ -1378,7 +1600,9 @@ export default {
               financialImpact: extractedInfo.risk_form_details.financialImpact || '',
               reputationalImpact: extractedInfo.risk_form_details.reputationalImpact || '',
               approved: extractedInfo.risk_form_details.approved,
-              remarks: extractedInfo.risk_form_details.remarks || ''
+              remarks: extractedInfo.risk_form_details.remarks || '',
+              user_submitted_date: extractedInfo.risk_form_details.user_submitted_date || extractedInfo.user_submitted_date,
+              reviewer_submitted_date: extractedInfo.risk_form_details.reviewer_submitted_date
             };
           } else {
             // Reset form details to empty
@@ -1392,16 +1616,27 @@ export default {
             };
           }
           
+          // Get previous versions from the task data that now includes it
+          if (task.PreviousVersion && task.PreviousVersion.mitigations) {
+            this.previousVersions = task.PreviousVersion.mitigations;
+            
+            // If there are previous form details, save them for comparison
+            if (task.PreviousVersion.risk_form_details) {
+              this.previousFormDetails = task.PreviousVersion.risk_form_details;
+            }
+          }
+          
           // Add task status info for completed tasks
           const isCompleted = task.RiskStatus === 'Approved' || task.RiskStatus === 'Revision Required';
           this.reviewCompleted = isCompleted;
           this.reviewApproved = task.RiskStatus === 'Approved';
+          
+          this.loadingMitigations = false;
         } else {
           this.mitigationReviewData = {};
           console.error('No mitigations found in ExtractedInfo');
+          this.loadingMitigations = false;
         }
-        
-        this.loadingMitigations = false;
       } catch (error) {
         console.error('Error parsing ExtractedInfo:', error);
         this.mitigationReviewData = {};
@@ -1409,8 +1644,11 @@ export default {
       }
     },
     approveQuestionnaire(approved) {
-      // Don't use this.$set directly, just update the property
+      // Update approval status
       this.formDetails.approved = approved;
+      
+      // Add timestamp for reviewer
+      this.formDetails.reviewer_submitted_date = new Date().toISOString();
       
       // If rejecting, ensure there's a remarks field
       if (!approved && !this.formDetails.remarks) {
@@ -1431,6 +1669,58 @@ export default {
       
       // Show confirmation to the user
       alert('Questionnaire feedback saved');
+    },
+    // Format date and time
+    formatDateTime(dateString) {
+      if (!dateString) return '';
+      
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    },
+    // Extract submission date from task
+    getSubmissionDate(task) {
+      try {
+        if (task.ExtractedInfo) {
+          const extractedInfo = JSON.parse(task.ExtractedInfo);
+          return extractedInfo.user_submitted_date || extractedInfo.submission_date;
+        }
+      } catch (error) {
+        console.error('Error parsing submission date:', error);
+      }
+      return null;
+    },
+    getPreviousMitigation(id) {
+      // Check if we have previous versions stored
+      if (!this.previousVersions || !this.previousVersions[id]) {
+        return null;
+      }
+      return this.previousVersions[id];
+    },
+    getPreviousFormDetail(field) {
+      if (!this.previousFormDetails) {
+        return null;
+      }
+      return this.previousFormDetails[field] || 'Not specified';
+    },
+    // Add this method to check if form field has changed
+    hasFormFieldChanged(field) {
+      if (!this.previousFormDetails) {
+        return false;
+      }
+      
+      const prevValue = this.previousFormDetails[field] || '';
+      const currentValue = this.formDetails[field] || '';
+      
+      return prevValue !== currentValue;
+    },
+    getFieldLabel(field) {
+      const labels = {
+        'cost': 'Cost for Mitigation',
+        'impact': 'Impact for Mitigation',
+        'financialImpact': 'Financial Impact',
+        'reputationalImpact': 'Reputational Impact'
+      };
+      return labels[field] || field;
     }
   }
 }
@@ -1522,6 +1812,28 @@ export default {
 
 .complete-btn:hover {
   background-color: #73d13d;
+}
+
+/* Add these new styles for submission dates */
+.submission-date {
+  font-size: 12px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.submission-date.user-date {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.submission-date.reviewer-date {
+  background-color: #f6ffed;
+  color: #52c41a;
 }
 </style>
 

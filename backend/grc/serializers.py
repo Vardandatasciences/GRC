@@ -6,6 +6,21 @@ from .models import Compliance
 from .models import RiskInstance
 from .models import RiskAssignment
 from .models import GRCLog
+import datetime
+
+# Custom DateField to handle date objects properly
+class SafeDateField(serializers.DateField):
+    def to_representation(self, value):
+        if isinstance(value, datetime.date):
+            return value.isoformat()
+        return super().to_representation(value)
+
+# Custom DateTimeField to handle date objects properly
+class SafeDateTimeField(serializers.DateTimeField):
+    def to_representation(self, value):
+        if isinstance(value, datetime.date) and not isinstance(value, datetime.datetime):
+            return value.isoformat()
+        return super().to_representation(value)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,6 +59,9 @@ class ComplianceSerializer(serializers.ModelSerializer):
 class RiskInstanceSerializer(serializers.ModelSerializer):
     # Add this custom field to handle any format of RiskMitigation
     RiskMitigation = serializers.JSONField(required=False, allow_null=True)
+    MitigationDueDate = SafeDateField(required=False, allow_null=True)
+    Date = SafeDateTimeField(required=False, allow_null=True)
+    MitigationCompletedDate = SafeDateTimeField(required=False, allow_null=True)
     
     class Meta:
         model = RiskInstance
@@ -65,6 +83,36 @@ class RiskInstanceSerializer(serializers.ModelSerializer):
             mutable_data['RiskMitigation'] = {}
         
         return super().to_internal_value(mutable_data)
+    
+    def to_representation(self, instance):
+        # Create a custom representation instead of using the parent's method
+        # This avoids the DateTimeField's enforce_timezone issues
+        representation = {}
+        
+        # Process all fields manually to avoid DRF's datetime handling
+        for field in self.fields.values():
+            attribute = field.get_attribute(instance)
+            
+            # Skip if the attribute is None
+            if attribute is None:
+                representation[field.field_name] = None
+                continue
+                
+            # Special handling for date/datetime fields
+            if field.field_name in ['MitigationDueDate', 'Date', 'MitigationCompletedDate']:
+                if hasattr(attribute, 'isoformat'):
+                    representation[field.field_name] = attribute.isoformat()
+                else:
+                    representation[field.field_name] = attribute
+            else:
+                # For other fields, use the field's to_representation
+                try:
+                    representation[field.field_name] = field.to_representation(attribute)
+                except Exception as e:
+                    print(f"Error serializing {field.field_name}: {e}")
+                    representation[field.field_name] = None
+        
+        return representation
 
 
 class RiskAssignmentSerializer(serializers.ModelSerializer):

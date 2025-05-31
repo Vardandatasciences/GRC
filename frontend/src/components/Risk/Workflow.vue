@@ -15,48 +15,67 @@
       <p>No risk instances found. Please create some risk instances first.</p>
     </div>
     
-    <div v-else class="table-responsive">
-      <table class="risk-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Risk Description</th>
-            <th>Category</th>
-            <th>Criticality</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Assigned To</th>
-            <th>Review Count</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="risk in risks" :key="risk.RiskInstanceId" :class="getRowClass(risk.RiskStatus)">
-            <td>{{ risk.RiskInstanceId }}</td>
-            <td>{{ risk.RiskDescription || 'No description' }}</td>
-            <td>{{ risk.Category }}</td>
-            <td><span class="criticality-badge" :class="getCriticalityClass(risk.Criticality)">{{ risk.Criticality }}</span></td>
-            <td><span class="priority-badge" :class="getPriorityClass(risk.RiskPriority)">{{ risk.RiskPriority }}</span></td>
-            <td><span class="status-badge" :class="getStatusClass(risk.RiskStatus)">{{ risk.RiskStatus }}</span></td>
-            <td>
-              <!-- If risk is assigned to a real user (not System Owner), just show the user name -->
-              <div v-if="risk.RiskOwner && risk.RiskOwner !== 'System Owner' && risk.RiskOwner !== 'System User'">
-                {{ risk.RiskOwner }}
-              </div>
-              <!-- If risk is unassigned or assigned to System Owner/System User, show assignment option -->
-              <div v-else class="assign-section">
-                <select v-model="selectedUsers[risk.RiskInstanceId]" class="user-dropdown">
-                  <option value="">Select User</option>
-                  <option v-for="user in users" :key="user.user_id" :value="user.user_id">
-                    {{ user.user_name }}
-                  </option>
-                </select>
-                <button @click="openMitigationModal(risk)" class="assign-btn" :disabled="!selectedUsers[risk.RiskInstanceId]">Assign</button>
-              </div>
-            </td>
-            <td>{{ risk.ReviewerCount || 0 }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <!-- Export Controls -->
+      <div class="export-controls">
+        <select v-model="exportFormat" class="export-format-dropdown">
+          <option value="">Select Export Format</option>
+          <option value="xlsx">Excel (XLSX)</option>
+          <option value="csv">CSV</option>
+          <option value="pdf">PDF</option>
+          <option value="json">JSON</option>
+          <option value="xml">XML</option>
+          <option value="txt">Text</option>
+        </select>
+        <button @click="exportRisks" class="export-btn" :disabled="!exportFormat || exporting">
+          <div v-if="exporting" class="spinner-small"></div>
+          <span v-else>Export</span>
+        </button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Risk Description</th>
+              <th>Category</th>
+              <th>Criticality</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Review Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="risk in risks" :key="risk.RiskInstanceId" :class="getRowClass(risk.RiskStatus)">
+              <td>{{ risk.RiskInstanceId }}</td>
+              <td>{{ risk.RiskDescription || 'No description' }}</td>
+              <td>{{ risk.Category }}</td>
+              <td><span class="criticality-badge" :class="getCriticalityClass(risk.Criticality)">{{ risk.Criticality }}</span></td>
+              <td><span class="priority-badge" :class="getPriorityClass(risk.RiskPriority)">{{ risk.RiskPriority }}</span></td>
+              <td><span class="status-badge" :class="getStatusClass(risk.RiskStatus)">{{ risk.RiskStatus }}</span></td>
+              <td>
+                <!-- If risk is assigned to a real user (not System Owner), just show the user name -->
+                <div v-if="risk.RiskOwner && risk.RiskOwner !== 'System Owner' && risk.RiskOwner !== 'System User'">
+                  {{ risk.RiskOwner }}
+                </div>
+                <!-- If risk is unassigned or assigned to System Owner/System User, show assignment option -->
+                <div v-else class="assign-section">
+                  <select v-model="selectedUsers[risk.RiskInstanceId]" class="user-dropdown">
+                    <option value="">Select User</option>
+                    <option v-for="user in users" :key="user.user_id" :value="user.user_id">
+                      {{ user.user_name }}
+                    </option>
+                  </select>
+                  <button @click="openMitigationModal(risk)" class="assign-btn" :disabled="!selectedUsers[risk.RiskInstanceId]">Assign</button>
+                </div>
+              </td>
+              <td>{{ risk.ReviewerCount || 0 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     
     <!-- Mitigation Modal -->
@@ -194,6 +213,39 @@
         </div>
       </div>
     </div>
+    
+    <!-- Export Result Modal -->
+    <div v-if="showExportModal" class="modal-overlay" @click.self="closeExportModal">
+      <div class="modal-content export-modal">
+        <div class="modal-header">
+          <h2>Export Complete</h2>
+          <button class="close-btn" @click="closeExportModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="exportError" class="export-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>{{ exportError }}</p>
+          </div>
+          <div v-else class="export-success">
+            <i class="fas fa-check-circle"></i>
+            <p>Your export has been completed successfully.</p>
+            
+            <div class="export-details">
+              <p><strong>File:</strong> {{ exportResult.file_name }}</p>
+              <p><strong>Format:</strong> {{ exportResult.metadata.format }}</p>
+              <p><strong>Records:</strong> {{ exportResult.metadata.record_count }}</p>
+              <p><strong>Size:</strong> {{ formatFileSize(exportResult.metadata.file_size) }}</p>
+            </div>
+            
+            <div class="export-actions">
+              <a :href="exportResult.file_url" target="_blank" class="download-btn">
+                <i class="fas fa-download"></i> Download File
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -221,7 +273,12 @@ export default {
         impact: '',
         financialImpact: '',
         reputationalImpact: ''
-      }
+      },
+      exportFormat: '',
+      exporting: false,
+      showExportModal: false,
+      exportResult: null,
+      exportError: null
     }
   },
   mounted() {
@@ -448,6 +505,48 @@ export default {
         this.riskFormDetails.financialImpact.trim() !== '' &&
         this.riskFormDetails.reputationalImpact.trim() !== ''
       );
+    },
+    exportRisks() {
+      if (!this.exportFormat) return;
+      
+      this.exporting = true;
+      
+      // Extract risk IDs for targeted export (or leave empty for all)
+      const riskIds = this.risks.map(risk => risk.RiskInstanceId);
+      
+      axios.post('http://localhost:8000/api/export-risks/', {
+        format: this.exportFormat,
+        user_id: 'admin', // You can replace with actual user ID if available
+        risk_ids: riskIds
+      })
+      .then(response => {
+        console.log('Export response:', response.data);
+        this.exportResult = response.data;
+        this.exportError = null;
+        this.showExportModal = true;
+      })
+      .catch(error => {
+        console.error('Export error:', error);
+        this.exportError = error.response?.data?.error || 'Failed to export risks. Please try again.';
+        this.showExportModal = true;
+      })
+      .finally(() => {
+        this.exporting = false;
+      });
+    },
+    closeExportModal() {
+      this.showExportModal = false;
+      this.exportResult = null;
+      this.exportError = null;
+    },
+    formatFileSize(bytes) {
+      if (!bytes) return '0 Bytes';
+      
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
   }
 }
@@ -1117,5 +1216,119 @@ h1 {
 
 .form-warning i {
   margin-right: 6px;
+}
+
+/* Export Controls Styles */
+.export-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.export-format-dropdown {
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+  min-width: 150px;
+}
+
+.export-btn {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-width: 100px;
+}
+
+.export-btn:hover:not(:disabled) {
+  background-color: #73d13d;
+}
+
+.export-btn:disabled {
+  background-color: #d9f7be;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+/* Export Modal Styles */
+.export-modal {
+  max-width: 500px;
+}
+
+.export-success, .export-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.export-success i, .export-error i {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.export-success i {
+  color: #52c41a;
+}
+
+.export-error i {
+  color: #ff4d4f;
+}
+
+.export-details {
+  background-color: #f9f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.export-details p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.export-actions {
+  margin-top: 20px;
+}
+
+.download-btn {
+  background-color: #1890ff;
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.download-btn:hover {
+  background-color: #40a9ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.5);
 }
 </style> 

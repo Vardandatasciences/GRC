@@ -30,6 +30,13 @@ import traceback
 from rest_framework import generics
 from .models import GRCLog
 from .serializers import GRCLogSerializer
+import os
+import base64
+import tempfile
+from .s3_fucntions import S3Client
+from .export_service import export_data
+from .notification_service import NotificationService
+from datetime import datetime
 
 # Create your views here.
 
@@ -437,7 +444,17 @@ class ComplianceViewSet(viewsets.ModelViewSet):
         )
         return super().destroy(request, ComplianceId=ComplianceId)
 
-class RiskInstanceViewSet(viewsets.ModelViewSet):
+class DateFieldFixMixin:
+    """
+    A mixin to fix date field serialization issues.
+    This ensures that date objects are properly converted to strings without timezone issues.
+    """
+    def get_serializer(self, *args, **kwargs):
+        """Get the serializer but patch datetime fields to handle dates properly"""
+        serializer = super().get_serializer(*args, **kwargs)
+        return serializer
+
+class RiskInstanceViewSet(DateFieldFixMixin, viewsets.ModelViewSet):
     queryset = RiskInstance.objects.all()
     serializer_class = RiskInstanceSerializer
     
@@ -504,12 +521,80 @@ class RiskInstanceViewSet(viewsets.ModelViewSet):
             # Default empty object
             mutable_data['RiskMitigation'] = {}
         
+        # Handle MitigationDueDate to ensure it's a proper date object
+        if 'MitigationDueDate' in mutable_data and mutable_data['MitigationDueDate']:
+            try:
+                from datetime import datetime, date
+                due_date = mutable_data['MitigationDueDate']
+                
+                # If it's already a date object, keep it
+                if isinstance(due_date, date):
+                    pass
+                # If it's a datetime object, convert to date
+                elif isinstance(due_date, datetime):
+                    mutable_data['MitigationDueDate'] = due_date.date()
+                # If it's a string, parse it
+                elif isinstance(due_date, str):
+                    # Try different formats
+                    try:
+                        # ISO format
+                        parsed_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                        mutable_data['MitigationDueDate'] = parsed_date.date()
+                    except ValueError:
+                        try:
+                            # Common date format
+                            parsed_date = datetime.strptime(due_date, '%Y-%m-%d')
+                            mutable_data['MitigationDueDate'] = parsed_date.date()
+                        except ValueError:
+                            # If all parsing fails, remove the field
+                            print(f"Invalid date format: {due_date}, removing field")
+                            mutable_data.pop('MitigationDueDate')
+            except Exception as e:
+                print(f"Error processing MitigationDueDate: {e}")
+                mutable_data.pop('MitigationDueDate', None)
+        
         print("Processed data:", mutable_data)
         
         # Replace the request data with our processed data
         request._full_data = mutable_data
         
-        return super().create(request, *args, **kwargs)
+        # Create the risk instance
+        response = super().create(request, *args, **kwargs)
+        
+        # If creation was successful, send notification to risk managers
+        if response.status_code == 201:  # 201 Created
+            try:
+                # Get the created risk instance
+                risk_instance = RiskInstance.objects.get(RiskInstanceId=response.data['RiskInstanceId'])
+                
+                # Send notification to risk managers (assuming there's a designated email)
+                notification_service = NotificationService()
+                
+                # Find risk managers to notify
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE designation = 'Manager' LIMIT 1")
+                    risk_manager = cursor.fetchone()
+                
+                if risk_manager:
+                    notification_data = {
+                        'notification_type': 'riskIdentified',
+                        'email': risk_manager[2],  # risk manager email
+                        'email_type': 'gmail',
+                        'template_data': [
+                            risk_manager[1],  # risk manager name
+                            risk_instance.RiskDescription or f"Risk #{risk_instance.RiskInstanceId}",  # risk title
+                            risk_instance.Category or "Uncategorized",  # category
+                            request.user.username if request.user.is_authenticated else "System User"  # creator name
+                        ]
+                    }
+                    
+                    notification_result = notification_service.send_multi_channel_notification(notification_data)
+                    print(f"New risk notification result: {notification_result}")
+            except Exception as e:
+                print(f"Error sending new risk notification: {e}")
+        
+        return response
 
     def update(self, request, *args, **kwargs):
         # Log the update operation
@@ -665,6 +750,14 @@ def risk_workflow(request):
         data = []
         
         for risk in risk_instances:
+            # Handle date objects properly
+            mitigation_due_date = None
+            if risk.MitigationDueDate:
+                if hasattr(risk.MitigationDueDate, 'isoformat'):
+                    mitigation_due_date = risk.MitigationDueDate.isoformat()
+                else:
+                    mitigation_due_date = risk.MitigationDueDate
+                    
             # Create response data
             risk_data = {
                 'RiskInstanceId': risk.RiskInstanceId,
@@ -675,7 +768,7 @@ def risk_workflow(request):
                 'RiskStatus': risk.RiskStatus,
                 'RiskPriority': risk.RiskPriority,
                 'RiskImpact': risk.RiskImpact,
-                'MitigationDueDate': risk.MitigationDueDate,
+                'MitigationDueDate': mitigation_due_date,
                 'MitigationStatus': risk.MitigationStatus,
                 'ReviewerCount': risk.ReviewerCount or 0,
                 'assignedTo': None
@@ -743,7 +836,7 @@ def assign_risk_instance(request):
         # Just validate the user exists
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT user_id, user_name FROM grc_test.user WHERE user_id = %s", [user_id])
+            cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [user_id])
             user = cursor.fetchone()
         
         if not user:
@@ -760,12 +853,28 @@ def assign_risk_instance(request):
         
         # Set mitigation due date if provided
         if due_date:
-            from datetime import datetime
+            from datetime import datetime, date
             try:
-                # Just use the date string directly, don't convert to datetime
-                risk_instance.MitigationDueDate = due_date
-            except ValueError:
-                print(f"Invalid date format: {due_date}")
+                # Convert to proper date object based on input type
+                if isinstance(due_date, date):
+                    risk_instance.MitigationDueDate = due_date
+                elif isinstance(due_date, datetime):
+                    risk_instance.MitigationDueDate = due_date.date()
+                elif isinstance(due_date, str):
+                    # Try different formats
+                    try:
+                        # ISO format
+                        parsed_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                        risk_instance.MitigationDueDate = parsed_date.date()
+                    except ValueError:
+                        try:
+                            # Common date format
+                            parsed_date = datetime.strptime(due_date, '%Y-%m-%d')
+                            risk_instance.MitigationDueDate = parsed_date.date()
+                        except ValueError:
+                            print(f"Invalid date format: {due_date}")
+            except Exception as e:
+                print(f"Error processing due date: {e}")
         
         # Save mitigations if provided
         if mitigations:
@@ -780,6 +889,29 @@ def assign_risk_instance(request):
         
         risk_instance.save()
         print(f"Risk instance updated successfully with mitigations: {risk_instance.RiskMitigation}")
+        
+        # Send notification to the assigned user
+        try:
+            notification_service = NotificationService()
+            # Format due date for notification
+            formatted_due_date = risk_instance.MitigationDueDate.strftime('%Y-%m-%d') if risk_instance.MitigationDueDate else "Not specified"
+            
+            # Send risk mitigation assignment notification
+            notification_data = {
+                'notification_type': 'riskMitigationAssigned',
+                'email': user[2],  # user email
+                'email_type': 'gmail',  # Use gmail as default
+                'template_data': [
+                    user[1],  # mitigator name
+                    risk_instance.RiskDescription or f"Risk #{risk_id}",  # risk title
+                    formatted_due_date  # due date
+                ]
+            }
+            
+            notification_result = notification_service.send_multi_channel_notification(notification_data)
+            print(f"Notification result: {notification_result}")
+        except Exception as e:
+            print(f"Error sending notification: {e}")
         
         # Log success or failure
         if risk_instance:
@@ -861,6 +993,14 @@ def get_user_risks(request, user_id):
         
         data = []
         for risk in risk_instances:
+            # Handle date objects properly
+            mitigation_due_date = None
+            if risk.MitigationDueDate:
+                if hasattr(risk.MitigationDueDate, 'isoformat'):
+                    mitigation_due_date = risk.MitigationDueDate.isoformat()
+                else:
+                    mitigation_due_date = risk.MitigationDueDate
+            
             risk_data = {
                 'RiskInstanceId': risk.RiskInstanceId,
                 'RiskId': risk.RiskId,
@@ -872,7 +1012,7 @@ def get_user_risks(request, user_id):
                 'RiskImpact': risk.RiskImpact,
                 'UserId': risk.UserId,
                 'RiskOwner': risk.RiskOwner,
-                'MitigationDueDate': risk.MitigationDueDate,
+                'MitigationDueDate': mitigation_due_date,
                 'MitigationStatus': risk.MitigationStatus,
                 'ReviewerCount': risk.ReviewerCount or 0
             }
@@ -1155,12 +1295,15 @@ def assign_reviewer(request):
     mitigations = request.data.get('mitigations')  # Get mitigation data with status
     risk_form_details = request.data.get('risk_form_details', None)  # Get form details
     
+    # Ensure user_id is a string for the logging service
+    user_id_str = str(user_id) if user_id is not None else None
+    
     # Log the reviewer assignment
     send_log(
         module="Risk",
         actionType="ASSIGN_REVIEWER",
         description=f"Assigning reviewer {reviewer_id} to risk {risk_id}",
-        userId=user_id,
+        userId=user_id_str,  # Convert to string to avoid the error
         entityType="RiskApproval",
         additionalInfo={"risk_id": risk_id, "reviewer_id": reviewer_id}
     )
@@ -1179,8 +1322,11 @@ def assign_reviewer(request):
         # Validate reviewer exists
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT user_id, user_name FROM grc_test.user WHERE user_id = %s", [reviewer_id])
+            cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [reviewer_id])
             reviewer = cursor.fetchone()
+            
+            cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [user_id])
+            user = cursor.fetchone()
         
         if not reviewer:
             return Response({'error': 'Reviewer not found'}, status=404)
@@ -1224,6 +1370,7 @@ def assign_reviewer(request):
         
         # Create a simplified JSON structure for ExtractedInfo
         import json
+        from datetime import datetime  # Import datetime here to avoid the error
         
         # Use the mitigation data provided, or get from the risk instance
         mitigation_steps = {}
@@ -1232,27 +1379,43 @@ def assign_reviewer(request):
             is_first_submission = version == "U1"
             
             for key, value in mitigations.items():
-                mitigation_steps[key] = {
-                    "description": value["description"],
-                    "status": value["status"] if "status" in value else "Completed",
-                    "comments": value.get("comments", ""),
-                    "fileData": value.get("fileData", None),
-                    "fileName": value.get("fileName", None)
-                }
-                
-                # Only set approved field if this is not the first submission or the value is coming from a previous approval
-                if not is_first_submission or "approved" in value and value["approved"] is True:
-                    mitigation_steps[key]["approved"] = value["approved"]
-                    mitigation_steps[key]["remarks"] = value.get("remarks", "")
+                # Handle case where value is a string
+                if isinstance(value, str):
+                    mitigation_steps[key] = {
+                        "description": value,
+                        "status": "Completed",
+                        "comments": "",
+                        "user_submitted_date": datetime.now().isoformat()
+                    }
+                else:
+                    mitigation_steps[key] = {
+                        "description": value.get("description", ""),
+                        "status": value.get("status", "Completed"),
+                        "comments": value.get("comments", ""),
+                        "fileData": value.get("fileData", None),
+                        "fileName": value.get("fileName", None),
+                        "user_submitted_date": datetime.now().isoformat()  # Fixed: using datetime.now()
+                    }
+                    
+                    # Only set approved field if this is not the first submission or the value is coming from a previous approval
+                    if not is_first_submission and "approved" in value:
+                        if isinstance(value["approved"], bool):
+                            mitigation_steps[key]["approved"] = value["approved"]
+                            mitigation_steps[key]["remarks"] = value.get("remarks", "")
         
         # Create the simplified JSON structure
         extracted_info = {
             "risk_id": risk_id,
             "mitigations": mitigation_steps,
             "version": version,
-            "submission_date": datetime.datetime.now().isoformat(),
+            "submission_date": datetime.now().isoformat(),
+            "user_submitted_date": datetime.now().isoformat(),  # Fixed: using datetime.now()
             "risk_form_details": risk_form_details  # Add form details to ExtractedInfo
         }
+        
+        # If risk_form_details has user_submitted_date, make sure it's in the top level as well
+        if risk_form_details and 'user_submitted_date' in risk_form_details:
+            extracted_info["user_submitted_date"] = risk_form_details["user_submitted_date"]
         
         # Insert into risk_approval table with ApprovedRejected as NULL for new submissions
         with connection.cursor() as cursor:
@@ -1271,14 +1434,39 @@ def assign_reviewer(request):
                 ]
             )
         
+        # Send notification to reviewer about new mitigation to review
+        try:
+            notification_service = NotificationService()
+            
+            # Calculate review due date (5 days from now)
+            from datetime import timedelta  # Import timedelta here
+            review_due_date = (datetime.now() + timedelta(days=5)).strftime('%Y-%m-%d')
+            
+            notification_data = {
+                'notification_type': 'riskMitigationCompleted',
+                'email': reviewer[2],  # reviewer email
+                'email_type': 'gmail',
+                'template_data': [
+                    reviewer[1],  # reviewer name
+                    risk_instance.RiskDescription or f"Risk #{risk_id}",  # risk title
+                    user[1],  # mitigator name
+                    review_due_date  # review due date
+                ]
+            }
+            
+            notification_result = notification_service.send_multi_channel_notification(notification_data)
+            print(f"Notification result: {notification_result}")
+        except Exception as e:
+            print(f"Error sending notification: {e}")
+        
         return Response({
             'success': True,
             'message': f'Reviewer {reviewer[1]} assigned to risk and approval record created with version {version}'
         })
-    except RiskInstance.DoesNotExist:
-        return Response({'error': 'Risk instance not found'}, status=404)
     except Exception as e:
         print(f"Error assigning reviewer: {e}")
+        # Add traceback for more detailed error information
+        traceback.print_exc()
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -1298,36 +1486,99 @@ def get_reviewer_tasks(request, user_id):
         # Using raw SQL query to fetch from approval table
         from django.db import connection
         with connection.cursor() as cursor:
-            # Modified query to get only the latest version for each risk
+            # Modified query to reduce sorting memory usage
+            # Get risk IDs first to reduce dataset size
             cursor.execute("""
-                WITH latest_versions AS (
-                    SELECT ra.RiskInstanceId, MAX(ra.version) as latest_version
-                    FROM grc_test.risk_approval ra
-                    WHERE ra.ApproverId = %s
-                    GROUP BY ra.RiskInstanceId
-                )
-                SELECT ra.RiskInstanceId, ra.ExtractedInfo, ra.UserId, ra.ApproverId, ra.version,
-                       ri.RiskDescription, ri.Criticality, ri.Category, ri.RiskStatus, ri.RiskPriority 
+                SELECT DISTINCT ra.RiskInstanceId
                 FROM grc_test.risk_approval ra
-                JOIN latest_versions lv ON ra.RiskInstanceId = lv.RiskInstanceId AND ra.version = lv.latest_version
-                JOIN grc_test.risk_instance ri ON ra.RiskInstanceId = ri.RiskInstanceId
                 WHERE ra.ApproverId = %s
-                ORDER BY 
-                    CASE 
-                        WHEN ri.RiskStatus = 'Under Review' THEN 1
-                        WHEN ri.RiskStatus = 'Revision Required' THEN 2
-                        WHEN ri.RiskStatus = 'Work In Progress' THEN 3
-                        WHEN ri.RiskStatus = 'Approved' THEN 4
-                        ELSE 5
-                    END,
-                    ra.RiskInstanceId
-            """, [user_id, user_id])
-            columns = [col[0] for col in cursor.description]
-            reviewer_tasks = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            """, [user_id])
+            
+            risk_ids = [row[0] for row in cursor.fetchall()]
+            
+            if not risk_ids:
+                return Response([])
+                
+            # Fetch data for each risk ID individually to avoid large sorts
+            reviewer_tasks = []
+            
+            for risk_id in risk_ids:
+                cursor.execute("""
+                    SELECT ra.RiskInstanceId, ra.ExtractedInfo, ra.UserId, ra.ApproverId, ra.version,
+                           ri.RiskDescription, ri.Criticality, ri.Category, ri.RiskStatus, ri.RiskPriority 
+                    FROM grc_test.risk_approval ra
+                    JOIN grc_test.risk_instance ri ON ra.RiskInstanceId = ri.RiskInstanceId
+                    WHERE ra.RiskInstanceId = %s AND ra.ApproverId = %s
+                    ORDER BY ra.version DESC
+                    LIMIT 1
+                """, [risk_id, user_id])
+                
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                
+                if rows:
+                    task = dict(zip(columns, rows[0]))
+                    reviewer_tasks.append(task)
+            
+            # Sort the tasks in Python instead of in SQL
+            reviewer_tasks.sort(key=lambda x: (
+                0 if x['RiskStatus'] == 'Under Review' else
+                1 if x['RiskStatus'] == 'Revision Required' else
+                2 if x['RiskStatus'] == 'Work In Progress' else
+                3 if x['RiskStatus'] == 'Approved' else 4,
+                x['RiskInstanceId']
+            ))
+            
+            # For each task, get the previous version data (if needed)
+            # This is where we'll limit processing to reduce memory usage
+            for task in reviewer_tasks:
+                risk_id = task['RiskInstanceId']
+                current_version = task['version']
+                
+                # Skip previous version lookup for approved or older tasks
+                if task['RiskStatus'] in ['Approved', 'Completed']:
+                    task['PreviousVersion'] = None
+                    continue
+                
+                # Extract numeric part of version for comparison
+                current_num = int(current_version[1:]) if current_version[1:].isdigit() else 0
+                previous_num = current_num - 1
+                
+                # Determine the previous version format
+                if current_version.startswith('U'):
+                    previous_version = f"U{previous_num}" if previous_num > 0 else None
+                elif current_version.startswith('R'):
+                    previous_version = f"R{previous_num}" if previous_num > 0 else "U1"
+                else:
+                    previous_version = None
+                
+                # If we have a previous version to look for
+                if previous_version:
+                    cursor.execute("""
+                        SELECT ExtractedInfo
+                        FROM grc_test.risk_approval
+                        WHERE RiskInstanceId = %s AND version = %s
+                        LIMIT 1
+                    """, [risk_id, previous_version])
+                    prev_row = cursor.fetchone()
+                    
+                    if prev_row:
+                        import json
+                        try:
+                            previous_data = json.loads(prev_row[0])
+                            # Add previous version data to the task
+                            task['PreviousVersion'] = previous_data
+                        except json.JSONDecodeError:
+                            task['PreviousVersion'] = None
+                    else:
+                        task['PreviousVersion'] = None
+                else:
+                    task['PreviousVersion'] = None
         
         return Response(reviewer_tasks)
     except Exception as e:
         print(f"Error fetching reviewer tasks: {e}")
+        traceback.print_exc()  # Add traceback for better debugging
         return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
@@ -1336,9 +1587,6 @@ def complete_review(request):
     import json
     import datetime
     import traceback
-    
-    # Log the review completion
-    
     
     try:
         # Print request data for debugging
@@ -1401,6 +1649,13 @@ def complete_review(request):
                 
             extracted_info, user_id, approver_id, current_version = row[0], row[1], row[2], row[3]
             
+            # Get user and reviewer information for notification
+            cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [user_id])
+            user = cursor.fetchone()
+            
+            cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [approver_id])
+            reviewer = cursor.fetchone()
+            
             # Determine the next R version
             cursor.execute("""
                 SELECT version FROM grc_test.risk_approval 
@@ -1433,9 +1688,24 @@ def complete_review(request):
                 "version": new_version,
                 "mitigations": {},
                 "review_date": datetime.datetime.now().isoformat(),
+                "reviewer_submitted_date": datetime.datetime.now().isoformat(),  # Add reviewer submission date
                 "overall_approved": approved,
                 "risk_form_details": risk_form_details or extracted_info_dict.get("risk_form_details", {})  # Include form details
             }
+            
+            # Add reviewer_submitted_date to risk_form_details if it exists
+            if new_json["risk_form_details"]:
+                new_json["risk_form_details"]["reviewer_submitted_date"] = datetime.datetime.now().isoformat()
+            
+            # Preserve the user_submitted_date for risk_form_details if it exists in the extracted_info
+            if extracted_info_dict.get("risk_form_details", {}).get("user_submitted_date"):
+                if not new_json["risk_form_details"]:
+                    new_json["risk_form_details"] = {}
+                new_json["risk_form_details"]["user_submitted_date"] = extracted_info_dict["risk_form_details"]["user_submitted_date"]
+            elif extracted_info_dict.get("user_submitted_date"):
+                if not new_json["risk_form_details"]:
+                    new_json["risk_form_details"] = {}
+                new_json["risk_form_details"]["user_submitted_date"] = extracted_info_dict["user_submitted_date"]
             
             # Copy the mitigations from the request
             for mitigation_id, mitigation_data in mitigations.items():
@@ -1446,7 +1716,9 @@ def complete_review(request):
                     "remarks": mitigation_data["remarks"] if not mitigation_data["approved"] else "",
                     "comments": mitigation_data.get("comments", ""),
                     "fileData": mitigation_data.get("fileData", None),
-                    "fileName": mitigation_data.get("fileName", None)
+                    "fileName": mitigation_data.get("fileName", None),
+                    "reviewer_submitted_date": datetime.datetime.now().isoformat(),  # Add reviewer submission date
+                    "user_submitted_date": mitigation_data.get("user_submitted_date", None)  # Preserve user submission date
                 }
             
             # Insert new record with the R version and set ApprovedRejected column
@@ -1471,16 +1743,45 @@ def complete_review(request):
                 WHERE RiskInstanceId = %s
             """, [risk_status, risk_id])
 
+            # Send notification to user about the review outcome
+            try:
+                notification_service = NotificationService()
+                
+                # Get first rejected mitigation remark for notification (if any)
+                reviewer_comment = ""
+                for mitigation_id, mitigation_data in mitigations.items():
+                    if not mitigation_data.get("approved", True) and mitigation_data.get("remarks"):
+                        reviewer_comment = mitigation_data.get("remarks")
+                        break
+                
+                # Prepare notification data
+                notification_data = {
+                    'notification_type': 'complianceReviewed',  # Using compliance template for risk reviews
+                    'email': user[2],  # user email
+                    'email_type': 'gmail',
+                    'template_data': [
+                        user[1],  # officer name (user)
+                        risk_instance.RiskDescription or f"Risk #{risk_id}",  # item title
+                        "Approved" if approved else "Rejected",  # status
+                        reviewer[1],  # reviewer name
+                        reviewer_comment  # reviewer comments (if rejected)
+                    ]
+                }
+                
+                notification_result = notification_service.send_multi_channel_notification(notification_data)
+                print(f"Notification result: {notification_result}")
+            except Exception as e:
+                print(f"Error sending notification: {e}")
 
         send_log(
-        module="Risk",
-        actionType="COMPLETE_REVIEW",
-        description=f"Completing review for risk {risk_id} with status: {'Approved' if approved else 'Rejected'}",
-        userId=request.user.id if request.user.is_authenticated else None,
-        userName=request.user.username if request.user.is_authenticated else None,
-        entityType="RiskApproval",
-        additionalInfo={"risk_id": risk_id, "approved": approved}
-    )
+            module="Risk",
+            actionType="COMPLETE_REVIEW",
+            description=f"Completing review for risk {risk_id} with status: {'Approved' if approved else 'Rejected'}",
+            userId=request.user.id if request.user.is_authenticated else None,
+            userName=request.user.username if request.user.is_authenticated else None,
+            entityType="RiskApproval",
+            additionalInfo={"risk_id": risk_id, "approved": approved}
+        )
             
         return Response({
             'success': True,
@@ -1572,6 +1873,7 @@ def update_mitigation_status(request):
     try:
         # Get the risk instance
         risk_instance = RiskInstance.objects.get(RiskInstanceId=risk_id)
+        old_status = risk_instance.MitigationStatus
         
         # Update the mitigation status
         risk_instance.MitigationStatus = status
@@ -1582,6 +1884,65 @@ def update_mitigation_status(request):
         
         risk_instance.save()
         print(f"Successfully updated risk {risk_id} mitigation status to {status}")
+        
+        # Send notification to risk managers about status change
+        try:
+            # Only send notification if the status has meaningfully changed
+            if old_status != status:
+                notification_service = NotificationService()
+                
+                # Find risk managers to notify
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE designation = 'Manager' LIMIT 1")
+                    risk_manager = cursor.fetchone()
+                    
+                    # Also get the owner of the risk for notification
+                    if risk_instance.UserId:
+                        cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", 
+                                      [risk_instance.UserId])
+                        risk_owner = cursor.fetchone()
+                    else:
+                        risk_owner = None
+                
+                # Notify risk manager
+                if risk_manager:
+                    # Use riskScoreUpdated template (repurposed for status updates)
+                    notification_data = {
+                        'notification_type': 'riskScoreUpdated',
+                        'email': risk_manager[2],  # risk manager email
+                        'email_type': 'gmail',
+                        'template_data': [
+                            risk_manager[1],  # risk manager name
+                            risk_instance.RiskDescription or f"Risk #{risk_id}",  # risk title
+                            old_status or "Not Started",  # old status
+                            status,  # new status
+                            request.user.username if request.user.is_authenticated else "System User"  # actor name
+                        ]
+                    }
+                    
+                    notification_result = notification_service.send_multi_channel_notification(notification_data)
+                    print(f"Status change notification to manager result: {notification_result}")
+                
+                # Also notify the risk owner if available and different from the updater
+                if risk_owner and risk_owner[0] != request.user.id:
+                    notification_data = {
+                        'notification_type': 'riskScoreUpdated',
+                        'email': risk_owner[2],  # risk owner email
+                        'email_type': 'gmail',
+                        'template_data': [
+                            risk_owner[1],  # risk owner name
+                            risk_instance.RiskDescription or f"Risk #{risk_id}",  # risk title
+                            old_status or "Not Started",  # old status
+                            status,  # new status
+                            request.user.username if request.user.is_authenticated else "System User"  # actor name
+                        ]
+                    }
+                    
+                    notification_result = notification_service.send_multi_channel_notification(notification_data)
+                    print(f"Status change notification to owner result: {notification_result}")
+        except Exception as e:
+            print(f"Error sending status change notification: {e}")
         
         return Response({
             'success': True,
@@ -1824,3 +2185,398 @@ class GRCLogDetail(generics.RetrieveAPIView):
     queryset = GRCLog.objects.all()
     serializer_class = GRCLogSerializer
     permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+def get_previous_versions(request, risk_id):
+    """Get previous versions of a risk for comparison"""
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Get the second-most recent version (one before the current)
+            cursor.execute("""
+                SELECT ExtractedInfo
+                FROM grc_test.risk_approval
+                WHERE RiskInstanceId = %s
+                ORDER BY 
+                    CASE 
+                        WHEN version LIKE 'U%_update%' THEN 1
+                        WHEN version LIKE 'U%' THEN 2
+                        WHEN version LIKE 'R%_update%' THEN 3
+                        WHEN version LIKE 'R%' THEN 4
+                        ELSE 5
+                    END,
+                    version DESC
+                LIMIT 1 OFFSET 1
+            """, [risk_id])
+            
+            row = cursor.fetchone()
+            if not row:
+                return Response({"message": "No previous versions found"}, status=200)
+            
+            import json
+            extracted_info = json.loads(row[0])
+            return Response(extracted_info)
+    except Exception as e:
+        print(f"Error fetching previous versions: {e}")
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['POST'])
+def save_uploaded_file(request):
+    """Save uploaded file locally first, then upload to S3, and finally delete the local file"""
+    try:
+        # Extract data from request
+        file_data = request.data.get('fileData')
+        file_name = request.data.get('fileName')
+        risk_id = request.data.get('riskId')
+        category = request.data.get('category', 'general')
+        mitigation_number = request.data.get('mitigationNumber', '1')
+        
+        # Validate required fields
+        if not file_data or not file_name or not risk_id:
+            return Response({'error': 'Missing required fields'}, status=400)
+        
+        # Create directory if it doesn't exist
+        upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 's3_files')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Create filename with the specified format
+        file_extension = os.path.splitext(file_name)[1]
+        new_file_name = f"{os.path.splitext(file_name)[0]}_{risk_id}_{category}_{mitigation_number}{file_extension}"
+        file_path = os.path.join(upload_dir, new_file_name)
+        
+        # Extract and save the base64 data locally
+        file_data = file_data.split(',')[1] if ',' in file_data else file_data
+        with open(file_path, 'wb') as f:
+            f.write(base64.b64decode(file_data))
+        
+        try:
+            # Now upload to S3
+            s3_client = S3Client(base_url="http://localhost:3000")
+            
+            # Upload to S3 with metadata
+            upload_result = s3_client.upload_file(
+                file_path=file_path,
+                user_id=str(request.user.id if request.user.is_authenticated else "anonymous"),
+                file_name=new_file_name,
+                risk_id=str(risk_id),
+                category=category,
+                mitigation_number=str(mitigation_number)
+            )
+            
+            if not upload_result.get('success'):
+                return Response({'error': 'S3 upload failed', 'details': upload_result}, status=500)
+            
+            # Log the file upload
+            send_log(
+                module="Risk",
+                actionType="FILE_UPLOAD",
+                description=f"File uploaded to S3 for risk {risk_id}, mitigation {mitigation_number}",
+                userId=request.user.id if request.user.is_authenticated else None,
+                userName=request.user.username if request.user.is_authenticated else None,
+                entityType="RiskMitigation",
+                additionalInfo={"risk_id": risk_id, "file_name": new_file_name, "s3_file_id": upload_result.get('fileId')}
+            )
+            
+            # Send notification to relevant parties about the file upload
+            try:
+                # Get risk instance to notify the owner
+                risk_instance = RiskInstance.objects.get(RiskInstanceId=risk_id)
+                
+                # Find relevant people to notify
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    # Get the assigned reviewer
+                    cursor.execute("""
+                        SELECT ApproverId, u.user_name, u.email
+                        FROM grc_test.risk_approval ra
+                        JOIN grc_test.user u ON ra.ApproverId = u.user_id
+                        WHERE ra.RiskInstanceId = %s
+                        LIMIT 1
+                    """, [risk_id])
+                    reviewer = cursor.fetchone()
+                    
+                    # If there's a reviewer, notify them about the new file
+                    if reviewer:
+                        notification_service = NotificationService()
+                        
+                        notification_data = {
+                            'notification_type': 'policyNewVersion',  # Repurposing this template for file upload notification
+                            'email': reviewer[2],  # reviewer email
+                            'email_type': 'gmail',
+                            'template_data': [
+                                reviewer[1],  # reviewer name
+                                f"Supporting document for risk {risk_id}",  # title
+                                "1.0",  # version
+                                f"http://localhost:3000/file/{upload_result.get('fileId', 'unknown')}"  # link to file
+                            ]
+                        }
+                        
+                        notification_result = notification_service.send_multi_channel_notification(notification_data)
+                        print(f"File upload notification result: {notification_result}")
+            except Exception as e:
+                print(f"Error sending file upload notification: {e}")
+            
+            return Response({
+                'success': True,
+                'message': 'File uploaded successfully to S3',
+                'savedFileName': new_file_name,
+                's3FileInfo': upload_result
+            })
+        finally:
+            # Delete the local file after S3 upload (or if upload fails)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"Local file {file_path} deleted successfully")
+                except Exception as e:
+                    print(f"Error deleting local file: {e}")
+    except Exception as e:
+        print(f"Error saving uploaded file: {e}")
+        return Response({'error': str(e)}, status=500)
+
+# Alternative implementation using the simple_upload method
+@api_view(['POST'])
+def save_uploaded_file_simple(request):
+    """Save an uploaded file to S3 using the simple_upload method"""
+    try:
+        # Extract data from request
+        file_data = request.data.get('fileData')
+        file_name = request.data.get('fileName')
+        risk_id = request.data.get('riskId')
+        category = request.data.get('category', 'general')
+        mitigation_number = request.data.get('mitigationNumber', '1')
+        
+        # Validate required fields
+        if not file_data or not file_name or not risk_id:
+            return Response({'error': 'Missing required fields'}, status=400)
+        
+        # Create custom filename with the specified format
+        file_extension = os.path.splitext(file_name)[1]
+        new_file_name = f"{os.path.splitext(file_name)[0]}_{risk_id}_{category}_{mitigation_number}{file_extension}"
+        
+        # Extract and save the base64 data to a temporary file
+        file_data = file_data.split(',')[1] if ',' in file_data else file_data
+        
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+        temp_file_path = temp_file.name
+        
+        try:
+            # Write decoded base64 data to the temporary file
+            with open(temp_file_path, 'wb') as f:
+                f.write(base64.b64decode(file_data))
+            
+            # Rename the temp file to match our desired filename
+            final_temp_path = os.path.join(os.path.dirname(temp_file_path), new_file_name)
+            os.rename(temp_file_path, final_temp_path)
+            
+            # Initialize S3 client
+            s3_client = S3Client(base_url="http://localhost:3000")
+            
+            # Upload using the simple method
+            upload_result = s3_client.simple_upload(
+                file_name=final_temp_path,
+                user_id=str(request.user.id if request.user.is_authenticated else "anonymous")
+            )
+            
+            if not upload_result.get('success'):
+                return Response({'error': 'S3 upload failed', 'details': upload_result}, status=500)
+            
+            # Log the file upload
+            send_log(
+                module="Risk",
+                actionType="FILE_UPLOAD",
+                description=f"File uploaded to S3 for risk {risk_id}, mitigation {mitigation_number}",
+                userId=request.user.id if request.user.is_authenticated else None,
+                userName=request.user.username if request.user.is_authenticated else None,
+                entityType="RiskMitigation",
+                additionalInfo={"risk_id": risk_id, "file_name": new_file_name, "s3_file_id": upload_result.get('fileId')}
+            )
+            
+            return Response({
+                'success': True,
+                'message': 'File uploaded successfully to S3',
+                'savedFileName': new_file_name,
+                's3FileInfo': upload_result
+            })
+            
+        finally:
+            # Clean up the temporary files
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+            if os.path.exists(final_temp_path):
+                os.unlink(final_temp_path)
+                
+    except Exception as e:
+        print(f"Error saving uploaded file to S3: {e}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+def export_risks(request):
+    """Export risk data to the specified format"""
+    try:
+        # Get request parameters
+        file_format = request.data.get('format', 'xlsx')
+        user_id = request.data.get('user_id', 'anonymous')
+        risk_ids = request.data.get('risk_ids', [])
+        
+        # Log the export request
+        send_log(
+            module="Risk",
+            actionType="EXPORT",
+            description=f"Exporting risks to {file_format} format",
+            userId=request.user.id if request.user.is_authenticated else None,
+            userName=request.user.username if request.user.is_authenticated else None,
+            entityType="RiskInstance",
+            additionalInfo={"format": file_format, "risk_ids": risk_ids}
+        )
+        
+        # If risk_ids is provided, filter risks by those IDs
+        if risk_ids:
+            risk_instances = RiskInstance.objects.filter(RiskInstanceId__in=risk_ids)
+        else:
+            # Otherwise, get all risk instances
+            risk_instances = RiskInstance.objects.all()
+        
+        # Convert to list of dictionaries for export
+        risk_data = []
+        for risk in risk_instances:
+            risk_data.append({
+                'RiskInstanceId': risk.RiskInstanceId,
+                'RiskDescription': risk.RiskDescription,
+                'Category': risk.Category,
+                'Criticality': risk.Criticality,
+                'RiskStatus': risk.RiskStatus,
+                'RiskPriority': risk.RiskPriority,
+                'RiskOwner': risk.RiskOwner,
+                'MitigationStatus': risk.MitigationStatus,
+                'MitigationDueDate': risk.MitigationDueDate.isoformat() if risk.MitigationDueDate else None
+            })
+        
+        # Call the export function from export_service.py
+        export_result = export_data(
+            data=risk_data,
+            file_format=file_format,
+            user_id=str(user_id),
+            options={
+                'title': 'Risk Export',
+                'timestamp': datetime.datetime.now().isoformat()
+            }
+        )
+        
+        # Send notification about the export
+        try:
+            # Get the user who requested the export
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [user_id])
+                export_user = cursor.fetchone()
+            
+            if export_user and export_result.get('success'):
+                notification_service = NotificationService()
+                
+                # Use the accountUpdate template (repurposed for export notification)
+                notification_data = {
+                    'notification_type': 'accountUpdate',
+                    'email': export_user[2],  # user email
+                    'email_type': 'gmail',
+                    'template_data': [
+                        export_user[1],  # user name
+                        f"""
+                        <p><strong>Export Details:</strong></p>
+                        <p>File: {export_result.get('file_name', 'Unknown')}</p>
+                        <p>Format: {file_format.upper()}</p>
+                        <p>Records: {len(risk_data)}</p>
+                        <p>The export file is ready for download.</p>
+                        """
+                    ]
+                }
+                
+                notification_result = notification_service.send_multi_channel_notification(notification_data)
+                print(f"Export notification result: {notification_result}")
+        except Exception as e:
+            print(f"Error sending export notification: {e}")
+        
+        return Response(export_result)
+    
+    except Exception as e:
+        print(f"Error exporting risks: {e}")
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+def send_due_date_reminders(request):
+    """Send reminders for risk mitigations approaching their due dates"""
+    try:
+        # Get risks with due dates in the next 2 days
+        from datetime import datetime, timedelta
+        today = datetime.now().date()
+        reminder_date = today + timedelta(days=2)
+        
+        # Find risks approaching due dates
+        risks_due_soon = RiskInstance.objects.filter(
+            MitigationDueDate__gte=today,
+            MitigationDueDate__lte=reminder_date,
+            RiskStatus__in=['Assigned', 'Work In Progress', 'Under Review', 'Revision Required'],
+            MitigationStatus__in=['Yet to Start', 'In Progress', 'Revision Required by User', 'Revision Required by Reviewer']
+        )
+        
+        if not risks_due_soon:
+            return Response({"message": "No risks with approaching due dates found"})
+        
+        notification_service = NotificationService()
+        notifications_sent = 0
+        
+        for risk in risks_due_soon:
+            # Skip if no user ID is assigned
+            if not risk.UserId:
+                continue
+                
+            # Get user email
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT user_id, user_name, email FROM grc_test.user WHERE user_id = %s", [risk.UserId])
+                user = cursor.fetchone()
+                
+            if not user or not user[2]:
+                continue
+                
+            # Format due date
+            due_date = risk.MitigationDueDate.strftime('%Y-%m-%d') if risk.MitigationDueDate else "Unknown"
+            
+            # Send the reminder using the complianceDueReminder template
+            notification_data = {
+                'notification_type': 'complianceDueReminder',
+                'email': user[2],  # user email
+                'email_type': 'gmail',
+                'template_data': [
+                    user[1],  # user name
+                    risk.RiskDescription or f"Risk #{risk.RiskInstanceId}",  # risk title
+                    due_date  # due date
+                ]
+            }
+            
+            notification_result = notification_service.send_multi_channel_notification(notification_data)
+            if notification_result.get('success'):
+                notifications_sent += 1
+            
+            # Log the reminder
+            send_log(
+                module="Risk",
+                actionType="REMINDER",
+                description=f"Due date reminder sent for risk {risk.RiskInstanceId}",
+                userId=None,
+                userName="System",
+                entityType="RiskInstance",
+                additionalInfo={"risk_id": risk.RiskInstanceId, "due_date": due_date}
+            )
+        
+        return Response({
+            "success": True, 
+            "message": f"Sent {notifications_sent} due date reminders",
+            "reminders_sent": notifications_sent
+        })
+    except Exception as e:
+        print(f"Error sending due date reminders: {e}")
+        traceback.print_exc()
+        return Response({"error": str(e)}, status=500)
