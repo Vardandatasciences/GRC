@@ -90,7 +90,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'grc_test',              # your DB schema
+        'NAME': 'grc',              # your DB schema
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST': 'localhost',
