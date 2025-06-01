@@ -573,3 +573,7 @@ django.db.utils.OperationalError: (1054, "Unknown column 'risk.RiskPriority' in 
 2025-06-02 04:40:53,035 - django.request - WARNING - Unauthorized: /api/users/
 2025-06-02 04:41:04,175 - django.request - WARNING - Not Found: /api/all-policies/framework-versions/1/
 2025-06-02 04:41:26,865 - django.request - WARNING - Not Found: /api/policy-approvals/latest/1083/
+2025-06-02 04:46:47,040 - django.request - WARNING - Not Found: /api/policy-approvals/latest/1084/
+2025-06-02 04:47:27,260 - django.request - WARNING - Unauthorized: /api/users/
+2025-06-02 04:47:42,467 - django.request - WARNING - Unauthorized: /api/users/
+2025-06-02 04:47:50,861 - django.request - WARNING - Forbidden: /api/frameworks/16/
