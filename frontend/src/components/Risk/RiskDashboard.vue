@@ -190,8 +190,9 @@
 
 <script>
 import Chart from 'chart.js/auto'
-import { MatrixController, MatrixElement } from 'chartjs-chart-matrix'
-Chart.register(MatrixController, MatrixElement)
+// Remove the MatrixController import that's causing issues
+// import { MatrixController, MatrixElement } from 'chartjs-chart-matrix'
+// Chart.register(MatrixController, MatrixElement)
 import axios from 'axios'
 
 export default {
@@ -392,58 +393,68 @@ export default {
     renderHeatmapScatterChart() {
       if (this.heatmapChartInstance) this.heatmapChartInstance.destroy()
       const ctx = this.$refs.heatmapChart.getContext('2d')
-      // Example risk data: each dot is a risk (x: Likelihood, y: Impact, v: count/severity)
-      const risks = [
-        { x: 1, y: 5, v: 25 }, { x: 2, y: 5, v: 1 }, { x: 5, y: 5, v: 1 },
-        { x: 1, y: 4, v: 5 },
-        { x: 2, y: 3, v: 1 }, { x: 4, y: 3, v: 1 },
-        { x: 2, y: 2, v: 1 }, { x: 3, y: 2, v: 1 },
-        { x: 3, y: 1, v: 2 }, { x: 1, y: 1, v: 1 }, { x: 3, y: 5, v: 0 },
-        // ... add more as needed
+      
+      // Generate sample data for the scatter plot 
+      const data = [
+        { x: 1, y: 1, v: 10 }, // Low likelihood, low impact
+        { x: 2, y: 1, v: 20 }, 
+        { x: 3, y: 2, v: 30 },
+        { x: 4, y: 3, v: 40 },
+        { x: 5, y: 4, v: 50 }, // High likelihood, high impact
       ]
-      function getColor(val) {
-        if (val >= 20) return '#388e3c'; // deep green
-        if (val >= 5) return '#43a047'; // green
-        if (val === 2) return '#fbc02d'; // yellow
-        if (val === 1) return '#f57c00'; // orange
-        if (val === 0) return '#d32f2f'; // red
-        return '#222';
-      }
+      
       this.heatmapChartInstance = new Chart(ctx, {
         type: 'scatter',
         data: {
           datasets: [{
-            label: 'Risk Heatmap',
-            data: risks,
-            pointBackgroundColor: risks.map(r => getColor(r.v)),
-            pointRadius: risks.map(r => Math.max(6, r.v * 1.5)),
-            pointHoverRadius: risks.map(r => Math.max(8, r.v * 2)),
-            showLine: false
+            label: 'Risk Heat Map',
+            data: data.map(d => ({
+              x: d.x,
+              y: d.y,
+              r: d.v / 2 // Size based on value
+            })),
+            backgroundColor: function(context) {
+              const value = context.raw.r * 2;
+              if (value < 20) return 'rgba(75, 192, 192, 0.8)'; // Low risk
+              if (value < 40) return 'rgba(255, 205, 86, 0.8)'; // Medium risk
+              return 'rgba(255, 99, 132, 0.8)'; // High risk
+            },
+            borderColor: 'rgb(255, 255, 255)',
+            borderWidth: 1
           }]
         },
         options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title: ctx => `Likelihood: ${ctx[0].raw.x}, Impact: ${ctx[0].raw.y}`,
-                label: ctx => `Count: ${ctx.raw.v}`
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Likelihood'
+              },
+              min: 0,
+              max: 6,
+              ticks: {
+                stepSize: 1
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Impact'
+              },
+              min: 0,
+              max: 6,
+              ticks: {
+                stepSize: 1
               }
             }
           },
-          scales: {
-            x: {
-              min: 1, max: 5,
-              title: { display: true, text: 'Likelihood', font: { size: 14 } },
-              ticks: { stepSize: 1, font: { size: 13 } },
-              grid: { color: '#e6e6e6' }
-            },
-            y: {
-              min: 1, max: 5,
-              title: { display: true, text: 'Impact', font: { size: 14 } },
-              ticks: { stepSize: 1, font: { size: 13 } },
-              grid: { color: '#e6e6e6' }
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Risk: ${context.raw.r * 2} (Likelihood: ${context.raw.x}, Impact: ${context.raw.y})`;
+                }
+              }
             }
           }
         }

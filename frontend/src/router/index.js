@@ -29,7 +29,13 @@ import UserTasks from '../components/Risk/UserTasks.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/policy/dashboard'
+    name: 'HomePage',
+    component: () => import('../components/Home.vue')
+  },
+  {
+    path: '/policy',
+    name: 'Policy',
+    component: () => import('../components/Policy/PolicyDashboard.vue')
   },
   {
     path: '/policy/dashboard',
@@ -144,51 +150,48 @@ const routes = [
     component: () => import('../components/Incident/IncidentPerformanceDashboard.vue')
   },
   {
-
     path: '/risk/riskregister',
     name: 'RiskRegister',
     component: RiskRegister
   },
-  
   {
     path: '/risk/ApprovalAndHandling',
     name: 'ApprovalAndHandling',
     component: ApprovalAndHandling
-  
   },
-  
-  
-    {
-      path: '/risk/riskdashboard',
-      name: 'RiskDashboard',
-      component: RiskDashboard
-    },
-    {
-      path: '/risk/riskinstances',
-      name: 'RiskInstances',
-      component: RiskInstances
-    },
-    {
-      path: '/risk/notifications',
-      name: 'RiskNotifications',
-      component: Notifications
-    },
-    {
-      path: '/risk/workflow',
-      name: 'RiskWorkflow',
-      component: () => import('../components/Risk/Workflow.vue')
-    },
-    {
-      path: '/risk/user-tasks',
-      name: 'UserTasks',
-      component: UserTasks
-  
-    }
-  
+  {
+    path: '/risk/riskdashboard',
+    name: 'RiskDashboard',
+    component: RiskDashboard
+  },
+  {
+    path: '/risk/riskinstances',
+    name: 'RiskInstances',
+    component: RiskInstances
+  },
+  {
+    path: '/risk/notifications',
+    name: 'RiskNotifications',
+    component: Notifications
+  },
+  {
+    path: '/risk/workflow',
+    name: 'RiskWorkflow',
+    component: () => import('../components/Risk/Workflow.vue')
+  },
+  {
+    path: '/risk/user-tasks',
+    name: 'UserTasks',
+    component: UserTasks
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
+  }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(process.env.BASE_URL),
   routes
 })
 
