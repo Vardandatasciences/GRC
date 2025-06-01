@@ -60,8 +60,8 @@ from .routes.incidents import(
     list_incidents,create_incident,schedule_manual_incident,reject_incident,create_incident_from_audit_finding,incident_mttd,incident_mttr,
     incident_mttc,incident_mttrv,first_response_time,incident_volume,escalation_rate,repeat_rate,
     incident_metrics,get_incident_counts,incident_count,incidents_by_severity,incident_root_causes,detection_accuracy,incident_closure_rate,
-    incident_origins,incident_types,incident_cost,incident_reopened_count,false_positive_rate,update_incident_status
-
+    incident_origins,incident_types,incident_cost,incident_reopened_count,false_positive_rate,update_incident_status, export_incidents,
+    resolve_incident
 )
 
 urlpatterns = [
@@ -154,8 +154,10 @@ urlpatterns = [
     path('api/incident/detection-accuracy/', detection_accuracy, name='detection-accuracy'),
     path('api/incident/incident-closure-rate/', incident_closure_rate, name='incident-closure-rate'),
     path('incidents/<int:incident_id>/status/', update_incident_status, name='update-incident-status'),
+    path('incidents/<int:incident_id>/resolve/', resolve_incident, name='resolve-incident'),
     path('api/policy/rejected/<int:user_id>/', get_rejected_policies_for_user),
     path('api/policy/resubmit/<int:approval_id>/', resubmit_rejected_policy),
+    path('api/incidents/export/', export_incidents, name='export-incidents'),
 ]
 
 

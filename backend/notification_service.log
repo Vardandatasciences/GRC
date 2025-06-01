@@ -1,0 +1,9 @@
+2025-06-01 23:32:25,528 - notification_service - INFO - Email sent successfully to admin@example.com, type: incidentEscalated
+2025-06-01 23:38:23,566 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\urls.py changed, reloading.
+2025-06-01 23:44:43,685 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\notification_service.py changed, reloading.
+2025-06-01 23:50:15,169 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\notification_service.py changed, reloading.
+2025-06-01 23:51:15,009 - notification_service - INFO - Email sent successfully to admin@example.com, type: incidentEscalated
+2025-06-01 23:56:51,877 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\notification_service.py changed, reloading.
+2025-06-01 23:57:23,847 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\notification_service.py changed, reloading.
+2025-06-01 23:58:46,243 - notification_service - INFO - Email sent successfully to admin@example.com, type: incidentEscalated
+2025-06-02 00:13:39,685 - django.utils.autoreload - INFO - C:\Users\louky\OneDrive - Vardaan Cyber Security Pvt Ltd\Desktop\GRC FINAL\GRC\backend\grc\routes\incidents.py changed, reloading.

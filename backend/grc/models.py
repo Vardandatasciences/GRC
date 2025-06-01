@@ -132,7 +132,7 @@ class Users(models.Model):
     UserId = models.AutoField(primary_key=True)
     UserName = models.CharField(max_length=255)
     # MobileNo = models.CharField(max_length=15)
-    # Email = models.CharField(max_length=255)
+    email = models.CharField(max_length=255)
     # Department = models.CharField(max_length=255)
     # Designation = models.CharField(max_length=255)
     Password = models.CharField(max_length=255)
@@ -291,4 +291,24 @@ class AuditFinding(models.Model):
  
     class Meta:
         db_table = 'audit_findings'
+
+class ExportedFile(models.Model):
+    id = models.AutoField(primary_key=True)
+    export_data = models.TextField(null=True, blank=True)  # JSON data of what was exported
+    file_type = models.CharField(max_length=10)  # xlsx, pdf, csv, etc.
+    user_id = models.CharField(max_length=100)  # User who requested the export
+    s3_url = models.TextField(null=True, blank=True)  # URL to the file in S3
+    file_name = models.CharField(max_length=255)  # File name
+    status = models.CharField(max_length=20)  # pending, processing, completed, failed
+    metadata = models.TextField(null=True, blank=True)  # JSON metadata
+    error = models.TextField(null=True, blank=True)  # Error message if failed
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'exported_files'
+        
+    def __str__(self):
+        return f"Export {self.id} - {self.file_type} - {self.status}"
  

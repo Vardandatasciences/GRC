@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Framework, Policy, SubPolicy, PolicyApproval, Incident, RiskInstance, Compliance
+from .models import Framework, Policy, SubPolicy, PolicyApproval, Incident, RiskInstance, Compliance, Audit, Users, AuditFinding, Risk, ExportedFile
 from datetime import date
 from django.contrib.auth.models import User
 
@@ -143,3 +143,9 @@ class IncidentSerializer(serializers.ModelSerializer):
 
     def get_has_risk_instance(self, obj):
         return RiskInstance.objects.filter(IncidentId=obj.IncidentId).exists()
+
+# Serializer for ExportedFile
+class ExportedFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportedFile
+        fields = ['id', 'file_type', 'user_id', 's3_url', 'file_name', 'status', 'metadata', 'created_at', 'completed_at']

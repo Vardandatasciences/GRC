@@ -33,6 +33,24 @@
                 {{ sortOrder === 'asc' ? '↑' : '↓' }}
               </button>
             </div>
+            <div class="export-controls">
+              <select v-model="exportFormat" class="export-format-select">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.csv)</option>
+                <option value="pdf">PDF (.pdf)</option>
+                <option value="json">JSON (.json)</option>
+                <option value="xml">XML (.xml)</option>
+                <option value="txt">Text (.txt)</option>
+              </select>
+              <button 
+                @click="exportIncidents" 
+                class="export-btn"
+                :disabled="isExporting"
+              >
+                <span v-if="isExporting">Exporting...</span>
+                <span v-else>Export</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -211,6 +229,18 @@
           </div>
         </div>
       </div>
+
+      <!-- Add export success notification -->
+      <div v-if="showExportSuccess" class="export-success-notification">
+        <div class="notification-content">
+          <span class="success-icon">✓</span>
+          <div class="notification-message">
+            <p>Export successful!</p>
+            <a :href="exportFileUrl" target="_blank" class="download-link">Download {{ exportFileName }}</a>
+          </div>
+          <button @click="showExportSuccess = false" class="close-notification-btn">✕</button>
+        </div>
+      </div>
     </div>
   </template>
   
@@ -233,7 +263,12 @@
         showModal: false,
         modalAction: '', // 'solve' or 'reject'
         selectedIncident: null,
-        showIncidentDetails: false
+        showIncidentDetails: false,
+        exportFormat: 'xlsx',
+        isExporting: false,
+        showExportSuccess: false,
+        exportFileUrl: '',
+        exportFileName: ''
       }
     },
     computed: {
@@ -468,6 +503,48 @@
       closeIncidentDetails() {
         this.selectedIncident = null;
         this.showIncidentDetails = false;
+      },
+      async exportIncidents() {
+        try {
+          this.isExporting = true;
+          
+          const response = await axios.post('http://localhost:8000/api/incidents/export/', {
+            file_format: this.exportFormat,
+            user_id: 'user123', // Ideally, use a logged-in user's ID
+            timeRange: 'all', // You can extend this to use your filters
+            category: 'all',
+            priority: 'all'
+          });
+          
+          console.log('Export response:', response.data);
+          
+          if (response.data.success) {
+            this.exportFileUrl = response.data.file_url;
+            this.exportFileName = response.data.file_name;
+            this.showExportSuccessMessage();
+            
+            // Auto-download the file
+            const link = document.createElement('a');
+            link.href = response.data.file_url;
+            link.download = response.data.file_name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        } catch (error) {
+          console.error('Error exporting incidents:', error);
+          alert('Failed to export incidents. Please try again.');
+        } finally {
+          this.isExporting = false;
+        }
+      },
+      
+      showExportSuccessMessage() {
+        this.showExportSuccess = true;
+        // Auto-hide the notification after 5 seconds
+        setTimeout(() => {
+          this.showExportSuccess = false;
+        }, 5000);
       }
     }
   }

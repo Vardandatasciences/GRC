@@ -33,6 +33,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 import json
+from ..notification_service import NotificationService
+from ..export_service import export_data
+
+# Initialize notification service
+notification_service = NotificationService()
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -94,8 +99,61 @@ def update_incident_status(request, incident_id):
         
         print(f"Updating incident {incident_id} status to: {new_status}")
         
+        # Store old status for notification purposes
+        old_status = incident.Status
+        
         incident.Status = new_status
         incident.save()
+        
+        # Send notification based on the status change
+        try:
+            # Get user for notification
+            user = incident.UserId if incident.UserId else None
+            recipient_email = user.Email if user and hasattr(user, 'Email') else 'admin@example.com'
+            
+            if new_status == 'Scheduled':
+                # Send escalation notification
+                notification_service.send_email(
+                    recipient_email,
+                    'gmail',
+                    'incidentEscalated',
+                    [
+                        user.UserName if user else 'Manager',
+                        incident.IncidentTitle,
+                        'System Admin'  # Escalator name
+                    ]
+                )
+                print(f"Sent incident escalation notification to {recipient_email}")
+            
+            elif new_status == 'Rejected':
+                # Send rejection notification
+                notification_service.send_email(
+                    recipient_email,
+                    'gmail',
+                    'incidentResolved',
+                    [
+                        incident.IncidentTitle,
+                        'System Admin',  # Assignee name
+                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    ]
+                )
+                print(f"Sent incident rejection notification to {recipient_email}")
+                
+            elif new_status == 'Mitigated':
+                # Send resolution notification
+                notification_service.send_email(
+                    recipient_email,
+                    'gmail',
+                    'incidentResolved',
+                    [
+                        incident.IncidentTitle,
+                        user.UserName if user else 'System Admin',  # Assignee name
+                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    ]
+                )
+                print(f"Sent incident resolution notification to {recipient_email}")
+        except Exception as e:
+            print(f"Error sending notification: {str(e)}")
         
         return Response({
             'success': True,
@@ -112,6 +170,7 @@ def update_incident_status(request, incident_id):
             'success': False,
             'message': str(e)
         }, status=500)
+
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -119,7 +178,29 @@ def create_incident(request):
     print("Received data:", request.data)
     serializer = IncidentSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        incident = serializer.save()
+        
+        # Send notification for new incident
+        try:
+            # Find a responsible manager/admin to notify
+            admin_users = Users.objects.filter(Role__icontains='admin').first()
+            recipient_email = admin_users.Email if admin_users and hasattr(admin_users, 'Email') else 'admin@example.com'
+            
+            # Send incident assigned notification
+            notification_service.send_email(
+                recipient_email,
+                'gmail',
+                'incidentAssigned',
+                [
+                    admin_users.UserName if admin_users else 'Admin',
+                    incident.IncidentTitle,
+                    (datetime.datetime.now() + datetime.timedelta(days=3)).strftime('%Y-%m-%d')  # Due date (3 days from now)
+                ]
+            )
+            print(f"Sent new incident notification to {recipient_email}")
+        except Exception as e:
+            print(f"Error sending notification: {str(e)}")
+            
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     print("Serializer errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -127,7 +208,7 @@ def create_incident(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def unchecked_audit_findings(request):
-    findings = AuditFinding.objects.filter(check_status='0')
+    findings = AuditFinding.objects.filter(Complied=['0','1'])
     serializer = AuditFindingSerializer(findings, many=True)
     return Response(serializer.data)
 
@@ -260,6 +341,30 @@ def create_incident_from_audit_finding(request):
         # Update the existing incident
         existing_incident.Status = 'Scheduled'
         existing_incident.save()
+        
+        # Send notification for updated incident
+        try:
+            # Find a responsible manager/admin to notify
+            risk_mgr = Users.objects.filter(Role__icontains='risk').first()
+            if not risk_mgr:
+                risk_mgr = Users.objects.filter(Role__icontains='admin').first()
+                
+            if risk_mgr and hasattr(risk_mgr, 'Email'):
+                # Send incident escalation notification
+                notification_service.send_email(
+                    risk_mgr.Email,
+                    'gmail', 
+                    'incidentEscalated',
+                    [
+                        risk_mgr.UserName,
+                        existing_incident.IncidentTitle,
+                        finding.UserId.UserName if finding.UserId else 'Auditor'
+                    ]
+                )
+                print(f"Sent incident escalation notification to {risk_mgr.Email}")
+        except Exception as e:
+            print(f"Error sending notification: {str(e)}")
+            
         serializer = IncidentSerializer(existing_incident)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -281,6 +386,46 @@ def create_incident_from_audit_finding(request):
     serializer = IncidentSerializer(data=incident_data)
     if serializer.is_valid():
         incident = serializer.save()
+        
+        # Send notification for new incident from audit finding
+        try:
+            # Find a responsible risk manager to notify
+            risk_mgr = Users.objects.filter(Role__icontains='risk').first()
+            if not risk_mgr:
+                risk_mgr = Users.objects.filter(Role__icontains='admin').first()
+                
+            if risk_mgr and hasattr(risk_mgr, 'Email'):
+                # Send incident escalation notification
+                notification_service.send_email(
+                    risk_mgr.Email,
+                    'gmail', 
+                    'incidentEscalated',
+                    [
+                        risk_mgr.UserName,
+                        incident.IncidentTitle,
+                        finding.UserId.UserName if finding.UserId else 'Auditor'
+                    ]
+                )
+                print(f"Sent new incident from audit finding notification to {risk_mgr.Email}")
+                
+                # Also notify the auditor if available
+                if finding.UserId and hasattr(finding.UserId, 'Email'):
+                    notification_service.send_email(
+                        finding.UserId.Email,
+                        'gmail',
+                        'auditReviewed',
+                        [
+                            finding.UserId.UserName,
+                            incident.IncidentTitle,
+                            'Escalated to Incident',
+                            risk_mgr.UserName,
+                            incident.Description
+                        ]
+                    )
+                    print(f"Sent notification to auditor {finding.UserId.Email}")
+        except Exception as e:
+            print(f"Error sending notification: {str(e)}")
+            
         # Do not change the Check status if it's partially compliant (2)
         if finding.Check != '2':
             finding.Check = '1'  # Mark as compliant/processed
@@ -296,6 +441,44 @@ def schedule_manual_incident(request):
         incident = Incident.objects.get(pk=incident_id, Origin="Manual")
         incident.Status = "Scheduled"
         incident.save()
+        
+        # Send notification for scheduled incident
+        try:
+            # Find a responsible risk manager to notify
+            risk_mgr = Users.objects.filter(Role__icontains='risk').first()
+            if not risk_mgr:
+                risk_mgr = Users.objects.filter(Role__icontains='admin').first()
+                
+            if risk_mgr and hasattr(risk_mgr, 'Email'):
+                # Send incident assigned notification
+                notification_service.send_email(
+                    risk_mgr.Email,
+                    'gmail',
+                    'incidentAssigned',
+                    [
+                        risk_mgr.UserName,
+                        incident.IncidentTitle,
+                        (datetime.datetime.now() + datetime.timedelta(days=7)).strftime('%Y-%m-%d')  # Due date (7 days from now)
+                    ]
+                )
+                print(f"Sent incident escalation notification to {risk_mgr.Email}")
+                
+                # Also notify the incident creator if available
+                if incident.UserId and hasattr(incident.UserId, 'Email'):
+                    notification_service.send_email(
+                        incident.UserId.Email,
+                        'gmail',
+                        'incidentEscalated',
+                        [
+                            incident.UserId.UserName,
+                            incident.IncidentTitle,
+                            risk_mgr.UserName
+                        ]
+                    )
+                    print(f"Sent notification to incident creator {incident.UserId.Email}")
+        except Exception as e:
+            print(f"Error sending notification: {str(e)}")
+            
         return Response({'message': 'Incident scheduled and directed to risk workflow.'}, status=status.HTTP_200_OK)
     except Incident.DoesNotExist:
         return Response({'error': 'Incident not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -310,6 +493,25 @@ def reject_incident(request):
             incident = Incident.objects.get(pk=incident_id)
             incident.Status = "Rejected"
             incident.save()
+            
+            # Send notification for rejected incident
+            try:
+                # Notify the incident creator
+                if incident.UserId and hasattr(incident.UserId, 'Email'):
+                    notification_service.send_email(
+                        incident.UserId.Email,
+                        'gmail',
+                        'incidentResolved',  # Using resolved template for rejection
+                        [
+                            incident.IncidentTitle,
+                            'System Administrator',  # Assignee name
+                            datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        ]
+                    )
+                    print(f"Sent incident rejection notification to {incident.UserId.Email}")
+            except Exception as e:
+                print(f"Error sending notification: {str(e)}")
+                
             return Response({'message': 'Incident rejected successfully.'}, status=status.HTTP_200_OK)
         except Incident.DoesNotExist:
             return Response({'error': 'Incident not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -328,6 +530,26 @@ def reject_incident(request):
             if existing_incident:
                 existing_incident.Status = "Rejected"
                 existing_incident.save()
+                
+                # Send notification for rejected audit finding incident
+                try:
+                    # Notify the auditor
+                    if finding.UserId and hasattr(finding.UserId, 'Email'):
+                        notification_service.send_email(
+                            finding.UserId.Email,
+                            'gmail',
+                            'auditReviewed',
+                            [
+                                finding.UserId.UserName,
+                                existing_incident.IncidentTitle,
+                                'Rejected',
+                                'System Administrator',
+                                existing_incident.Comments or 'No additional comments.'
+                            ]
+                        )
+                        print(f"Sent audit finding rejection notification to {finding.UserId.Email}")
+                except Exception as e:
+                    print(f"Error sending notification: {str(e)}")
             else:
                 # Create a new incident with Rejected status
                 incident_data = {
@@ -346,7 +568,28 @@ def reject_incident(request):
                 
                 serializer = IncidentSerializer(data=incident_data)
                 if serializer.is_valid():
-                    serializer.save()
+                    incident = serializer.save()
+                    
+                    # Send notification for newly created rejected incident
+                    try:
+                        # Notify the auditor
+                        if finding.UserId and hasattr(finding.UserId, 'Email'):
+                            notification_service.send_email(
+                                finding.UserId.Email,
+                                'gmail',
+                                'auditReviewed',
+                                [
+                                    finding.UserId.UserName,
+                                    incident.IncidentTitle,
+                                    'Rejected',
+                                    'System Administrator',
+                                    incident.Comments or 'No additional comments.'
+                                ]
+                            )
+                            print(f"Sent new rejected incident notification to {finding.UserId.Email}")
+                    except Exception as e:
+                        print(f"Error sending notification: {str(e)}")
+                        
                     # Mark finding as processed
                     finding.Check = '1'
                     finding.save()
@@ -1843,6 +2086,31 @@ def incident_closure_rate(request):
         closure_rate = 0
 
     print(f"Calculated closure rate: {closure_rate}%")
+    
+    # Send periodic notification about incident closure rate to management
+    try:
+        # Only send notification if the time range is 30 days (for monthly reporting)
+        if time_range == '30days':
+            # Find management users to notify
+            managers = Users.objects.filter(Role__icontains='manager').first()
+            if not managers:
+                managers = Users.objects.filter(Role__icontains='admin').first()
+            
+            if managers and hasattr(managers, 'Email'):
+                notification_service.send_email(
+                    managers.Email,
+                    'gmail',
+                    'accountUpdate', # Using account update template for reporting
+                    [
+                        managers.UserName,
+                        f"Monthly Incident Closure Report: The current incident closure rate is {round(closure_rate, 2)}%. " +
+                        f"Out of {total_incidents} total incidents, {resolved_incidents} have been resolved. " +
+                        f"This report covers the period from {start_date.strftime('%Y-%m-%d') if start_date else 'all time'} to {now().strftime('%Y-%m-%d')}."
+                    ]
+                )
+                print(f"Sent incident closure rate notification to {managers.Email}")
+    except Exception as e:
+        print(f"Error sending closure rate notification: {str(e)}")
 
     # Prepare response data
     response_data = {
@@ -2139,4 +2407,214 @@ def get_incident_counts(request):
 
     print(f"Returning JSON response data: {data}")
     return JsonResponse(data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def export_incidents(request):
+    """Export incidents to various formats (xlsx, pdf, csv, json, xml, txt)"""
+    try:
+        # Get export format from request
+        file_format = request.data.get('file_format', 'xlsx')
+        user_id = request.data.get('user_id', 'anonymous')
+        
+        # Get filter parameters
+        time_range = request.data.get('timeRange', 'all')
+        category = request.data.get('category', 'all')
+        priority = request.data.get('priority', 'all')
+        
+        # Start with all incidents
+        incidents = Incident.objects.all()
+        
+        # Apply time range filter
+        if time_range != 'all':
+            from datetime import datetime, timedelta
+            today = datetime.now().date()
+            
+            if time_range == '7days':
+                start_date = today - timedelta(days=7)
+            elif time_range == '30days':
+                start_date = today - timedelta(days=30)
+            elif time_range == '90days':
+                start_date = today - timedelta(days=90)
+            elif time_range == '1year':
+                start_date = today - timedelta(days=365)
+                
+            incidents = incidents.filter(Date__gte=start_date)
+        
+        # Apply category filter
+        if category != 'all':
+            incidents = incidents.filter(RiskCategory__iexact=category)
+        
+        # Apply priority filter
+        if priority != 'all':
+            incidents = incidents.filter(RiskPriority__iexact=priority)
+        
+        # Convert incidents queryset to list of dictionaries
+        incidents_data = []
+        for incident in incidents:
+            incident_dict = {
+                'IncidentId': incident.IncidentId,
+                'IncidentTitle': incident.IncidentTitle,
+                'Description': incident.Description,
+                'Mitigation': incident.Mitigation or '',
+                'Date': incident.Date.strftime('%Y-%m-%d') if incident.Date else '',
+                'Time': incident.Time.strftime('%H:%M:%S') if incident.Time else '',
+                'Origin': incident.Origin,
+                'Comments': incident.Comments or '',
+                'RiskCategory': incident.RiskCategory or '',
+                'RiskPriority': incident.RiskPriority or '',
+                'Status': incident.Status or '',
+                'CreatedAt': incident.CreatedAt.strftime('%Y-%m-%d %H:%M:%S') if incident.CreatedAt else '',
+                'IdentifiedAt': incident.IdentifiedAt.strftime('%Y-%m-%d %H:%M:%S') if incident.IdentifiedAt else '',
+                'CostOfIncident': incident.CostOfIncident or ''
+            }
+            incidents_data.append(incident_dict)
+        
+        # Export options
+        export_options = {
+            'filters': {
+                'timeRange': time_range,
+                'category': category,
+                'priority': priority
+            }
+        }
+        
+        # Use export_service to generate the export
+        result = export_data(
+            data=incidents_data,
+            file_format=file_format,
+            user_id=user_id,
+            options=export_options
+        )
+
+        # Send notification about the export
+        try:
+            # Find the user who requested the export
+            user = None
+            if user_id != 'anonymous':
+                try:
+                    user = Users.objects.get(UserId=user_id)
+                except Users.DoesNotExist:
+                    user = None
+            
+            # Prepare notification data
+            if user and hasattr(user, 'Email'):
+                export_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                notification_service.send_email(
+                    user.Email,
+                    'gmail',
+                    'accountUpdate',
+                    [
+                        user.UserName,
+                        f"Incident report in {file_format.upper()} format was exported on {export_time}. " +
+                        f"The report contains {len(incidents_data)} incidents and can be accessed through the system."
+                    ]
+                )
+                print(f"Sent export notification to {user.Email}")
+                
+                # If configured, also notify administrators about the export
+                admin_users = Users.objects.filter(Role__icontains='admin').first()
+                if admin_users and hasattr(admin_users, 'Email'):
+                    notification_service.send_email(
+                        admin_users.Email,
+                        'gmail',
+                        'systemMaintenance',
+                        [
+                            export_time.split(' ')[0],  # Date
+                            export_time.split(' ')[1],  # Time
+                            f"Incident report in {file_format.upper()} format was exported by {user.UserName}"
+                        ]
+                    )
+                    print(f"Sent export notification to admin {admin_users.Email}")
+        except Exception as e:
+            print(f"Error sending export notification: {str(e)}")
+        
+        return Response({
+            'success': True,
+            'message': f'Exported {len(incidents_data)} incidents to {file_format}',
+            'file_url': result['file_url'],
+            'file_name': result['file_name'],
+            'metadata': result['metadata']
+        })
+        
+    except Exception as e:
+        print(f"Error exporting incidents: {str(e)}")
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def resolve_incident(request, incident_id):
+    """Mark an incident as resolved/mitigated and send notifications"""
+    try:
+        # Get the incident
+        incident = Incident.objects.get(IncidentId=incident_id)
+        
+        # Check if it's already resolved
+        if incident.Status == 'Mitigated':
+            return Response({
+                'success': False,
+                'message': 'Incident is already resolved'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get resolution details from request
+        resolution_notes = request.data.get('resolution_notes', '')
+        resolution_date = request.data.get('resolution_date', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        
+        # Update incident status
+        incident.Status = 'Mitigated'
+        incident.Comments = (incident.Comments or '') + f"\n\nResolution notes ({resolution_date}): {resolution_notes}"
+        incident.save()
+        
+        # Send resolution notification
+        try:
+            # Notify the incident creator
+            if incident.UserId and hasattr(incident.UserId, 'Email'):
+                notification_service.send_email(
+                    incident.UserId.Email,
+                    'gmail',
+                    'incidentResolved',
+                    [
+                        incident.IncidentTitle,
+                        request.user.username if hasattr(request, 'user') and hasattr(request.user, 'username') else 'System User',
+                        resolution_date
+                    ]
+                )
+                print(f"Sent incident resolution notification to {incident.UserId.Email}")
+            
+            # Notify management
+            managers = Users.objects.filter(Role__icontains='manager').first()
+            if managers and hasattr(managers, 'Email'):
+                notification_service.send_email(
+                    managers.Email,
+                    'gmail',
+                    'incidentResolved',
+                    [
+                        incident.IncidentTitle,
+                        request.user.username if hasattr(request, 'user') and hasattr(request.user, 'username') else 'System User',
+                        resolution_date
+                    ]
+                )
+                print(f"Sent incident resolution notification to manager {managers.Email}")
+            
+        except Exception as e:
+            print(f"Error sending resolution notification: {str(e)}")
+        
+        return Response({
+            'success': True,
+            'message': 'Incident has been successfully resolved'
+        })
+        
+    except Incident.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'Incident not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error resolving incident: {str(e)}")
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
