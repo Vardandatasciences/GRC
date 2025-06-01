@@ -33,15 +33,21 @@
   
   /* Global Styles for Incident Table */
   .incident-view-container {
-    padding: 16px 16px 16px 210px;
+    padding: 0px 24px 24px 24px;
     min-height: 100vh;
     font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     color: var(--incident-gray-800);
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: calc(100% - 200px);
+    margin-left: 200px;
     box-sizing: border-box;
     overflow-x: hidden;
+    background-color: #f5f7fb;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 0;
   }
   
   /* Header Styles */
@@ -51,6 +57,8 @@
     align-items: center;
     margin-bottom: 24px;
     position: relative;
+    padding-top: 16px;
+    width: 100%;
   }
   
   .incident-view-title {
@@ -327,11 +335,12 @@
     width: 100%;
     max-width: 100%;
     overflow: visible;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-top: 16px;
     margin-bottom: 32px;
     flex: 1;
-    background-color: transparent;
+    background-color: white;
   }
   
   /* Table container - enable scrolling */
@@ -594,7 +603,8 @@
   
   @media (max-width: 1200px) {
     .incident-view-container {
-      padding: 20px 20px 20px 220px;
+      padding: 0px 20px 20px 20px;
+      width: calc(100% - 200px);
     }
     
     .incident-checklist-item,
@@ -606,6 +616,10 @@
   }
   
   @media (max-width: 992px) {
+    .incident-view-container {
+      padding: 0px 16px 16px 16px;
+    }
+    
     .incident-checklist-item,
     .checklist-header-row {
       grid-template-columns: 60px minmax(180px, 1fr) 100px 120px 380px;
@@ -616,7 +630,9 @@
   
   @media (max-width: 768px) {
     .incident-view-container {
-      padding: 16px;
+      padding: 0px 12px 16px 12px;
+      width: 100%;
+      margin-left: 0;
     }
     
     .filter-group {
@@ -1667,7 +1683,8 @@
   
   @media (max-width: 1200px) {
     .incident-view-container {
-      padding: 20px 20px 20px 220px;
+      padding: 0px 20px 20px 20px;
+      width: calc(100% - 200px);
     }
     
     .details-grid {
@@ -1680,6 +1697,10 @@
   }
   
   @media (max-width: 992px) {
+    .incident-view-container {
+      padding: 0px 16px 16px 16px;
+    }
+    
     .checklist-header {
       flex-direction: column;
       gap: 15px;
@@ -1697,7 +1718,9 @@
   
   @media (max-width: 768px) {
     .incident-view-container {
-      padding: 16px;
+      padding: 0px 12px 16px 12px;
+      width: 100%;
+      margin-left: 0;
     }
     
     .filter-group {
@@ -1994,11 +2017,12 @@
     width: 100%;
     max-width: 100%;
     overflow: visible;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-top: 16px;
     margin-bottom: 32px;
     flex: 1;
-    background-color: transparent;
+    background-color: white;
   }
   
   /* Ensure proper visibility of IDs */
