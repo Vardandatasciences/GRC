@@ -14,6 +14,11 @@ import FrameworkPolicies from '../components/Policy/FrameworkPolicies.vue'
 import KPIDashboard from '../components/Policy/KPIDashboard.vue'
 import FrameworkApprover from '../components/Framework/FrameworkApprover.vue'
 
+import CreateIncident from '../components/Incident/CreateIncident.vue'
+import IncidentDashboard from '../components/Incident/IncidentDashboard.vue'
+import IncidentManagement from '../components/Incident/Incident.vue'
+import IncidentDetails from '@/components/Incident/IncidentDetails.vue'
+
 const routes = [
   {
     path: '/',
@@ -100,6 +105,37 @@ const routes = [
     path: '/policy/performance/kpis',
     name: 'KPIDashboard',
     component: KPIDashboard
+  },
+  {
+    path: '/incident/create',
+    name: 'CreateIncident',
+    component: CreateIncident
+  },
+  {
+    path: '/incident/incident',
+    name: 'Incident',
+    component: IncidentManagement
+  },
+  {
+    path: '/incident/dashboard',
+    name: 'IncidentDashboard',
+    component: IncidentDashboard
+  },
+  {
+    path: '/incident/:id',
+    name: 'IncidentDetails',
+    component: IncidentDetails,
+    props: true
+  },
+  {
+    path: '/incident/incident',
+    name: 'IncidentManagement',
+    component: () => import('../components/Incident/Incident.vue')
+  },
+  {
+    path: '/incident/performance/dashboard',
+    name: 'IncidentPerformanceDashboard',
+    component: () => import('../components/Incident/IncidentPerformanceDashboard.vue')
   },
   
   

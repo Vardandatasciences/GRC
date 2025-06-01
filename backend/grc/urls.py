@@ -44,7 +44,9 @@ from .routes.policy import (
     submit_policy_approval_review,
     get_policy_version_history,
     list_policy_approvals_for_reviewer,
-    list_rejected_policy_approvals_for_user
+    list_rejected_policy_approvals_for_user,
+    get_rejected_policies_for_user,
+    resubmit_rejected_policy
 )
 from .routes.frameworks import (
     create_framework_approval,
@@ -53,6 +55,13 @@ from .routes.frameworks import (
     submit_framework_review,
     get_latest_framework_approval,
     resubmit_framework
+)
+from .routes.incidents import(
+    list_incidents,create_incident,schedule_manual_incident,reject_incident,create_incident_from_audit_finding,incident_mttd,incident_mttr,
+    incident_mttc,incident_mttrv,first_response_time,incident_volume,escalation_rate,repeat_rate,
+    incident_metrics,get_incident_counts,incident_count,incidents_by_severity,incident_root_causes,detection_accuracy,incident_closure_rate,
+    incident_origins,incident_types,incident_cost,incident_reopened_count,false_positive_rate,update_incident_status
+
 )
 
 urlpatterns = [
@@ -114,5 +123,41 @@ urlpatterns = [
     path('api/framework-approvals/<int:approval_id>/update/', update_framework_approval, name='update-framework-approval'),
     path('api/frameworks/<int:framework_id>/submit-review/', submit_framework_review, name='submit-framework-review'),
     path('api/framework-approvals/latest/<int:framework_id>/', get_latest_framework_approval, name='get-latest-framework-approval'),
-    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework')
+    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework'),
+
+    path('incidents/', list_incidents, name='list-incidents'),
+    path('api/incidents/', list_incidents, name='api-list-incidents'),
+    path('incident/create/', create_incident, name='create-incident-singular'),
+    path('incident/schedule-manual/', schedule_manual_incident, name='schedule_manual_incident'),
+    path('incident/reject/', reject_incident, name='reject_incident'),
+    path('incidents/create/', create_incident, name='create-incident'),
+    path('incident/from-audit-finding/', create_incident_from_audit_finding, name='incident_from_audit_finding'),
+    path('api/incident/mttd/', incident_mttd, name='incident-mttd'),
+    path('api/incident/mttr/', incident_mttr, name='incident_mttr'),
+    path('api/incident/mttc/',incident_mttc, name='incident-mttc'),
+    path('api/incident/mttrv/',incident_mttrv, name='incident-mttrv'),
+    path('api/incident/first-response-time/', first_response_time, name='first-response-time'),
+    path('api/incident/incident-volume/', incident_volume, name='incident-volume'),
+    path('api/incident/escalation-rate/', escalation_rate, name='escalation-rate'),
+    path('api/incident/repeat-rate/', repeat_rate, name='repeat-rate'),
+    path('api/incident/metrics/', incident_metrics, name='incident-metrics'),
+    path('api/incidents/counts/', get_incident_counts, name='incident-counts'),
+    path('api/incident/count/', incident_count, name='incident-count'),
+    path('api/incident/by-severity/', incidents_by_severity, name='incidents-by-severity'),
+    path('api/incident/root-causes/', incident_root_causes, name='incident-root-causes'),
+    path('api/incident/origins/', incident_origins, name='incident-origins'),
+    path('api/incident/types/', incident_types, name='incident-types'),
+    path('api/incident/incident-cost/', incident_cost, name='incident-cost'),
+    path('api/incident/cost/', incident_cost, name='incident-cost-alt'),
+    path('api/incident/reopened-count/', incident_reopened_count, name='incident-reopened-count'),
+    path('api/incident/false-positive-rate/', false_positive_rate, name='false-positive-rate'),
+    path('api/incident/detection-accuracy/', detection_accuracy, name='detection-accuracy'),
+    path('api/incident/incident-closure-rate/', incident_closure_rate, name='incident-closure-rate'),
+    path('incidents/<int:incident_id>/status/', update_incident_status, name='update-incident-status'),
+    path('api/policy/rejected/<int:user_id>/', get_rejected_policies_for_user),
+    path('api/policy/resubmit/<int:approval_id>/', resubmit_rejected_policy),
 ]
+
+
+
+

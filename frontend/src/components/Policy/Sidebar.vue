@@ -149,13 +149,69 @@
           </div>
         </div>
       </div>
-    </div>
+    
+      <!-- Incident Section -->
+<div 
+  @click="toggleSubmenu('incident')" 
+  class="menu-item has-submenu" 
+  :class="{'expanded': openMenus.incident}"
+>
+  <i class="fas fa-file-alt icon"></i>
+  <span v-if="!isCollapsed">Incident</span>
+  <i v-if="!isCollapsed" class="fas fa-chevron-right submenu-arrow"></i> <!-- Arrow icon added -->
+</div>
 
+<div v-if="!isCollapsed && openMenus.incident" class="submenu">
+  <!-- Incident Management -->
+  <div 
+    @click="toggleSubmenu('incidentManagement')" 
+    class="menu-item has-submenu" 
+    :class="{'expanded': openMenus.incidentManagement}"
+  >
+    <i class="fas fa-clipboard-list icon"></i>
+    <span>Incident Management</span>
+    <i class="fas fa-chevron-right submenu-arrow"></i>
+  </div>
+  <div v-if="!isCollapsed && openMenus.incidentManagement" class="submenu">
+    <div class="menu-item" @click="navigate('/incident/incident')">
+      <i class="fas fa-list icon"></i>
+      <span>Incident List</span>
+    </div>
+    <div class="menu-item" @click="navigate('/incident/create')">
+      <i class="fas fa-plus icon"></i>
+      <span>Create Incident</span>
+    </div>
+  </div>
+
+  <!-- Incident Performance -->
+  <div 
+    @click="toggleSubmenu('incidentPerformance')" 
+    class="menu-item has-submenu" 
+    :class="{'expanded': openMenus.incidentPerformance}"
+  >
+    <i class="fas fa-chart-line icon"></i>
+    <span>Performance Analysis</span>
+    <i class="fas fa-chevron-right submenu-arrow"></i>
+  </div>
+  <div v-if="!isCollapsed && openMenus.incidentPerformance" class="submenu">
+    <div class="menu-item" @click="navigate('/incident/dashboard')">
+      <i class="fas fa-chart-pie icon"></i>
+      <span>KPIs Analysis</span>
+    </div>
+    <div class="menu-item" @click="navigate('/incident/performance/dashboard')">
+      <i class="fas fa-tachometer-alt icon"></i>
+      <span>Dashboard</span>
+    </div>
+  </div>
+</div>
+
+   
+    </div>
     <div class="bottom-profile">
       <i class="fas fa-user icon"></i>
       <span v-if="!isCollapsed">User Profile</span>
     </div>
-  </div>
+    </div>
 </template>
 
 <script>

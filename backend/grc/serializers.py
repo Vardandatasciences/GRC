@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Framework, Policy, SubPolicy, PolicyApproval
+from .models import Framework, Policy, SubPolicy, PolicyApproval, Incident, RiskInstance, Compliance
 from datetime import date
 from django.contrib.auth.models import User
 
@@ -60,6 +60,10 @@ class FrameworkSerializer(serializers.ModelSerializer):
             'ActiveInactive', 'policies', 'Reviewer'
         ]
 
+class ComplianceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Compliance
+        fields = '__all__'  # Include all fields in the model
 
 class PolicyAllocationSerializer(serializers.Serializer):
     framework = serializers.IntegerField(required=True, error_messages={'required': 'Framework is required', 'invalid': 'Framework must be a valid integer'})
@@ -129,3 +133,13 @@ class PolicyApprovalSerializer(serializers.ModelSerializer):
             'ApprovalId', 'ExtractedData', 'UserId', 
             'ReviewerId', 'Version', 'ApprovedNot', 'ApprovedDate', 'PolicyId'
         ]
+
+class IncidentSerializer(serializers.ModelSerializer):
+    has_risk_instance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Incident
+        fields = '__all__'  # or list all fields explicitly + 'has_risk_instance'
+
+    def get_has_risk_instance(self, obj):
+        return RiskInstance.objects.filter(IncidentId=obj.IncidentId).exists()

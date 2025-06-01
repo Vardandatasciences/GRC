@@ -597,11 +597,11 @@ def add_policy_to_framework(request, framework_id):
                 "PolicyName": policy.PolicyName,
                 "PolicyDescription": policy.PolicyDescription,
                 "Status": policy.Status,
-                "StartDate": policy.StartDate.isoformat() if policy.StartDate else None,
-                "EndDate": policy.EndDate.isoformat() if policy.EndDate else None,
+                "StartDate": policy.StartDate.isoformat() if hasattr(policy.StartDate, 'isoformat') else policy.StartDate,
+                "EndDate": policy.EndDate.isoformat() if hasattr(policy.EndDate, 'isoformat') else policy.EndDate,
                 "Department": policy.Department,
                 "CreatedByName": policy.CreatedByName,
-                "CreatedByDate": policy.CreatedByDate.isoformat() if policy.CreatedByDate else None,
+                "CreatedByDate": policy.CreatedByDate.isoformat() if hasattr(policy.CreatedByDate, 'isoformat') else policy.CreatedByDate,
                 "Applicability": policy.Applicability,
                 "Scope": policy.Scope,
                 "Objective": policy.Objective,
@@ -830,6 +830,16 @@ def submit_policy_review(request, approval_id):
             return Response({'error': 'ExtractedData is required'}, status=status.HTTP_400_BAD_REQUEST)
        
         approved_not = request.data.get('ApprovedNot')
+        
+        # Add approval information to extracted data
+        if 'policy_approval' not in extracted_data:
+            extracted_data['policy_approval'] = {}
+        
+        extracted_data['policy_approval']['approved'] = approved_not
+        
+        # Add remarks if provided
+        if request.data.get('remarks'):
+            extracted_data['policy_approval']['remarks'] = request.data.get('remarks')
        
         # Simply create a new PolicyApproval object
         # Avoid using filters that might generate BINARY expressions
@@ -838,7 +848,7 @@ def submit_policy_review(request, approval_id):
         # Try to determine the next version number without SQL LIKE
         try:
             r_versions = []
-            for pa in PolicyApproval.objects.filter(Identifier=approval.Identifier):
+            for pa in PolicyApproval.objects.filter(PolicyId=approval.PolicyId):
                 if pa.Version and pa.Version.startswith('r') and pa.Version[1:].isdigit():
                     r_versions.append(int(pa.Version[1:]))
            
@@ -847,69 +857,45 @@ def submit_policy_review(request, approval_id):
         except Exception as version_err:
             print(f"Error determining version (using default): {str(version_err)}")
        
-        # Set approved date if policy is approved
+        # Set approved date if policy is approved or rejected
         approved_date = None
-        if approved_not == True or approved_not == 1:
-            approved_date = datetime.date.today()
+        if approved_not is not None:  # Either approved or rejected
+            approved_date = datetime.now().date()
            
         # Create a new record using Django ORM
         new_approval = PolicyApproval(
-            Identifier=approval.Identifier,
+            PolicyId=approval.PolicyId,
             ExtractedData=extracted_data,
             UserId=approval.UserId,
             ReviewerId=approval.ReviewerId,
             ApprovedNot=approved_not,
-            ApprovedDate=approved_date,  # Set approved date
+            ApprovedDate=approved_date,  # Set date for both approval and rejection
             Version=new_version
         )
         new_approval.save()
        
-        # If policy is approved (ApprovedNot=1), update the status in policy and subpolicies tables
-        if approved_not == True or approved_not == 1:
-            try:
-                # Find the policy by Identifier
-                policy = Policy.objects.get(Identifier=approval.Identifier)
-
-                # Get the policy version record
-                policy_version = PolicyVersion.objects.filter(
-                    PolicyId=policy,
-                    Version=policy.CurrentVersion
-                ).first()
-
-                # If this policy has a previous version, set it to inactive
-                if policy_version and policy_version.PreviousVersionId:
-                    try:
-                        previous_version = PolicyVersion.objects.get(VersionId=policy_version.PreviousVersionId)
-                        previous_policy = previous_version.PolicyId
-                        previous_policy.ActiveInactive = 'Inactive'
-                        previous_policy.save()
-                        print(f"Set previous policy version {previous_policy.PolicyId} to Inactive")
-                    except Exception as prev_error:
-                        print(f"Error updating previous policy version: {str(prev_error)}")
-               
-                # Update policy status to Approved and Active
-                if policy.Status == 'Under Review':
-                    policy.Status = 'Approved'
-                    policy.ActiveInactive = 'Active'  # Set to Active when approved
-                    policy.save()
-                    print(f"Updated policy {policy.Identifier} status to Approved and Active")
-               
-                # Update all subpolicies for this policy
-                subpolicies = SubPolicy.objects.filter(PolicyId=policy.PolicyId)
-                for subpolicy in subpolicies:
-                    if subpolicy.Status == 'Under Review':
-                        subpolicy.Status = 'Approved'
-                        subpolicy.save()
-                        print(f"Updated subpolicy {subpolicy.Identifier} status to Approved")
-            except Exception as update_error:
-                print(f"Error updating policy/subpolicy status: {str(update_error)}")
-                # Continue with the response even if status update fails
+        # Update the policy status based on approval decision
+        if approval.PolicyId_id:
+            policy = Policy.objects.get(PolicyId=approval.PolicyId_id)
+            
+            if approved_not is True:  # Approved
+                policy.Status = 'Approved'
+                policy.ActiveInactive = 'Active'
+                
+                # Update all subpolicies
+                SubPolicy.objects.filter(PolicyId=policy.PolicyId, Status='Under Review').update(Status='Approved')
+            elif approved_not is False:  # Rejected
+                policy.Status = 'Rejected'
+                # Don't change ActiveInactive status for rejections
+            
+            policy.save()
        
         return Response({
             'message': 'Policy review submitted successfully',
             'ApprovalId': new_approval.ApprovalId,
-            'Version': new_approval.Version,
-            'ApprovedDate': approved_date.isoformat() if approved_date else None
+            'Version': new_version,
+            'ApprovedDate': approved_date.isoformat() if approved_date else None,
+            'Status': policy.Status if approval.PolicyId_id else None
         })
        
     except PolicyApproval.DoesNotExist:
@@ -2638,11 +2624,11 @@ def create_policy_version(request, pk):
                 'PolicyId': new_policy.PolicyId,
                 'PolicyName': new_policy.PolicyName,
                 'PolicyDescription': new_policy.PolicyDescription,
-                'StartDate': new_policy.StartDate.isoformat() if isinstance(new_policy.StartDate, datetime.date) else new_policy.StartDate,
-                'EndDate': new_policy.EndDate.isoformat() if isinstance(new_policy.EndDate, datetime.date) else new_policy.EndDate,
+                'StartDate': new_policy.StartDate.isoformat() if hasattr(new_policy.StartDate, 'isoformat') else new_policy.StartDate,
+                'EndDate': new_policy.EndDate.isoformat() if hasattr(new_policy.EndDate, 'isoformat') else new_policy.EndDate,
                 'Department': new_policy.Department,
                 'CreatedByName': new_policy.CreatedByName,
-                'CreatedByDate': new_policy.CreatedByDate.isoformat() if isinstance(new_policy.CreatedByDate, datetime.date) else new_policy.CreatedByDate,
+                'CreatedByDate': new_policy.CreatedByDate.isoformat() if hasattr(new_policy.CreatedByDate, 'isoformat') else new_policy.CreatedByDate,
                 'Applicability': new_policy.Applicability,
                 'DocURL': new_policy.DocURL,
                 'Scope': new_policy.Scope,
@@ -4027,16 +4013,19 @@ def get_avg_policy_approval_time(request):
     # Get the first and last approval for each policy
     policy_approvals = {}
     for approval in approved_policies:
-        if approval.Identifier not in policy_approvals:
-            policy_approvals[approval.Identifier] = {
+        # Use PolicyId instead of Identifier
+        policy_id = approval.PolicyId_id
+        
+        if policy_id not in policy_approvals:
+            policy_approvals[policy_id] = {
                 'first': approval,
                 'last': approval
             }
         else:
-            if approval.ApprovalId < policy_approvals[approval.Identifier]['first'].ApprovalId:
-                policy_approvals[approval.Identifier]['first'] = approval
-            if approval.ApprovalId > policy_approvals[approval.Identifier]['last'].ApprovalId:
-                policy_approvals[approval.Identifier]['last'] = approval
+            if approval.ApprovalId < policy_approvals[policy_id]['first'].ApprovalId:
+                policy_approvals[policy_id]['first'] = approval
+            if approval.ApprovalId > policy_approvals[policy_id]['last'].ApprovalId:
+                policy_approvals[policy_id]['last'] = approval
 
     # Calculate average days between first submission and approval
     total_days = 0
@@ -4636,3 +4625,117 @@ def acknowledge_policy(request, policy_id):
             'error': 'Error acknowledging policy',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_rejected_policies_for_user(request, user_id):
+    """
+    Get all rejected policies for a specific user to allow resubmission
+    """
+    try:
+        # Find the latest approval record for each policy where ApprovedNot=False (rejected)
+        # Group by PolicyId to get only the latest rejection for each policy
+        latest_rejections = {}
+        
+        # Get all rejections for this user
+        rejections = PolicyApproval.objects.filter(
+            UserId=user_id,
+            ApprovedNot=False  # False means rejected
+        ).order_by('-ApprovalId')  # Most recent first
+        
+        # Group by PolicyId to get only the latest rejection
+        for rejection in rejections:
+            policy_id = rejection.PolicyId_id
+            if policy_id and policy_id not in latest_rejections:
+                latest_rejections[policy_id] = rejection
+        
+        # Convert to list for the response
+        rejection_data = []
+        for rejection in latest_rejections.values():
+            # Get the policy data
+            policy = None
+            if rejection.PolicyId_id:
+                try:
+                    policy = Policy.objects.get(PolicyId=rejection.PolicyId_id)
+                except Policy.DoesNotExist:
+                    continue  # Skip if policy doesn't exist
+            
+            # Add to response data
+            rejection_data.append({
+                'ApprovalId': rejection.ApprovalId,
+                'PolicyId': rejection.PolicyId_id,
+                'PolicyName': policy.PolicyName if policy else 'Unknown',
+                'ExtractedData': rejection.ExtractedData,
+                'Version': rejection.Version,
+                'RejectedDate': rejection.ApprovedDate,
+                'Remarks': rejection.ExtractedData.get('policy_approval', {}).get('remarks', '')
+            })
+        
+        return Response(rejection_data)
+    
+    except Exception as e:
+        print(f"Error getting rejected policies: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def resubmit_rejected_policy(request, approval_id):
+    """
+    Resubmit a rejected policy with modified data
+    """
+    try:
+        # Get the original rejection
+        rejection = get_object_or_404(PolicyApproval, ApprovalId=approval_id)
+        
+        # Ensure this was a rejection
+        if rejection.ApprovedNot is not False:
+            return Response({
+                'error': 'This approval is not a rejection and cannot be resubmitted'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get the modified data from the request
+        modified_data = request.data.get('ExtractedData')
+        if not modified_data:
+            return Response({'error': 'ExtractedData is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create new version number (u followed by number)
+        u_versions = PolicyApproval.objects.filter(
+            PolicyId=rejection.PolicyId_id,
+            Version__startswith='u'
+        ).order_by('-Version')
+        
+        next_version = 'u1'
+        if u_versions.exists():
+            latest = u_versions.first()
+            try:
+                # Extract number and increment
+                version_num = int(latest.Version[1:])
+                next_version = f"u{version_num + 1}"
+            except (ValueError, IndexError):
+                pass
+        
+        # Create a new approval with the modified data
+        new_approval = PolicyApproval.objects.create(
+            PolicyId=rejection.PolicyId,
+            ExtractedData=modified_data,
+            UserId=rejection.UserId,
+            ReviewerId=rejection.ReviewerId,
+            ApprovedNot=None,  # Reset to pending
+            Version=next_version
+        )
+        
+        # Update policy status back to Under Review
+        if rejection.PolicyId_id:
+            policy = Policy.objects.get(PolicyId=rejection.PolicyId_id)
+            policy.Status = 'Under Review'
+            policy.save()
+        
+        return Response({
+            'message': 'Policy resubmitted successfully',
+            'ApprovalId': new_approval.ApprovalId,
+            'Version': next_version
+        })
+        
+    except Exception as e:
+        print(f"Error resubmitting policy: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
