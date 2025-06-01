@@ -1,21 +1,15 @@
 <template>
-  <div id="app">
-    <div class="app-container">
-      <Sidebar />
-      <div class="main-content">
-        <router-view></router-view>
-      </div>
-    </div>
-  </div>
+  <PolicySidebar />
+  <router-view />
 </template>
 
 <script>
-import Sidebar from './components/Policy/Sidebar.vue'
+import PolicySidebar from './components/Policy/Sidebar.vue'
 
 export default {
   name: 'App',
   components: {
-    Sidebar
+    PolicySidebar
   }
 }
 </script>

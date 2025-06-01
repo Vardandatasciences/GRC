@@ -43,66 +43,6 @@
             "description": "Description for Sub Policy 3"
           }
         ]
-      },
-      {
-        "title": "Policy 3",
-        "description": "Description for Policy 2",
-        "objective": "Objective for Policy 2",
-        "scope": "Scope for Policy 2",
-        "subPolicies": [
-          {
-            "title": "Sub Policy 1",
-            "description": "Description for Sub Policy 1"
-          },
-          {
-            "title": "Sub Policy 2",
-            "description": "Description for Sub Policy 2"
-          },
-          {
-            "title": "Sub Policy 3",
-            "description": "Description for Sub Policy 3"
-          }
-        ]
-      },
-      {
-        "title": "Policy 4",
-        "description": "Description for Policy 2",
-        "objective": "Objective for Policy 2",
-        "scope": "Scope for Policy 2",
-        "subPolicies": [
-          {
-            "title": "Sub Policy 1",
-            "description": "Description for Sub Policy 1"
-          },
-          {
-            "title": "Sub Policy 2",
-            "description": "Description for Sub Policy 2"
-          },
-          {
-            "title": "Sub Policy 3",
-            "description": "Description for Sub Policy 3"
-          }
-        ]
-      },
-      {
-        "title": "Policy 5",
-        "description": "Description for Policy 2",
-        "objective": "Objective for Policy 2",
-        "scope": "Scope for Policy 2",
-        "subPolicies": [
-          {
-            "title": "Sub Policy 1",
-            "description": "Description for Sub Policy 1"
-          },
-          {
-            "title": "Sub Policy 2",
-            "description": "Description for Sub Policy 2"
-          },
-          {
-            "title": "Sub Policy 3",
-            "description": "Description for Sub Policy 3"
-          }
-        ]
       }
     ],
     "authorizer": {

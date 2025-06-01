@@ -37,3 +37,4 @@
 2025-06-01 02:56:27,761 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
 2025-06-01 02:56:35,336 - django.utils.autoreload - INFO - C:\Users\puttu\OneDrive\Desktop\Vardaan\GRC_risk_module\backend\grc\views.py changed, reloading.
 2025-06-01 02:56:57,336 - notification_service - INFO - Email sent successfully to syammuni916@gmail.com, type: riskMitigationCompleted
+2025-06-01 17:42:58,436 - django.utils.autoreload - INFO - C:\Users\puttu\Music\GRC_INTEGRATIONS\GRC\backend\grc\serializers.py changed, reloading.
