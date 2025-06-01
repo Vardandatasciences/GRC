@@ -14,18 +14,6 @@ import FrameworkPolicies from '../components/Policy/FrameworkPolicies.vue'
 import KPIDashboard from '../components/Policy/KPIDashboard.vue'
 import FrameworkApprover from '../components/Framework/FrameworkApprover.vue'
 
-import CreateIncident from '../components/Incident/CreateIncident.vue'
-import IncidentDashboard from '../components/Incident/IncidentDashboard.vue'
-import IncidentManagement from '../components/Incident/Incident.vue'
-import IncidentDetails from '@/components/Incident/IncidentDetails.vue'
-// import CreateRisk from '../components/Risk/CreateRisk.vue'
-import RiskRegister from '../components/Risk/RiskRegister.vue'
-import RiskDashboard from '../components/Risk/RiskDashboard.vue'
-import RiskInstances from '../components/Risk/RiskInstances.vue'
-import ApprovalAndHandling from '../components/Risk/ApprovalAndHandling.vue'
-import Notifications from '../components/Risk/Notifications.vue'
-import UserTasks from '../components/Risk/UserTasks.vue'
-
 const routes = [
   {
     path: '/',
@@ -36,6 +24,7 @@ const routes = [
     name: 'PolicyDashboard',
     component: PolicyDashboard
   },
+
   {
     path: '/policy/performance',
     name: 'PerformancePage',
@@ -112,78 +101,7 @@ const routes = [
     name: 'KPIDashboard',
     component: KPIDashboard
   },
-  {
-    path: '/incident/create',
-    name: 'CreateIncident',
-    component: CreateIncident
-  },
-  {
-    path: '/incident/incident',
-    name: 'Incident',
-    component: IncidentManagement
-  },
-  {
-    path: '/incident/dashboard',
-    name: 'IncidentDashboard',
-    component: IncidentDashboard
-  },
-  {
-    path: '/incident/:id',
-    name: 'IncidentDetails',
-    component: IncidentDetails,
-    props: true
-  },
-  {
-    path: '/incident/incident',
-    name: 'IncidentManagement',
-    component: () => import('../components/Incident/Incident.vue')
-  },
-  {
-    path: '/incident/performance/dashboard',
-    name: 'IncidentPerformanceDashboard',
-    component: () => import('../components/Incident/IncidentPerformanceDashboard.vue')
-  },
-  {
-
-    path: '/risk/riskregister',
-    name: 'RiskRegister',
-    component: RiskRegister
-  },
   
-  {
-    path: '/risk/ApprovalAndHandling',
-    name: 'ApprovalAndHandling',
-    component: ApprovalAndHandling
-  
-  },
-  
-  
-    {
-      path: '/risk/riskdashboard',
-      name: 'RiskDashboard',
-      component: RiskDashboard
-    },
-    {
-      path: '/risk/riskinstances',
-      name: 'RiskInstances',
-      component: RiskInstances
-    },
-    {
-      path: '/risk/notifications',
-      name: 'RiskNotifications',
-      component: Notifications
-    },
-    {
-      path: '/risk/workflow',
-      name: 'RiskWorkflow',
-      component: () => import('../components/Risk/Workflow.vue')
-    },
-    {
-      path: '/risk/user-tasks',
-      name: 'UserTasks',
-      component: UserTasks
-  
-    }
   
 ]
 

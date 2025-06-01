@@ -30,7 +30,7 @@
         <span class="summary-value">{{ summary.inactive_policies }}</span>
       </div>
     </div>
-    <div class="filter-controls">
+    <div class="top-controls">
       <div class="framework-dropdown-section">
         <label>Framework</label>
         <select v-model="selectedFrameworkId" class="framework-dropdown">
@@ -41,6 +41,22 @@
       <div v-if="activeFilter" class="active-filter">
         <span>Filtered by: {{ activeFilter }}</span>
         <button class="clear-filter-btn" @click="clearFilter">Clear Filter</button>
+      </div>
+    </div>
+    <div class="export-controls">
+      <div class="export-controls-inner">
+        <select v-model="selectedExportFormat" class="export-dropdown">
+          <option value="" disabled>Select format</option>
+          <option value="xlsx">Excel (.xlsx)</option>
+          <option value="pdf">PDF (.pdf)</option>
+          <option value="csv">CSV (.csv)</option>
+          <option value="json">JSON (.json)</option>
+          <option value="xml">XML (.xml)</option>
+          <option value="txt">Text (.txt)</option>
+        </select>
+        <button @click="exportFrameworkPolicies" :disabled="!selectedExportFormat || !selectedFrameworkId">
+          Export
+        </button>
       </div>
     </div>
     <div class="framework-card-grid">
@@ -171,6 +187,32 @@ const activeFilter = computed(() => {
 const showModal = ref(false)
 const isLoadingDetails = ref(false)
 const frameworkDetails = ref(null)
+
+// Add export controls above the framework grid
+const selectedExportFormat = ref('');
+const exportFrameworkPolicies = async () => {
+  if (!selectedFrameworkId.value || !selectedExportFormat.value) {
+    alert('Please select a framework and format.');
+    return;
+  }
+  try {
+    const res = await axios.post(`/api/frameworks/${selectedFrameworkId.value}/export/`, {
+      format: selectedExportFormat.value
+    }, { responseType: 'blob' });
+    // Download the file
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `framework_${selectedFrameworkId.value}_policies.${selectedExportFormat.value}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    alert('Export successful!');
+  } catch (err) {
+    alert('Export failed.');
+    console.error(err);
+  }
+};
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -337,7 +379,7 @@ onMounted(() => {
   font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
-  min-width: 200px;
+  min-width: 240px;
   min-height: 160px;
   box-shadow: 0 2px 12px rgba(79,108,255,0.10);
   transition: box-shadow 0.18s, transform 0.18s;
@@ -399,16 +441,19 @@ onMounted(() => {
   margin-top: 12px;
   color: #222;
 }
-.filter-controls {
+.top-controls {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
   margin-bottom: 18px;
+  width: 100%;
 }
 .framework-dropdown-section {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 0;
 }
 .framework-dropdown {
   min-width: 160px;
@@ -674,5 +719,42 @@ button {
   background: #fcfcff;
   border-radius: 8px;
   padding: 15px;
+}
+.export-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 18px;
+  width: 100%;
+}
+.export-controls-inner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.export-dropdown {
+  min-width: 140px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.95rem;
+  padding: 0 12px;
+  background: #fff;
+  color: #222;
+}
+.export-controls button {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #4f6cff;
+  color: #fff;
+  transition: background 0.2s;
+}
+.export-controls button:disabled {
+  background: #bfc8e6;
+  cursor: not-allowed;
 }
 </style> 

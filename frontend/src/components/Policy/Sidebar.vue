@@ -149,102 +149,13 @@
           </div>
         </div>
       </div>
-    
-      <!-- Incident Section -->
-<div 
-  @click="toggleSubmenu('incident')" 
-  class="menu-item has-submenu" 
-  :class="{'expanded': openMenus.incident}"
->
-  <i class="fas fa-file-alt icon"></i>
-  <span v-if="!isCollapsed">Incident</span>
-  <i v-if="!isCollapsed" class="fas fa-chevron-right submenu-arrow"></i> <!-- Arrow icon added -->
-</div>
-
-<div v-if="!isCollapsed && openMenus.incident" class="submenu">
-  <!-- Incident Management -->
-  <div 
-    @click="toggleSubmenu('incidentManagement')" 
-    class="menu-item has-submenu" 
-    :class="{'expanded': openMenus.incidentManagement}"
-  >
-    <i class="fas fa-clipboard-list icon"></i>
-    <span>Incident Management</span>
-    <i class="fas fa-chevron-right submenu-arrow"></i>
-  </div>
-  <div v-if="!isCollapsed && openMenus.incidentManagement" class="submenu">
-    <div class="menu-item" @click="navigate('/incident/incident')">
-      <i class="fas fa-list icon"></i>
-      <span>Incident List</span>
     </div>
-    <div class="menu-item" @click="navigate('/incident/create')">
-      <i class="fas fa-plus icon"></i>
-      <span>Create Incident</span>
-    </div>
-  </div>
 
-  <!-- Incident Performance -->
-  <div 
-    @click="toggleSubmenu('incidentPerformance')" 
-    class="menu-item has-submenu" 
-    :class="{'expanded': openMenus.incidentPerformance}"
-  >
-    <i class="fas fa-chart-line icon"></i>
-    <span>Performance Analysis</span>
-    <i class="fas fa-chevron-right submenu-arrow"></i>
-  </div>
-  <div v-if="!isCollapsed && openMenus.incidentPerformance" class="submenu">
-    <div class="menu-item" @click="navigate('/incident/dashboard')">
-      <i class="fas fa-chart-pie icon"></i>
-      <span>KPIs Analysis</span>
-    </div>
-    <div class="menu-item" @click="navigate('/incident/performance/dashboard')">
-      <i class="fas fa-tachometer-alt icon"></i>
-      <span>Dashboard</span>
-    </div>
-  </div>
-</div>
-
-
-<!-- Risk Section -->
-<div @click="toggleSubmenu('risk')" class="menu-item">
-        <i class="fas fa-exclamation-triangle icon"></i>
-        <span v-if="!isCollapsed">Risk</span>
-      </div>
-      <div v-if="!isCollapsed && openMenus.risk" class="submenu">
-        <div class="menu-item" @click="navigate('/risk/riskdashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>Dashboard</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/riskregister')">
-          <i class="fas fa-plus icon"></i>
-          <span>Risk Register</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/riskinstances')">
-          <i class="fas fa-th-list icon"></i>
-          <span>Instances</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/notifications')">
-          <i class="fas fa-bell icon"></i>
-          <span>Notifications</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/workflow')">
-          <i class="fas fa-tasks icon"></i>
-          <span>Risk Workflow</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/user-tasks')">
-          <i class="fas fa-user-check icon"></i>
-          <span>User Tasks</span>
-        </div>
-      </div>
-
-   
-    </div>
     <div class="bottom-profile">
       <i class="fas fa-user icon"></i>
       <span v-if="!isCollapsed">User Profile</span>
     </div>
-    </div>
+  </div>
 </template>
 
 <script>

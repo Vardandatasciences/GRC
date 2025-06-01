@@ -42,116 +42,103 @@
         <li v-for="framework in sortedFrameworks" 
             :key="framework.ApprovalId" 
             :class="{'new-framework': isNewFramework(framework)}">
-          <strong class="clickable" @click="openApprovalDetails(framework)">
-            {{ getFrameworkId(framework) }}
-          </strong>
-          <span class="item-type-badge framework-badge">Framework</span>
-          <span class="date-info">
-            {{ formatDate(framework.ExtractedData?.CreatedByDate || framework.created_at) }}
-          </span>
-          <span v-if="isNewFramework(framework)" class="new-badge">NEW</span>
-          <span class="framework-category">{{ framework.ExtractedData.Category || 'No Category' }}</span>
-          <span class="assigned-by">
-            <img class="assigned-avatar" :src="framework.ExtractedData.CreatedByAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'" alt="avatar" />
-            {{ framework.ExtractedData.CreatedByName || 'System' }}
-          </span>
-          <span v-if="framework.ApprovedNot === null" class="approval-status pending">(Pending)</span>
-          <span v-else-if="framework.ApprovedNot === true" class="approval-status approved">(Approved)</span>
-          <span v-else class="approval-status rejected">(Rejected)</span>
+          <div class="framework-item-header" @click="openApprovalDetails(framework)">
+            <strong class="clickable">
+              {{ getFrameworkId(framework) }}
+            </strong>
+            <span class="item-type-badge framework-badge">Framework</span>
+            <span class="date-info">
+              {{ formatDate(framework.ExtractedData?.CreatedByDate || framework.created_at) }}
+            </span>
+            <span v-if="isNewFramework(framework)" class="new-badge">NEW</span>
+            <span class="framework-category">{{ framework.ExtractedData.Category || 'No Category' }}</span>
+            <span class="assigned-by">
+              <img class="assigned-avatar" :src="framework.ExtractedData.CreatedByAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'" alt="avatar" />
+              {{ framework.ExtractedData.CreatedByName || 'System' }}
+            </span>
+            <span v-if="framework.ApprovedNot === null" class="approval-status pending">(Pending)</span>
+            <span v-else-if="framework.ApprovedNot === true" class="approval-status approved">
+              <i class="fas fa-check"></i> Approved
+            </span>
+            <span v-else class="approval-status rejected">(Rejected)</span>
+          </div>
+
+          <!-- Inline Framework Details -->
+          <div v-if="showDetails && selectedApproval && selectedApproval.FrameworkId === framework.FrameworkId" 
+               class="framework-details-inline">
+            <div class="framework-details-content">
+              <h3>
+                <span class="detail-type-indicator">Framework</span> 
+                Details: {{ getFrameworkId(framework) }}
+                <span class="version-pill">Version: {{ framework.version || 'u1' }}</span>
+              </h3>
+              
+              <!-- Framework Approval Section -->
+              <div class="framework-approval-section">
+                <h4>Framework Approval</h4>
+                
+                <!-- Framework status indicator -->
+                <div class="framework-status-indicator">
+                  <span class="status-label">Status:</span>
+                  <span class="status-value" :class="{
+                    'status-approved': framework.ApprovedNot === true || framework.ExtractedData?.Status === 'Approved',
+                    'status-rejected': framework.ApprovedNot === false || framework.ExtractedData?.Status === 'Rejected',
+                    'status-pending': framework.ApprovedNot === null && framework.ExtractedData?.Status !== 'Approved' && framework.ExtractedData?.Status !== 'Rejected'
+                  }">
+                    {{ framework.ApprovedNot === true || framework.ExtractedData?.Status === 'Approved' ? 'Approved' : 
+                       framework.ApprovedNot === false || framework.ExtractedData?.Status === 'Rejected' ? 'Rejected' : 
+                       'Under Review' }}
+                  </span>
+                </div>
+                
+                <div class="framework-actions">
+                  <button class="approve-btn" @click="approveFramework()" v-if="isReviewer && framework.ApprovedNot === null">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                  <button class="reject-btn" @click="rejectFramework()" v-if="isReviewer && framework.ApprovedNot === null">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                  <button class="submit-btn" @click="submitReview()" v-if="isReviewer && framework.ApprovedNot !== null">
+                    <i class="fas fa-paper-plane"></i> Submit Review
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Display framework details -->
+              <div v-if="framework.ExtractedData">
+                <div v-for="(value, key) in framework.ExtractedData" :key="key" class="framework-detail-row">
+                  <template v-if="key !== 'policies' && key !== 'framework_approval' && key !== 'type'">
+                    <strong>{{ formatFieldName(key) }}:</strong> <span>{{ value }}</span>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Policies Section -->
+              <div v-if="framework.ApprovedNot === true && framework.policies && framework.policies.length > 0" class="policies-section">
+                <h4>Framework Policies</h4>
+                <ul class="policies-list">
+                  <li v-for="policy in framework.policies" :key="policy.PolicyId" class="policy-item">
+                    <span class="policy-name">{{ policy.PolicyName }}</span>
+                    <span class="policy-status" :class="{
+                      'status-approved': policy.Status === 'Approved',
+                      'status-rejected': policy.Status === 'Rejected',
+                      'status-pending': policy.Status === 'Under Review'
+                    }">{{ policy.Status }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Rejected Framework Message -->
+              <div v-if="framework.ApprovedNot === false" class="rejected-framework-message">
+                <div class="rejection-note">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  This framework has been rejected. All policies and subpolicies within this framework have been automatically rejected.
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
       </ul>
-    </div>
-
-    <!-- Framework Details Modal -->
-    <div v-if="showDetails && selectedApproval" class="framework-details-modal">
-      <div class="framework-details-content">
-        <h3>
-          <span class="detail-type-indicator">Framework</span> 
-          Details: {{ getFrameworkId(selectedApproval) }}
-          <span class="version-pill">Version: {{ selectedApproval.version || 'u1' }}</span>
-        </h3>
-        
-        <button class="close-btn" @click="closeApprovalDetails">Close</button>
-        
-        <!-- Framework Approval Section -->
-        <div class="framework-approval-section">
-          <h4>Framework Approval</h4>
-          
-          <!-- Framework status indicator -->
-          <div class="framework-status-indicator">
-            <span class="status-label">Status:</span>
-            <span class="status-value" :class="{
-              'status-approved': selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved',
-              'status-rejected': selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected',
-              'status-pending': selectedApproval.ApprovedNot === null && selectedApproval.ExtractedData?.Status !== 'Approved' && selectedApproval.ExtractedData?.Status !== 'Rejected'
-            }">
-              {{ selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved' ? 'Approved' : 
-                 selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected' ? 'Rejected' : 
-                 'Under Review' }}
-            </span>
-          </div>
-          
-          <div class="framework-actions">
-            <button class="approve-btn" @click="approveFramework()" v-if="isReviewer && selectedApproval.ApprovedNot === null">
-              <i class="fas fa-check"></i> Approve
-            </button>
-            <button class="reject-btn" @click="rejectFramework()" v-if="isReviewer && selectedApproval.ApprovedNot === null">
-              <i class="fas fa-times"></i> Reject
-            </button>
-            <button class="submit-btn" @click="submitReview()" v-if="isReviewer && selectedApproval.ApprovedNot !== null">
-              <i class="fas fa-paper-plane"></i> Submit Review
-            </button>
-          </div>
-        </div>
-        
-        <!-- Display framework details -->
-        <div v-if="selectedApproval.ExtractedData">
-          <div v-for="(value, key) in selectedApproval.ExtractedData" :key="key" class="framework-detail-row">
-            <template v-if="key !== 'policies' && key !== 'framework_approval' && key !== 'type'">
-              <strong>{{ formatFieldName(key) }}:</strong> <span>{{ value }}</span>
-            </template>
-          </div>
-        </div>
-
-        <!-- Add this after the framework details section in the modal -->
-        <div v-if="selectedApproval.ApprovedNot === true && selectedApproval.policies && selectedApproval.policies.length > 0" class="policies-section">
-          <h4>Framework Policies</h4>
-          <ul class="policies-list">
-            <li v-for="policy in selectedApproval.policies" :key="policy.PolicyId" class="policy-item">
-              <span class="policy-name">{{ policy.PolicyName }}</span>
-              <span class="policy-status" :class="{
-                'status-approved': policy.Status === 'Approved',
-                'status-rejected': policy.Status === 'Rejected',
-                'status-pending': policy.Status === 'Under Review'
-              }">{{ policy.Status }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Add a message for rejected frameworks -->
-        <div v-if="selectedApproval.ApprovedNot === false" class="rejected-framework-message">
-          <div class="rejection-note">
-            <i class="fas fa-exclamation-triangle"></i>
-            This framework has been rejected. All policies and subpolicies within this framework have been automatically rejected.
-          </div>
-        </div>
-      </div>
-      
-      <!-- Rejection Modal -->
-      <div v-if="showRejectModal" class="reject-modal">
-        <div class="reject-modal-content">
-          <h4>Rejection Reason</h4>
-          <p>Please provide a reason for rejecting this framework</p>
-          <textarea 
-            v-model="rejectionComment" 
-            class="rejection-comment" 
-            placeholder="Enter your comments here..."></textarea>
-          <div class="reject-modal-actions">
-            <button class="cancel-btn" @click="cancelRejection">Cancel</button>
-            <button class="confirm-btn" @click="confirmRejection">Confirm Rejection</button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Rejected Frameworks List -->
@@ -224,14 +211,6 @@
         <button class="resubmit-btn" @click="resubmitFramework(editingFramework)">Resubmit for Review</button>
       </div>
     </div>
-
-    <!-- Role toggle for testing -->
-    <div class="role-toggle">
-      <label>
-        <input type="checkbox" v-model="isReviewer">
-        <span>{{ isReviewer ? 'Reviewer Mode' : 'User Mode' }}</span>
-      </label>
-    </div>
   </div>
 </template>
 
@@ -295,9 +274,18 @@ export default {
         });
     },
     
-    openApprovalDetails(approval) {
+    openApprovalDetails(framework) {
+      // If clicking the same framework, toggle the details
+      if (this.selectedApproval && this.selectedApproval.FrameworkId === framework.FrameworkId) {
+        this.showDetails = !this.showDetails;
+        if (!this.showDetails) {
+          this.selectedApproval = null;
+        }
+        return;
+      }
+
       // Get the framework ID
-      const frameworkId = this.getFrameworkId(approval);
+      const frameworkId = this.getFrameworkId(framework);
 
       // Fetch the latest framework approval
       axios.get(`http://localhost:8000/api/framework-approvals/latest/${frameworkId}/`)
@@ -310,7 +298,7 @@ export default {
             
             // Create a complete approval object with the latest data
             const updatedApproval = {
-              ...approval,
+              ...framework,
               ...latestApproval,
               version: latestApproval.Version || 'u1',
               ExtractedData: latestApproval.ExtractedData
@@ -335,14 +323,14 @@ export default {
             }
           } else {
             // If no approval data found, just use the framework data
-            this.selectedApproval = approval;
+            this.selectedApproval = framework;
             this.showDetails = true;
           }
         })
         .catch(error => {
           console.error('Error fetching framework approval:', error);
-          // Fall back to using the approval as-is
-          this.selectedApproval = approval;
+          // Fall back to using the framework as-is
+          this.selectedApproval = framework;
           this.showDetails = true;
         });
     },
@@ -387,11 +375,6 @@ export default {
         return typeof framework.FrameworkId === 'object' ? framework.FrameworkId.FrameworkId : framework.FrameworkId;
       }
       return framework.ApprovalId;
-    },
-    
-    closeApprovalDetails() {
-      this.selectedApproval = null;
-      this.showDetails = false;
     },
     
     approveFramework() {
@@ -474,9 +457,6 @@ export default {
           }
           
           alert(`Framework review submitted successfully! New version: ${response.data.Version}`);
-          
-          // Close the details view
-          this.closeApprovalDetails();
           
           // Refresh the frameworks list
           this.fetchFrameworks();

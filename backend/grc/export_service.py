@@ -19,7 +19,7 @@ db_pool = mysql.connector.pooling.MySQLConnectionPool(
     host=os.environ.get('DB_HOST', 'localhost'),
     user=os.environ.get('DB_USER', 'root'),
     password=os.environ.get('DB_PASSWORD', 'root'),
-    database=os.environ.get('DB_NAME', 'grc_test')
+    database=os.environ.get('DB_NAME', 'grc')
 )
 
 # S3 client setup

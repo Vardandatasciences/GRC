@@ -1,5 +1,3 @@
-
-from django.urls import path, include
 from django.urls import path
 from .routes.policy import (
     framework_list, framework_detail, policy_detail, policy_list,
@@ -46,9 +44,7 @@ from .routes.policy import (
     submit_policy_approval_review,
     get_policy_version_history,
     list_policy_approvals_for_reviewer,
-    list_rejected_policy_approvals_for_user,
-    get_rejected_policies_for_user,
-    resubmit_rejected_policy
+    list_rejected_policy_approvals_for_user
 )
 from .routes.frameworks import (
     create_framework_approval,
@@ -58,57 +54,8 @@ from .routes.frameworks import (
     get_latest_framework_approval,
     resubmit_framework
 )
-from .routes.incidents import(
-    list_incidents,create_incident,schedule_manual_incident,reject_incident,create_incident_from_audit_finding,incident_mttd,incident_mttr,
-    incident_mttc,incident_mttrv,first_response_time,incident_volume,escalation_rate,repeat_rate,
-    incident_metrics,get_incident_counts,incident_count,incidents_by_severity,incident_root_causes,detection_accuracy,incident_closure_rate,
-    incident_origins,incident_types,incident_cost,incident_reopened_count,false_positive_rate,update_incident_status
-
-)
-from . import views
-from rest_framework.routers import DefaultRouter
-from .views import RiskViewSet, RiskInstanceViewSet
-
-router = DefaultRouter()
-router.register(r'risks', views.RiskViewSet)
-router.register(r'risk-instances', views.RiskInstanceViewSet)
 
 urlpatterns = [
-    path('login/', views.login, name='login'),
-    path('register/', views.register, name='register'),
-    path('test-connection/', views.test_connection, name='test-connection'),
-    path('api/', include(router.urls)),
-    path('api/last-incident/', views.last_incident, name='last-incident'),
-    path('api/compliance-by-incident/<int:incident_id>/', views.get_compliance_by_incident, name='compliance-by-incident'),
-    path('api/risks-by-incident/<int:incident_id>/', views.get_risks_by_incident, name='risks-by-incident'),
-    path('api/analyze-incident/', views.analyze_incident, name='analyze-incident'),
-    path('api/risk/metrics', views.risk_metrics, name='risk_metrics'),
-    path('users/', views.get_users, name='get-users'),
-    path('api/risk-workflow/', views.risk_workflow, name='risk-workflow'),
-    path('api/risk-assign/', views.assign_risk_instance, name='risk-assign'),
-    path('api/custom-users/', views.get_custom_users, name='custom-users'),
-    path('api/user-risks/<int:user_id>/', views.get_user_risks, name='user-risks'),
-    path('api/risk-update-status/', views.update_risk_status, name='risk-update-status'),
-    path('api/risk-mitigations/<int:risk_id>/', views.get_risk_mitigations, name='risk-mitigations'),
-    path('api/update-mitigation-status/', views.update_mitigation_status, name='update-mitigation-status'),
-    path('api/assign-reviewer/', views.assign_reviewer, name='assign-reviewer'),
-    path('api/reviewer-tasks/<int:user_id>/', views.get_reviewer_tasks, name='reviewer-tasks'),
-    # path('api/update-mitigation-approval/', views.update_mitigation_approval, name='update-mitigation-approval'),
-    path('api/complete-review/', views.complete_review, name='complete-review'),
-    # path('api/user-notifications/<int:user_id>/', views.get_user_notifications, name='user-notifications'),
-    path('api/reviewer-comments/<int:risk_id>/', views.get_reviewer_comments, name='reviewer-comments'),
-    path('api/latest-review/<int:risk_id>/', views.get_latest_review, name='latest-review'),
-    path('api/get-assigned-reviewer/<int:risk_id>/', views.get_assigned_reviewer, name='get-assigned-reviewer'),
-    path('api/risk-update-mitigation/<int:risk_id>/', views.update_risk_mitigation, name='risk-update-mitigation'),
-    path('api/risk-form-details/<int:risk_id>/', views.get_risk_form_details, name='risk-form-details'),
-    path('api/logs/', views.GRCLogList.as_view(), name='log-list'),
-    path('api/logs/<int:pk>/', views.GRCLogDetail.as_view(), name='log-detail'),
-    path('api/get-previous-versions/<int:risk_id>/', views.get_previous_versions, name='get-previous-versions'),
-    path('api/save-uploaded-file/', views.save_uploaded_file, name='save-uploaded-file'),
-    path('api/save-uploaded-file-simple/', views.save_uploaded_file_simple, name='save-uploaded-file-simple'),
-    path('api/export-risks/', views.export_risks, name='export-risks'),
-    path('api/risk-due-reminders/', views.send_due_date_reminders, name='risk-due-reminders'),
-
     path('frameworks/', framework_list, name='framework-list'),
     path('frameworks/<int:pk>/', framework_detail, name='framework-detail'),
     path('frameworks/<int:pk>/copy/', copy_framework, name='copy-framework'),
@@ -167,42 +114,5 @@ urlpatterns = [
     path('api/framework-approvals/<int:approval_id>/update/', update_framework_approval, name='update-framework-approval'),
     path('api/frameworks/<int:framework_id>/submit-review/', submit_framework_review, name='submit-framework-review'),
     path('api/framework-approvals/latest/<int:framework_id>/', get_latest_framework_approval, name='get-latest-framework-approval'),
-    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework'),
-
-    path('incidents/', list_incidents, name='list-incidents'),
-    path('api/incidents/', list_incidents, name='api-list-incidents'),
-    path('incident/create/', create_incident, name='create-incident-singular'),
-    path('incident/schedule-manual/', schedule_manual_incident, name='schedule_manual_incident'),
-    path('incident/reject/', reject_incident, name='reject_incident'),
-    path('incidents/create/', create_incident, name='create-incident'),
-    path('incident/from-audit-finding/', create_incident_from_audit_finding, name='incident_from_audit_finding'),
-    path('api/incident/mttd/', incident_mttd, name='incident-mttd'),
-    path('api/incident/mttr/', incident_mttr, name='incident_mttr'),
-    path('api/incident/mttc/',incident_mttc, name='incident-mttc'),
-    path('api/incident/mttrv/',incident_mttrv, name='incident-mttrv'),
-    path('api/incident/first-response-time/', first_response_time, name='first-response-time'),
-    path('api/incident/incident-volume/', incident_volume, name='incident-volume'),
-    path('api/incident/escalation-rate/', escalation_rate, name='escalation-rate'),
-    path('api/incident/repeat-rate/', repeat_rate, name='repeat-rate'),
-    path('api/incident/metrics/', incident_metrics, name='incident-metrics'),
-    path('api/incidents/counts/', get_incident_counts, name='incident-counts'),
-    path('api/incident/count/', incident_count, name='incident-count'),
-    path('api/incident/by-severity/', incidents_by_severity, name='incidents-by-severity'),
-    path('api/incident/root-causes/', incident_root_causes, name='incident-root-causes'),
-    path('api/incident/origins/', incident_origins, name='incident-origins'),
-    path('api/incident/types/', incident_types, name='incident-types'),
-    path('api/incident/incident-cost/', incident_cost, name='incident-cost'),
-    path('api/incident/cost/', incident_cost, name='incident-cost-alt'),
-    path('api/incident/reopened-count/', incident_reopened_count, name='incident-reopened-count'),
-    path('api/incident/false-positive-rate/', false_positive_rate, name='false-positive-rate'),
-    path('api/incident/detection-accuracy/', detection_accuracy, name='detection-accuracy'),
-    path('api/incident/incident-closure-rate/', incident_closure_rate, name='incident-closure-rate'),
-    path('incidents/<int:incident_id>/status/', update_incident_status, name='update-incident-status'),
-    path('api/policy/rejected/<int:user_id>/', get_rejected_policies_for_user),
-    path('api/policy/resubmit/<int:approval_id>/', resubmit_rejected_policy),
-
+    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework')
 ]
-
-
-
-

@@ -3,13 +3,13 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from ..models import Framework, Policy, SubPolicy, FrameworkVersion, PolicyVersion, PolicyApproval, Users, FrameworkApproval
+from ..models import Framework, Policy, SubPolicy, FrameworkVersion, PolicyVersion, PolicyApproval, Users, FrameworkApproval, ExportTask
 from ..serializers import FrameworkSerializer, PolicySerializer, SubPolicySerializer, PolicyApprovalSerializer, UserSerializer   
 from django.db import transaction
 import traceback
 import sys
-from datetime import datetime
-
+from datetime import datetime, date, timedelta
+from ..export_service import export_data, save_export_record, update_export_status, update_export_url, update_export_metadata
 import re
 from django.utils import timezone
 from datetime import timedelta
@@ -75,7 +75,7 @@ Example payload:
 @permission_classes([AllowAny])
 def framework_list(request):
     if request.method == 'GET':
-        frameworks = Framework.objects.all()
+        frameworks = Framework.objects.filter(Status='Approved', ActiveInactive='Active')
         framework_data = []
         for framework in frameworks:
             framework_data.append({
@@ -111,20 +111,36 @@ def framework_list(request):
                 'FrameworkDescription': data.get('FrameworkDescription', ''),
                 'EffectiveDate': effective_date,
                 'CreatedByName': data.get('CreatedByName'),
-                'CreatedByDate': datetime.now().date(),
+                'CreatedByDate': date.today(),
                 'Category': data.get('Category', ''),
                 'DocURL': data.get('DocURL', ''),
-                'Identifier': data.get('Identifier', ''),
+                'Identifier': data.get('Identifier', ''),  # Ensure Identifier is properly set
                 'StartDate': start_date,
                 'EndDate': end_date,
                 'Status': 'Under Review',
-                'ActiveInactive': 'Active',
+                'ActiveInactive': 'InActive',
                 'Reviewer': data.get('Reviewer', ''),
                 'CurrentVersion': 1.0
             }
 
+            # Validate required fields
+            if not framework_data['Identifier']:
+                return Response({"error": "Identifier is required"}, status=status.HTTP_400_BAD_REQUEST)
+
             with transaction.atomic():
                 framework = Framework.objects.create(**framework_data)
+                print(f"Created framework with Identifier: {framework.Identifier}")  # Log the Identifier
+
+                # Create FrameworkVersion record
+                framework_version = FrameworkVersion(
+                    FrameworkId=framework,
+                    Version=framework.CurrentVersion,
+                    FrameworkName=framework.FrameworkName,
+                    CreatedBy=framework.CreatedByName,
+                    CreatedDate=date.today(),
+                    PreviousVersionId=None
+                )
+                framework_version.save()
 
                 # Process policies
                 if 'policies' in data and isinstance(data['policies'], list):
@@ -134,7 +150,7 @@ def framework_list(request):
                         policy_end_date = parse_date(policy_data.get('EndDate'))
 
                         policy = Policy.objects.create(
-                    FrameworkId=framework,
+                            FrameworkId=framework,
                             PolicyName=policy_data.get('PolicyName', ''),
                             PolicyDescription=policy_data.get('PolicyDescription', ''),
                             Status='Under Review',
@@ -142,45 +158,65 @@ def framework_list(request):
                             EndDate=policy_end_date,
                             Department=policy_data.get('Department', ''),
                             CreatedByName=policy_data.get('CreatedByName', ''),
-                            CreatedByDate=datetime.now().date(),
+                            CreatedByDate=date.today(),
                             Applicability=policy_data.get('Applicability', ''),
                             DocURL=policy_data.get('DocURL', ''),
                             Scope=policy_data.get('Scope', ''),
                             Objective=policy_data.get('Objective', ''),
                             Identifier=policy_data.get('Identifier', ''),
-                            PermanentTemporary=policy_data.get('PermanentTemporary', 'Permanent'),
-                            ActiveInactive='Active',
+                            PermanentTemporary=policy_data.get('PermanentTemporary', ''),
+                            ActiveInactive='InActive',
                             Reviewer=policy_data.get('Reviewer', ''),
-                            CoverageRate=policy_data.get('CoverageRate')
+                            CoverageRate=policy_data.get('CoverageRate'),
+                            CurrentVersion=framework.CurrentVersion  # Set to framework's current version
                         )
+
+                        # Create PolicyVersion record
+                        policy_version = PolicyVersion(
+                            PolicyId=policy,
+                            Version=framework.CurrentVersion,  # Use framework's current version
+                            PolicyName=policy.PolicyName,
+                            CreatedBy=policy.CreatedByName,
+                            CreatedDate=date.today(),
+                            PreviousVersionId=None
+                        )
+                        policy_version.save()
 
                         # Process subpolicies
                         if 'subpolicies' in policy_data and isinstance(policy_data['subpolicies'], list):
                             for subpolicy_data in policy_data['subpolicies']:
                                 SubPolicy.objects.create(
-                        PolicyId=policy,
+                                    PolicyId=policy,
                                     SubPolicyName=subpolicy_data.get('SubPolicyName', ''),
                                     CreatedByName=subpolicy_data.get('CreatedByName', ''),
-                                    CreatedByDate=datetime.now().date(),
+                                    CreatedByDate=date.today(),
                                     Identifier=subpolicy_data.get('Identifier', ''),
                                     Description=subpolicy_data.get('Description', ''),
                                     Status='Under Review',
-                                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', 'Permanent'),
+                                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', ''),
                                     Control=subpolicy_data.get('Control', '')
                                 )
 
                 # Create framework approval record
                 try:
                     user_id = data.get('CreatedById', 1)
-                    reviewer_id = data.get('Reviewer') if data.get('Reviewer') else 2
+                    # Get reviewer ID from the reviewer name
+                    reviewer_name = data.get('Reviewer', '')
+                    reviewer_id = None
+                    if reviewer_name:
+                        try:
+                            reviewer = Users.objects.get(UserName=reviewer_name)
+                            reviewer_id = reviewer.UserId
+                        except Users.DoesNotExist:
+                            reviewer_id = 2  # Default reviewer ID if not found
 
                     extracted_data = {
                         "FrameworkName": framework.FrameworkName,
                         "FrameworkDescription": framework.FrameworkDescription,
                         "Category": framework.Category,
-                        "EffectiveDate": framework.EffectiveDate.isoformat() if framework.EffectiveDate else None,
-                        "StartDate": framework.StartDate.isoformat() if framework.StartDate else None,
-                        "EndDate": framework.EndDate.isoformat() if framework.EndDate else None,
+                        "EffectiveDate": safe_isoformat(framework.EffectiveDate),
+                        "StartDate": safe_isoformat(framework.StartDate),
+                        "EndDate": safe_isoformat(framework.EndDate),
                         "CreatedByName": framework.CreatedByName,
                         "Identifier": framework.Identifier,
                         "Status": framework.Status,
@@ -541,17 +577,29 @@ def add_policy_to_framework(request, framework_id):
             EndDate=policy_data.get('EndDate'),
             Department=policy_data.get('Department', ''),
             CreatedByName=policy_data.get('CreatedByName', ''),
-            CreatedByDate=datetime.now().date(),
+            CreatedByDate=date.today(),
             Applicability=policy_data.get('Applicability', ''),
             DocURL=policy_data.get('DocURL', ''),
             Scope=policy_data.get('Scope', ''),
             Objective=policy_data.get('Objective', ''),
             Identifier=policy_data.get('Identifier', ''),
-            PermanentTemporary=policy_data.get('PermanentTemporary', 'Permanent'),
-            ActiveInactive='Active',
+            PermanentTemporary=policy_data.get('PermanentTemporary', ''),
+            ActiveInactive='InActive',
             Reviewer=policy_data.get('Reviewer', ''),
-            CoverageRate=policy_data.get('CoverageRate')
+            CoverageRate=policy_data.get('CoverageRate'),
+            CurrentVersion=framework.CurrentVersion  # Set to framework's current version
         )
+        
+        # Create PolicyVersion record
+        policy_version = PolicyVersion(
+            PolicyId=policy,
+            Version=framework.CurrentVersion,  # Use framework's current version
+            PolicyName=policy.PolicyName,
+            CreatedBy=policy.CreatedByName,
+            CreatedDate=date.today(),
+            PreviousVersionId=None
+        )
+        policy_version.save()
         
         # Process subpolicies if they exist
         if 'subpolicies' in policy_data and isinstance(policy_data['subpolicies'], list):
@@ -560,11 +608,11 @@ def add_policy_to_framework(request, framework_id):
                 PolicyId=policy,
                     SubPolicyName=subpolicy_data.get('SubPolicyName', ''),
                     CreatedByName=subpolicy_data.get('CreatedByName', ''),
-                    CreatedByDate=datetime.now().date(),
+                    CreatedByDate=date.today(),
                     Identifier=subpolicy_data.get('Identifier', ''),
                     Description=subpolicy_data.get('Description', ''),
                     Status='Under Review',
-                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', 'Permanent'),
+                    PermanentTemporary=subpolicy_data.get('PermanentTemporary', ''),
                     Control=subpolicy_data.get('Control', '')
                 )
         
@@ -583,7 +631,7 @@ def add_policy_to_framework(request, framework_id):
                     "SubPolicyId": subpolicy.SubPolicyId,
                     "SubPolicyName": subpolicy.SubPolicyName,
                     "CreatedByName": subpolicy.CreatedByName,
-                    "CreatedByDate": subpolicy.CreatedByDate.isoformat() if subpolicy.CreatedByDate else None,
+                    "CreatedByDate": safe_isoformat(subpolicy.CreatedByDate),
                     "Identifier": subpolicy.Identifier,
                     "Description": subpolicy.Description,
                     "Status": subpolicy.Status,
@@ -597,11 +645,11 @@ def add_policy_to_framework(request, framework_id):
                 "PolicyName": policy.PolicyName,
                 "PolicyDescription": policy.PolicyDescription,
                 "Status": policy.Status,
-                "StartDate": policy.StartDate.isoformat() if hasattr(policy.StartDate, 'isoformat') else policy.StartDate,
-                "EndDate": policy.EndDate.isoformat() if hasattr(policy.EndDate, 'isoformat') else policy.EndDate,
+                "StartDate": safe_isoformat(policy.StartDate),
+                "EndDate": safe_isoformat(policy.EndDate),
                 "Department": policy.Department,
                 "CreatedByName": policy.CreatedByName,
-                "CreatedByDate": policy.CreatedByDate.isoformat() if hasattr(policy.CreatedByDate, 'isoformat') else policy.CreatedByDate,
+                "CreatedByDate": safe_isoformat(policy.CreatedByDate),
                 "Applicability": policy.Applicability,
                 "Scope": policy.Scope,
                 "Objective": policy.Objective,
@@ -830,16 +878,6 @@ def submit_policy_review(request, approval_id):
             return Response({'error': 'ExtractedData is required'}, status=status.HTTP_400_BAD_REQUEST)
        
         approved_not = request.data.get('ApprovedNot')
-        
-        # Add approval information to extracted data
-        if 'policy_approval' not in extracted_data:
-            extracted_data['policy_approval'] = {}
-        
-        extracted_data['policy_approval']['approved'] = approved_not
-        
-        # Add remarks if provided
-        if request.data.get('remarks'):
-            extracted_data['policy_approval']['remarks'] = request.data.get('remarks')
        
         # Simply create a new PolicyApproval object
         # Avoid using filters that might generate BINARY expressions
@@ -848,7 +886,7 @@ def submit_policy_review(request, approval_id):
         # Try to determine the next version number without SQL LIKE
         try:
             r_versions = []
-            for pa in PolicyApproval.objects.filter(PolicyId=approval.PolicyId):
+            for pa in PolicyApproval.objects.filter(Identifier=approval.Identifier):
                 if pa.Version and pa.Version.startswith('r') and pa.Version[1:].isdigit():
                     r_versions.append(int(pa.Version[1:]))
            
@@ -857,45 +895,69 @@ def submit_policy_review(request, approval_id):
         except Exception as version_err:
             print(f"Error determining version (using default): {str(version_err)}")
        
-        # Set approved date if policy is approved or rejected
+        # Set approved date if policy is approved
         approved_date = None
-        if approved_not is not None:  # Either approved or rejected
-            approved_date = datetime.now().date()
+        if approved_not == True or approved_not == 1:
+            approved_date = date.today()
            
         # Create a new record using Django ORM
         new_approval = PolicyApproval(
-            PolicyId=approval.PolicyId,
+            Identifier=approval.Identifier,
             ExtractedData=extracted_data,
             UserId=approval.UserId,
             ReviewerId=approval.ReviewerId,
             ApprovedNot=approved_not,
-            ApprovedDate=approved_date,  # Set date for both approval and rejection
+            ApprovedDate=approved_date,  # Set approved date
             Version=new_version
         )
         new_approval.save()
        
-        # Update the policy status based on approval decision
-        if approval.PolicyId_id:
-            policy = Policy.objects.get(PolicyId=approval.PolicyId_id)
-            
-            if approved_not is True:  # Approved
-                policy.Status = 'Approved'
-                policy.ActiveInactive = 'Active'
-                
-                # Update all subpolicies
-                SubPolicy.objects.filter(PolicyId=policy.PolicyId, Status='Under Review').update(Status='Approved')
-            elif approved_not is False:  # Rejected
-                policy.Status = 'Rejected'
-                # Don't change ActiveInactive status for rejections
-            
-            policy.save()
+        # If policy is approved (ApprovedNot=1), update the status in policy and subpolicies tables
+        if approved_not == True or approved_not == 1:
+            try:
+                # Find the policy by Identifier
+                policy = Policy.objects.get(Identifier=approval.Identifier)
+
+                # Get the policy version record
+                policy_version = PolicyVersion.objects.filter(
+                    PolicyId=policy,
+                    Version=policy.CurrentVersion
+                ).first()
+
+                # If this policy has a previous version, set it to inactive
+                if policy_version and policy_version.PreviousVersionId:
+                    try:
+                        previous_version = PolicyVersion.objects.get(VersionId=policy_version.PreviousVersionId)
+                        previous_policy = previous_version.PolicyId
+                        previous_policy.ActiveInactive = 'Inactive'
+                        previous_policy.save()
+                        print(f"Set previous policy version {previous_policy.PolicyId} to Inactive")
+                    except Exception as prev_error:
+                        print(f"Error updating previous policy version: {str(prev_error)}")
+               
+                # Update policy status to Approved and Active
+                if policy.Status == 'Under Review':
+                    policy.Status = 'Approved'
+                    policy.ActiveInactive = 'Active'  # Set to Active when approved
+                    policy.save()
+                    print(f"Updated policy {policy.Identifier} status to Approved and Active")
+               
+                # Update all subpolicies for this policy
+                subpolicies = SubPolicy.objects.filter(PolicyId=policy.PolicyId)
+                for subpolicy in subpolicies:
+                    if subpolicy.Status == 'Under Review':
+                        subpolicy.Status = 'Approved'
+                        subpolicy.save()
+                        print(f"Updated subpolicy {subpolicy.Identifier} status to Approved")
+            except Exception as update_error:
+                print(f"Error updating policy/subpolicy status: {str(update_error)}")
+                # Continue with the response even if status update fails
        
         return Response({
             'message': 'Policy review submitted successfully',
             'ApprovalId': new_approval.ApprovalId,
-            'Version': new_version,
-            'ApprovedDate': approved_date.isoformat() if approved_date else None,
-            'Status': policy.Status if approval.PolicyId_id else None
+            'Version': new_approval.Version,
+            'ApprovedDate': safe_isoformat(approved_date)
         })
        
     except PolicyApproval.DoesNotExist:
@@ -919,7 +981,7 @@ def add_subpolicy_to_policy(request, policy_id):
             if 'CreatedByName' not in subpolicy_data:
                 subpolicy_data['CreatedByName'] = policy.CreatedByName
             if 'CreatedByDate' not in subpolicy_data:
-                subpolicy_data['CreatedByDate'] = datetime.date.today()
+                subpolicy_data['CreatedByDate'] = date.today()
             if 'Status' not in subpolicy_data:
                 subpolicy_data['Status'] = 'Under Review'
            
@@ -1417,7 +1479,7 @@ def submit_policy_approval_review(request, policy_id):
             new_version = f'{prefix}{num}'
         
         # Set approved date if policy is approved
-        approved_date = datetime.date.today() if approved_not is True or approved_not == 1 else None
+        approved_date = date.today() if approved_not is True or approved_not == 1 else None
         
         # Create new policy approval with incremented version
         new_approval = PolicyApproval(
@@ -1452,7 +1514,7 @@ def submit_policy_approval_review(request, policy_id):
             'ApprovalId': new_approval.ApprovalId,
             'Version': new_version,
             'Status': policy.Status,
-            'ApprovedDate': approved_date.isoformat() if approved_date else None
+            'ApprovedDate': safe_isoformat(approved_date)
         }, status=status.HTTP_201_CREATED)
     
     except Exception as e:
@@ -1611,7 +1673,7 @@ def copy_framework(request, pk):
                 'FrameworkDescription': request.data.get('FrameworkDescription', original_framework.FrameworkDescription),
                 'EffectiveDate': request.data.get('EffectiveDate', original_framework.EffectiveDate),
                 'CreatedByName': request.data.get('CreatedByName', original_framework.CreatedByName),
-                'CreatedByDate': datetime.date.today(),
+                'CreatedByDate': date.today(),
                 'Category': request.data.get('Category', original_framework.Category),
                 'DocURL': request.data.get('DocURL', original_framework.DocURL),
                 'Identifier': original_framework.Identifier,
@@ -1632,7 +1694,7 @@ def copy_framework(request, pk):
                 Version=str(framework_version),
                 FrameworkName=new_framework.FrameworkName,
                 CreatedBy=new_framework.CreatedByName,
-                CreatedDate=datetime.date.today(),
+                CreatedDate=date.today(),
                 PreviousVersionId=None
             )
             framework_version_record.save()
@@ -1739,7 +1801,7 @@ def copy_framework(request, pk):
                             'PolicyId': new_policy,
                             'SubPolicyName': sub_custom_data.get('SubPolicyName', subpolicy.SubPolicyName),
                             'CreatedByName': new_policy.CreatedByName,
-                            'CreatedByDate': datetime.date.today(),
+                            'CreatedByDate': date.today(),
                             'Identifier': sub_custom_data.get('Identifier', subpolicy.Identifier),
                             'Description': sub_custom_data.get('Description', subpolicy.Description),
                             'Status': 'Under Review',
@@ -1767,7 +1829,7 @@ def copy_framework(request, pk):
                     policy_data['Status'] = 'Under Review'
                     policy_data['ActiveInactive'] = 'Inactive'
                     policy_data.setdefault('CreatedByName', new_framework.CreatedByName)
-                    policy_data['CreatedByDate'] = datetime.date.today()
+                    policy_data['CreatedByDate'] = date.today()
 
                     new_policy = Policy.objects.create(**policy_data)
                     created_policies.append(new_policy)
@@ -1778,7 +1840,7 @@ def copy_framework(request, pk):
                         Version=str(framework_version),
                         PolicyName=new_policy.PolicyName,
                         CreatedBy=new_policy.CreatedByName,
-                        CreatedDate=datetime.date.today(),
+                        CreatedDate=date.today(),
                         PreviousVersionId=None
                     )
 
@@ -1793,7 +1855,7 @@ def copy_framework(request, pk):
                         subpolicy = subpolicy_data.copy()
                         subpolicy['PolicyId'] = new_policy
                         subpolicy.setdefault('CreatedByName', new_policy.CreatedByName)
-                        subpolicy['CreatedByDate'] = datetime.date.today()
+                        subpolicy['CreatedByDate'] = date.today()
                         subpolicy.setdefault('Status', 'Under Review')
 
                         SubPolicy.objects.create(**subpolicy)
@@ -2023,6 +2085,7 @@ def copy_policy(request, pk):
         print("Error in copy_policy:", error_info)  # Add this to see full error on server console/logs
         return Response({'error': 'Error copying policy', 'details': error_info}, status=status.HTTP_400_BAD_REQUEST)
 
+
 """
 @api PUT /api/frameworks/{pk}/toggle-status/
 Toggles the ActiveInactive status of a framework between 'Active' and 'Inactive'.
@@ -2240,7 +2303,7 @@ def create_framework_version(request, pk):
                 'FrameworkDescription': request.data.get('FrameworkDescription', original_framework.FrameworkDescription),
                 'EffectiveDate': request.data.get('EffectiveDate', original_framework.EffectiveDate),
                 'CreatedByName': request.data.get('CreatedByName', original_framework.CreatedByName),
-                'CreatedByDate': request.data.get('CreatedByDate', datetime.date.today()),
+                'CreatedByDate': date.today(),
                 'Category': request.data.get('Category', original_framework.Category),
                 'DocURL': request.data.get('DocURL', original_framework.DocURL),
                 'Identifier': original_framework.Identifier,
@@ -2448,7 +2511,7 @@ def create_framework_version(request, pk):
                     policy_data['Status'] = 'Under Review'
                     policy_data['ActiveInactive'] = 'Inactive'
                     policy_data.setdefault('CreatedByName', new_framework.CreatedByName)
-                    policy_data['CreatedByDate'] = datetime.date.today()
+                    policy_data['CreatedByDate'] = date.today()
 
                     reviewer_id_new_policy = policy_data.get('Reviewer')
                     reviewer_username_new_policy = reviewer_name  # fallback
@@ -2600,7 +2663,7 @@ def create_policy_version(request, pk):
                 'EndDate': request.data.get('EndDate', original_policy.EndDate),
                 'Department': request.data.get('Department', original_policy.Department),
                 'CreatedByName': request.data.get('CreatedByName', original_policy.CreatedByName),
-                'CreatedByDate': datetime.date.today(),
+                'CreatedByDate': date.today(),
                 'Applicability': request.data.get('Applicability', original_policy.Applicability),
                 'DocURL': request.data.get('DocURL', original_policy.DocURL),
                 'Scope': request.data.get('Scope', original_policy.Scope),
@@ -2614,46 +2677,7 @@ def create_policy_version(request, pk):
             # Create new policy record
             new_policy = Policy.objects.create(**new_policy_data)
 
-            # Find user ID for CreatedByName (for PolicyApproval)
-            created_by_name = new_policy_data['CreatedByName']
-            user_obj = Users.objects.filter(UserName=created_by_name).first()
-            user_id = user_obj.UserId if user_obj else None
-
-            # Prepare extracted data for PolicyApproval
-            extracted_data = {
-                'PolicyId': new_policy.PolicyId,
-                'PolicyName': new_policy.PolicyName,
-                'PolicyDescription': new_policy.PolicyDescription,
-                'StartDate': new_policy.StartDate.isoformat() if hasattr(new_policy.StartDate, 'isoformat') else new_policy.StartDate,
-                'EndDate': new_policy.EndDate.isoformat() if hasattr(new_policy.EndDate, 'isoformat') else new_policy.EndDate,
-                'Department': new_policy.Department,
-                'CreatedByName': new_policy.CreatedByName,
-                'CreatedByDate': new_policy.CreatedByDate.isoformat() if hasattr(new_policy.CreatedByDate, 'isoformat') else new_policy.CreatedByDate,
-                'Applicability': new_policy.Applicability,
-                'DocURL': new_policy.DocURL,
-                'Scope': new_policy.Scope,
-                'Objective': new_policy.Objective,
-                'Identifier': new_policy.Identifier,
-                'Status': new_policy.Status,
-                'ActiveInactive': new_policy.ActiveInactive,
-                'FrameworkId': new_policy.FrameworkId.FrameworkId,
-                'policy_approval': {
-                    'approved': None,
-                    'remarks': ''
-                },
-                'subpolicies': []
-            }
-
-            # Create PolicyApproval record with ReviewerId as UserId
-            PolicyApproval.objects.create(
-                Identifier=new_policy.Identifier,
-                ExtractedData=extracted_data,
-                UserId=user_id,
-                ReviewerId=reviewer_id,
-                ApprovedNot=None,
-                Version="u1"
-            )
-
+            
             # Get original PolicyVersion to link new version
             original_policy_version = PolicyVersion.objects.filter(
                 PolicyId=original_policy,
@@ -2755,7 +2779,7 @@ def create_policy_version(request, pk):
                     if 'CreatedByName' not in policy_data:
                         policy_data['CreatedByName'] = original_policy.CreatedByName
                     if 'CreatedByDate' not in policy_data:
-                        policy_data['CreatedByDate'] = datetime.date.today()
+                        policy_data['CreatedByDate'] = date.today()
 
                     created_policy = Policy.objects.create(**policy_data)
                     created_policies.append(created_policy)
@@ -2823,153 +2847,142 @@ Identifier, PolicyName (PolicyFamily), SubpolicyIdentifier, SubpolicyName, Contr
 Example response:
 Returns an Excel file as attachment
 """
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([AllowAny])
 def export_policies_to_excel(request, framework_id):
+    """
+    Export framework policies and their subpolicies to various formats
+    """
+    print(f"[EXPORT] Request received to export policies for Framework ID: {framework_id}")
+
     try:
         # Get the framework
-        framework = get_object_or_404(Framework, FrameworkId=framework_id)
-        
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        from django.http import HttpResponse
-        from datetime import datetime
-        import re
-        
-        # Sanitize framework name for sheet title (remove invalid characters)
-        def sanitize_sheet_name(name):
-            # Remove or replace invalid characters for Excel sheet names
-            # Excel sheet names cannot contain: \ / * ? : [ ]
-            invalid_chars = r'[\\/*?:\[\]]'
-            sanitized = re.sub(invalid_chars, '-', name)
-            # Excel sheet names must be <= 31 characters
-            return sanitized[:31].strip('-')  # Remove trailing dash if present
-        
-        def sanitize_filename(name):
-            # Remove or replace invalid characters for file names
-            invalid_chars = r'[<>:"/\\|?*]'
-            return re.sub(invalid_chars, '-', name)
-        
-        # Create a new workbook and select the active sheet
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        
-        # Sanitize and set the sheet title
-        sheet_title = sanitize_sheet_name(f"{framework.FrameworkName} Policies")
-        if not sheet_title:  # If all characters were invalid
-            sheet_title = "Framework Policies"
-        ws.title = sheet_title
-        
-        # Define headers
-        headers = ['Identifier', 'PolicyFamily', 'SubpolicyIdentifier', 'SubpolicyName', 'Control', 'Description']
-        
-        # Style for headers
-        header_font = Font(bold=True, color='FFFFFF')
-        header_fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
-        
-        # Style for policy rows
-        policy_fill = PatternFill(start_color='E6E6E6', end_color='E6E6E6', fill_type='solid')
-        
-        # Border styles
-        thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-        
-        # Write headers
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = Alignment(horizontal='center')
-            cell.border = thin_border
-        
-        # Fetch all policies for this framework and their subpolicies
-        policies = Policy.objects.filter(FrameworkId=framework).select_related('FrameworkId')
-        
-        row = 2  # Start from second row after headers
+        framework = Framework.objects.get(FrameworkId=framework_id)
+        print(f"[EXPORT] Found framework: {framework.FrameworkName}")
+
+        # Get all policies for this framework
+        policies = Policy.objects.filter(FrameworkId=framework_id)
+        print(f"[EXPORT] Found {policies.count()} policies under framework {framework_id}")
+
+        # Prepare data for export (one row per subpolicy, or one row per policy if no subpolicies)
+        export_data_list = []
         for policy in policies:
-            # Get subpolicies for this policy
-            subpolicies = SubPolicy.objects.filter(PolicyId=policy)
-            
-            if not subpolicies:
-                # If no subpolicies, write just the policy row
-                for col in range(1, 7):
-                    cell = ws.cell(row=row, column=col)
-                    cell.border = thin_border
-                    if col <= 2:  # Only fill first two columns
-                        cell.fill = policy_fill
-                
-                ws.cell(row=row, column=1, value=policy.Identifier)
-                ws.cell(row=row, column=2, value=policy.PolicyName)
-                row += 1
+            print(f"[EXPORT] Processing policy: {policy.PolicyName}")
+            subpolicies = policy.subpolicy_set.all()
+            if subpolicies.exists():
+                for sub in subpolicies:
+                    row = {
+                        'Policy ID': policy.PolicyId,
+                        'Policy Name': policy.PolicyName,
+                        'Version': policy.CurrentVersion,
+                        'Status': policy.Status,
+                        'Description': policy.PolicyDescription,
+                        'Department': policy.Department,
+                        'Created By': policy.CreatedByName,
+                        'Created Date': policy.CreatedByDate.isoformat() if policy.CreatedByDate else None,
+                        'Start Date': policy.StartDate.isoformat() if policy.StartDate else None,
+                        'End Date': policy.EndDate.isoformat() if policy.EndDate else None,
+                        'Applicability': policy.Applicability,
+                        'Scope': policy.Scope,
+                        'Objective': policy.Objective,
+                        'Identifier': policy.Identifier,
+                        'Active/Inactive': policy.ActiveInactive,
+                        # Subpolicy fields
+                        'Subpolicy ID': sub.SubPolicyId,
+                        'Subpolicy Name': sub.SubPolicyName,
+                        'Subpolicy Identifier': sub.Identifier,
+                        'Subpolicy Description': sub.Description,
+                        'Subpolicy Status': sub.Status,
+                        'Subpolicy Permanent/Temporary': sub.PermanentTemporary,
+                        'Subpolicy Control': sub.Control,
+                        'Subpolicy Created By': sub.CreatedByName,
+                        'Subpolicy Created Date': sub.CreatedByDate.isoformat() if sub.CreatedByDate else None,
+                    }
+                    export_data_list.append(row)
             else:
-                # Store the starting row for this policy
-                policy_start_row = row
-                
-                # Write policy with each subpolicy
-                for subpolicy in subpolicies:
-                    for col in range(1, 7):
-                        cell = ws.cell(row=row, column=col)
-                        cell.border = thin_border
-                        if col <= 2:  # Only fill first two columns
-                            cell.fill = policy_fill
-                    
-                    ws.cell(row=row, column=1, value=policy.Identifier)
-                    ws.cell(row=row, column=2, value=policy.PolicyName)
-                    ws.cell(row=row, column=3, value=subpolicy.Identifier)
-                    ws.cell(row=row, column=4, value=subpolicy.SubPolicyName)
-                    ws.cell(row=row, column=5, value=subpolicy.Control)
-                    ws.cell(row=row, column=6, value=subpolicy.Description)
-                    row += 1
-                
-                # Merge policy cells if there are multiple subpolicies
-                if row - policy_start_row > 1:
-                    ws.merge_cells(start_row=policy_start_row, start_column=1,
-                                 end_row=row-1, end_column=1)
-                    ws.merge_cells(start_row=policy_start_row, start_column=2,
-                                 end_row=row-1, end_column=2)
-                    
-                    # Center the merged cells vertically
-                    merged_cell1 = ws.cell(row=policy_start_row, column=1)
-                    merged_cell2 = ws.cell(row=policy_start_row, column=2)
-                    merged_cell1.alignment = Alignment(vertical='center')
-                    merged_cell2.alignment = Alignment(vertical='center')
-        
-        # Add styling to the data cells and wrap text
-        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=6):
-            for cell in row:
-                if not cell.alignment:  # Don't override merged cell alignment
-                    cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-        
-        # Adjust column widths
-        column_widths = [20, 30, 20, 30, 40, 50]  # Preset widths for each column
-        for i, width in enumerate(column_widths, 1):
-            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
-        
-        # Create response with Excel file
-        response = HttpResponse(
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                # Policy with no subpolicies: still include a row
+                row = {
+                    'Policy ID': policy.PolicyId,
+                    'Policy Name': policy.PolicyName,
+                    'Version': policy.CurrentVersion,
+                    'Status': policy.Status,
+                    'Description': policy.PolicyDescription,
+                    'Department': policy.Department,
+                    'Created By': policy.CreatedByName,
+                    'Created Date': policy.CreatedByDate.isoformat() if policy.CreatedByDate else None,
+                    'Start Date': policy.StartDate.isoformat() if policy.StartDate else None,
+                    'End Date': policy.EndDate.isoformat() if policy.EndDate else None,
+                    'Applicability': policy.Applicability,
+                    'Scope': policy.Scope,
+                    'Objective': policy.Objective,
+                    'Identifier': policy.Identifier,
+                    'Active/Inactive': policy.ActiveInactive,
+                    # Subpolicy fields (empty)
+                    'Subpolicy ID': None,
+                    'Subpolicy Name': None,
+                    'Subpolicy Identifier': None,
+                    'Subpolicy Description': None,
+                    'Subpolicy Status': None,
+                    'Subpolicy Permanent/Temporary': None,
+                    'Subpolicy Control': None,
+                    'Subpolicy Created By': None,
+                    'Subpolicy Created Date': None,
+                }
+                export_data_list.append(row)
+
+        # Get export format from request
+        export_format = request.data.get('format', 'xlsx')
+        print(f"[EXPORT] Export format requested: {export_format}")
+
+        # Create export record
+        print("[EXPORT] Saving export task record...")
+        export_record = save_export_record({
+            'export_data': export_data_list,
+            'file_type': export_format,
+            'user_id': request.user.id if request.user.is_authenticated else 'anonymous',
+            'file_name': f"framework_{framework_id}_policies.{export_format}",
+            'status': 'pending',
+            'metadata': {
+                'framework_id': framework_id,
+                'framework_name': framework.FrameworkName,
+                'record_count': len(export_data_list)
+            }
+        })
+
+        # Export the data
+        print("[EXPORT] Initiating export_data process...")
+        result = export_data(
+            data=export_data_list,
+            file_format=export_format,
+            user_id=request.user.id if request.user.is_authenticated else 'anonymous',
+            options={
+                'framework_id': framework_id,
+                'framework_name': framework.FrameworkName
+            }
         )
-        
-        # Create a safe filename
-        safe_framework_name = sanitize_filename(framework.FrameworkName)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f'{safe_framework_name}_policies_{timestamp}.xlsx'
-        
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        # Save the workbook to the response
-        wb.save(response)
-        return response
+
+        print(f"[EXPORT] Export successful. File name: {result['file_name']}")
+        return Response({
+            'success': True,
+            'export_id': result['export_id'],
+            'file_url': result['file_url'],
+            'file_name': result['file_name'],
+            'metadata': result['metadata']
+        })
+
+    except Framework.DoesNotExist:
+        print(f"[ERROR] Framework with ID {framework_id} not found.")
+        return Response({
+            'success': False,
+            'error': 'Framework not found'
+        }, status=404)
         
     except Exception as e:
+        print(f"[ERROR] Exception during export: {str(e)}")
         return Response({
-            'error': 'Error exporting policies to Excel',
-            'details': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -3376,11 +3389,11 @@ def get_policy_details(request, policy_id):
             'PolicyName': policy.PolicyName,
             'PolicyDescription': policy.PolicyDescription,
             'CurrentVersion': policy.CurrentVersion,
-            'StartDate': policy.StartDate,
-            'EndDate': policy.EndDate,
+            'StartDate': safe_isoformat(policy.StartDate),
+            'EndDate': safe_isoformat(policy.EndDate),
             'Department': policy.Department,
             'CreatedByName': policy.CreatedByName,
-            'CreatedByDate': policy.CreatedByDate,
+            'CreatedByDate': safe_isoformat(policy.CreatedByDate),
             'Applicability': policy.Applicability,
             'DocURL': policy.DocURL,
             'Scope': policy.Scope,
@@ -3714,7 +3727,7 @@ def all_policies_get_subpolicies(request):
                     'policy_id': subpolicy.PolicyId_id,
                     'policy_name': policy_name,
                     'created_by': subpolicy.CreatedByName,
-                    'created_date': subpolicy.CreatedByDate
+                    'created_date': safe_isoformat(subpolicy.CreatedByDate)
                 }
                 subpolicies_data.append(subpolicy_data)
                 print(f"Added subpolicy: {subpolicy.SubPolicyId} - {subpolicy.SubPolicyName}")
@@ -3924,7 +3937,7 @@ def all_policies_get_policy_version_subpolicies(request, version_id):
                     'policy_id': policy.PolicyId,
                     'policy_name': policy.PolicyName,
                     'created_by': subpolicy.CreatedByName,
-                    'created_date': subpolicy.CreatedByDate
+                    'created_date': safe_isoformat(subpolicy.CreatedByDate)
                 }
                 subpolicies_data.append(subpolicy_data)
                 print(f"Added subpolicy: {subpolicy.SubPolicyId} - {subpolicy.SubPolicyName}")
@@ -3992,7 +4005,7 @@ def get_recent_policy_activity(request):
         {
             'PolicyName': p.PolicyName,
             'CreatedBy': p.CreatedByName,
-            'CreatedDate': p.CreatedByDate
+            'CreatedDate': safe_isoformat(p.CreatedByDate)
         } for p in recent_policies
     ])
 
@@ -4013,19 +4026,16 @@ def get_avg_policy_approval_time(request):
     # Get the first and last approval for each policy
     policy_approvals = {}
     for approval in approved_policies:
-        # Use PolicyId instead of Identifier
-        policy_id = approval.PolicyId_id
-        
-        if policy_id not in policy_approvals:
-            policy_approvals[policy_id] = {
+        if approval.Identifier not in policy_approvals:
+            policy_approvals[approval.Identifier] = {
                 'first': approval,
                 'last': approval
             }
         else:
-            if approval.ApprovalId < policy_approvals[policy_id]['first'].ApprovalId:
-                policy_approvals[policy_id]['first'] = approval
-            if approval.ApprovalId > policy_approvals[policy_id]['last'].ApprovalId:
-                policy_approvals[policy_id]['last'] = approval
+            if approval.ApprovalId < policy_approvals[approval.Identifier]['first'].ApprovalId:
+                policy_approvals[approval.Identifier]['first'] = approval
+            if approval.ApprovalId > policy_approvals[approval.Identifier]['last'].ApprovalId:
+                policy_approvals[approval.Identifier]['last'] = approval
 
     # Calculate average days between first submission and approval
     total_days = 0
@@ -4463,7 +4473,7 @@ def get_policy_kpis(request):
         ]
 
         # Get historical active policy counts for the last 12 months
-        twelve_months_ago = datetime.date.today() - timedelta(days=365)
+        twelve_months_ago = date.today() - timedelta(days=365)
         monthly_counts = []
         
         # Get all policies with their creation dates
@@ -4473,7 +4483,7 @@ def get_policy_kpis(request):
         
         # Group by month and count active policies
         month_data = {}
-        current_date = datetime.date.today()
+        current_date = date.today()
         
         # Initialize all months with 0
         for i in range(12):
@@ -4497,7 +4507,7 @@ def get_policy_kpis(request):
         ][:12]
         
         # Calculate revision metrics
-        three_months_ago = datetime.date.today() - timedelta(days=90)
+        three_months_ago = date.today() - timedelta(days=90)
         
         # Get all policy versions with previous version links
         policy_versions = PolicyVersion.objects.filter(
@@ -4626,116 +4636,8 @@ def acknowledge_policy(request, policy_id):
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_rejected_policies_for_user(request, user_id):
-    """
-    Get all rejected policies for a specific user to allow resubmission
-    """
-    try:
-        # Find the latest approval record for each policy where ApprovedNot=False (rejected)
-        # Group by PolicyId to get only the latest rejection for each policy
-        latest_rejections = {}
-        
-        # Get all rejections for this user
-        rejections = PolicyApproval.objects.filter(
-            UserId=user_id,
-            ApprovedNot=False  # False means rejected
-        ).order_by('-ApprovalId')  # Most recent first
-        
-        # Group by PolicyId to get only the latest rejection
-        for rejection in rejections:
-            policy_id = rejection.PolicyId_id
-            if policy_id and policy_id not in latest_rejections:
-                latest_rejections[policy_id] = rejection
-        
-        # Convert to list for the response
-        rejection_data = []
-        for rejection in latest_rejections.values():
-            # Get the policy data
-            policy = None
-            if rejection.PolicyId_id:
-                try:
-                    policy = Policy.objects.get(PolicyId=rejection.PolicyId_id)
-                except Policy.DoesNotExist:
-                    continue  # Skip if policy doesn't exist
-            
-            # Add to response data
-            rejection_data.append({
-                'ApprovalId': rejection.ApprovalId,
-                'PolicyId': rejection.PolicyId_id,
-                'PolicyName': policy.PolicyName if policy else 'Unknown',
-                'ExtractedData': rejection.ExtractedData,
-                'Version': rejection.Version,
-                'RejectedDate': rejection.ApprovedDate,
-                'Remarks': rejection.ExtractedData.get('policy_approval', {}).get('remarks', '')
-            })
-        
-        return Response(rejection_data)
-    
-    except Exception as e:
-        print(f"Error getting rejected policies: {str(e)}")
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def resubmit_rejected_policy(request, approval_id):
-    """
-    Resubmit a rejected policy with modified data
-    """
-    try:
-        # Get the original rejection
-        rejection = get_object_or_404(PolicyApproval, ApprovalId=approval_id)
-        
-        # Ensure this was a rejection
-        if rejection.ApprovedNot is not False:
-            return Response({
-                'error': 'This approval is not a rejection and cannot be resubmitted'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Get the modified data from the request
-        modified_data = request.data.get('ExtractedData')
-        if not modified_data:
-            return Response({'error': 'ExtractedData is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create new version number (u followed by number)
-        u_versions = PolicyApproval.objects.filter(
-            PolicyId=rejection.PolicyId_id,
-            Version__startswith='u'
-        ).order_by('-Version')
-        
-        next_version = 'u1'
-        if u_versions.exists():
-            latest = u_versions.first()
-            try:
-                # Extract number and increment
-                version_num = int(latest.Version[1:])
-                next_version = f"u{version_num + 1}"
-            except (ValueError, IndexError):
-                pass
-        
-        # Create a new approval with the modified data
-        new_approval = PolicyApproval.objects.create(
-            PolicyId=rejection.PolicyId,
-            ExtractedData=modified_data,
-            UserId=rejection.UserId,
-            ReviewerId=rejection.ReviewerId,
-            ApprovedNot=None,  # Reset to pending
-            Version=next_version
-        )
-        
-        # Update policy status back to Under Review
-        if rejection.PolicyId_id:
-            policy = Policy.objects.get(PolicyId=rejection.PolicyId_id)
-            policy.Status = 'Under Review'
-            policy.save()
-        
-        return Response({
-            'message': 'Policy resubmitted successfully',
-            'ApprovalId': new_approval.ApprovalId,
-            'Version': next_version
-        })
-        
-    except Exception as e:
-        print(f"Error resubmitting policy: {str(e)}")
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# Add this helper function near the top of the file (after imports)
+def safe_isoformat(val):
+    if hasattr(val, 'isoformat'):
+        return val.isoformat()
+    return val if isinstance(val, str) else None

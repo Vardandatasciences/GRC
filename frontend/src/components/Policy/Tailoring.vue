@@ -266,6 +266,13 @@
                         >
                           {{ sub.exclude ? 'Excluded' : 'Exclude' }}
                         </button>
+                        <button 
+                          type="button" 
+                          class="remove-btn" 
+                          @click="removeSubPolicy(policyIndex, subIdx)"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                     <div class="form-group" :class="{ 'excluded': sub.exclude }">
@@ -774,9 +781,9 @@ export default {
               subpolicies // <-- use the mapped subpolicies
             }
 
-            // For new policies (no id), create new policy
             if (!policy.id) {
-              await axios.post(`${API_BASE_URL}/policies/`, policyData);
+              // Use the selected framework as the target for new policy
+              await axios.post(`${API_BASE_URL}/frameworks/${selectedFramework.value}/policies/`, policyData);
             } else {
               // For existing policies, copy to new framework
               await axios.post(`${API_BASE_URL}/policies/${policy.id}/copy/`, policyData);

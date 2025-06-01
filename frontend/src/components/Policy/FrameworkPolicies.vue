@@ -314,7 +314,7 @@ onMounted(() => {
 
 .policy-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   width: 100%;
   margin-top: 24px;
@@ -324,17 +324,17 @@ onMounted(() => {
 
 .policy-card {
   background: #f7f7fa;
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   position: relative;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  min-height: 180px;
-  box-shadow: 0 4px 14px rgba(79,108,255,0.08);
-  border-left: 4px solid transparent;
+  min-height: 120px;
+  box-shadow: 0 2px 8px rgba(79,108,255,0.08);
+  border-left: 3px solid transparent;
   transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;

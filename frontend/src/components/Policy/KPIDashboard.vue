@@ -532,6 +532,7 @@ export default {
   min-height: calc(100vh - 4rem);
   max-width: 1200px;
   margin: 0 auto;
+  margin-left: 260px;
 }
 
 .dashboard-header {
@@ -1294,6 +1295,13 @@ export default {
 
   .overall-value {
     font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-dashboard {
+    margin-left: 0;
+    padding: 1rem;
   }
 }
 </style> 
