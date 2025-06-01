@@ -577,4 +577,7 @@ django.db.utils.OperationalError: (1054, "Unknown column 'risk.RiskPriority' in 
 2025-06-02 04:47:27,260 - django.request - WARNING - Unauthorized: /api/users/
 2025-06-02 04:47:42,467 - django.request - WARNING - Unauthorized: /api/users/
 2025-06-02 04:47:50,861 - django.request - WARNING - Forbidden: /api/frameworks/16/
+<<<<<<< HEAD
 2025-06-02 04:50:53,984 - django.utils.autoreload - INFO - C:\Users\puttu\Music\GRC_INTEGRATIONS\GRC\backend\grc\models.py changed, reloading.
+=======
+>>>>>>> RiskModule_01_06

@@ -1,39 +1,15 @@
 <template>
-  <div id="app">
-    <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
-    <LoginSuccess v-else @logout="handleLogout" />
-  </div>
+  <PolicySidebar />
+  <router-view />
 </template>
 
 <script>
-import Login from './components/Login.vue'
-import LoginSuccess from './components/LoginSuccess.vue'
+import PolicySidebar from './components/Policy/Sidebar.vue'
 
 export default {
   name: 'App',
   components: {
-    Login,
-    LoginSuccess
-  },
-  data() {
-    return {
-      isLoggedIn: false
-    }
-  },
-  created() {
-    // Check if user is already logged in
-    const user = localStorage.getItem('user');
-    if (user) {
-      this.isLoggedIn = true;
-    }
-  },
-  methods: {
-    handleLoginSuccess() {
-      this.isLoggedIn = true;
-    },
-    handleLogout() {
-      this.isLoggedIn = false;
-    }
+    PolicySidebar
   }
 }
 </script>
@@ -49,5 +25,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background-color: #f5f5f5;
 }
 </style>

@@ -15,5 +15,10 @@
       "dom.iterable",
       "scripthost"
     ]
-  }
+  },
+  "exclude": [
+    "src/components/HelloWorld.vue",
+    "src/components/Login.vue",
+    "src/components/LoginSuccess.vue"
+  ]
 }

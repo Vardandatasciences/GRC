@@ -1,0 +1,48 @@
+{
+  "framework": {
+    "title": "Sample Framework",
+    "description": "This is a sample framework for demonstration purposes"
+  },
+  "policies": [
+    {
+      "title": "Information Security Policy",
+      "description": "This policy outlines information security requirements",
+      "objective": "To establish guidelines for protecting information assets",
+      "scope": "Applies to all employees and information systems",
+      "subPolicies": [
+        {
+          "title": "Password Management",
+          "description": "Requirements for secure password management"
+        },
+        {
+          "title": "Data Classification",
+          "description": "Guidelines for classifying organizational data"
+        }
+      ]
+    },
+    {
+      "title": "Access Control Policy",
+      "description": "This policy defines access control requirements",
+      "objective": "To ensure appropriate access to information resources",
+      "scope": "Applies to all access to information systems",
+      "subPolicies": [
+        {
+          "title": "User Access Management",
+          "description": "Procedures for managing user access"
+        },
+        {
+          "title": "Privilege Management",
+          "description": "Guidelines for managing privileged access"
+        }
+      ]
+    }
+  ],
+  "authorizer": {
+    "title": "Authorization Details",
+    "description": "Information about authorization process",
+    "createdBy": "Admin User",
+    "createdDate": "2024-05-15",
+    "authorizedBy": "Security Officer",
+    "assignTask": "Chief Information Security Officer"
+  }
+} 
