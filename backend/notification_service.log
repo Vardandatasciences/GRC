@@ -573,4 +573,7 @@ django.db.utils.OperationalError: (1054, "Unknown column 'risk.RiskPriority' in 
 2025-06-02 04:40:53,035 - django.request - WARNING - Unauthorized: /api/users/
 2025-06-02 04:41:04,175 - django.request - WARNING - Not Found: /api/all-policies/framework-versions/1/
 2025-06-02 04:41:26,865 - django.request - WARNING - Not Found: /api/policy-approvals/latest/1083/
+<<<<<<< HEAD
 2025-06-02 04:43:10,528 - django.utils.autoreload - INFO - C:\Users\puttu\Music\GRC_INTEGRATIONS\GRC\backend\grc\serializers.py changed, reloading.
+=======
+>>>>>>> RiskModule_01_06
