@@ -568,3 +568,8 @@ Traceback (most recent call last):
   File "C:\Users\puttu\AppData\Roaming\Python\Python310\site-packages\pymysql\err.py", line 150, in raise_mysql_exception
     raise errorclass(errno, errval)
 django.db.utils.OperationalError: (1054, "Unknown column 'risk.RiskPriority' in 'field list'")
+2025-06-02 04:40:47,582 - django.request - WARNING - Unauthorized: /api/users/
+2025-06-02 04:40:52,008 - django.request - WARNING - Unauthorized: /api/users/
+2025-06-02 04:40:53,035 - django.request - WARNING - Unauthorized: /api/users/
+2025-06-02 04:41:04,175 - django.request - WARNING - Not Found: /api/all-policies/framework-versions/1/
+2025-06-02 04:41:26,865 - django.request - WARNING - Not Found: /api/policy-approvals/latest/1083/
