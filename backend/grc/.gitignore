@@ -1,0 +1,9 @@
+# Ignore Python compiled files
+*.pyc
+__pycache__/
+
+# VSCode, JetBrains, system files (optional)
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
