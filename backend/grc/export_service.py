@@ -19,7 +19,7 @@ db_pool = mysql.connector.pooling.MySQLConnectionPool(
     host=os.environ.get('DB_HOST', 'localhost'),
     user=os.environ.get('DB_USER', 'root'),
     password=os.environ.get('DB_PASSWORD', 'root'),
-    database=os.environ.get('DB_NAME', 'grc_test')
+    database=os.environ.get('DB_NAME', 'grc')
 )
 
 # S3 client setup
@@ -175,32 +175,97 @@ def update_export_url(export_id, s3_url):
         conn.close()
 
 def export_to_excel(data):
-    """Export data to Excel format"""
+    """Export data to Excel format with proper styling"""
     try:
         df = pd.DataFrame(data)
         output = BytesIO()
         
-        # Try to use xlsxwriter engine
+        # Try to use xlsxwriter engine for better styling
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, sheet_name='Export', index=False)
+                df.to_excel(writer, sheet_name='Compliance Export', index=False)
                 workbook = writer.book
-                worksheet = writer.sheets['Export']
+                worksheet = writer.sheets['Compliance Export']
                 
-                # Format the header
-                header_format = workbook.add_format({'bold': True, 'bg_color': '#D3D3D3'})
+                # Define formats
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'bg_color': '#4F81BD',
+                    'font_color': 'white',
+                    'border': 1,
+                    'align': 'center',
+                    'valign': 'vcenter',
+                    'text_wrap': True
+                })
+                
+                cell_format = workbook.add_format({
+                    'border': 1,
+                    'align': 'left',
+                    'valign': 'vcenter',
+                    'text_wrap': True
+                })
+                
+                # Format headers
                 for col_num, value in enumerate(df.columns.values):
                     worksheet.write(0, col_num, value, header_format)
                     
-                # Adjust column width
+                # Format data cells
+                for row_num in range(len(df)):
+                    for col_num in range(len(df.columns)):
+                        worksheet.write(row_num + 1, col_num, df.iloc[row_num, col_num], cell_format)
+                
+                # Adjust column widths
                 for i, col in enumerate(df.columns):
-                    column_width = max(df[col].astype(str).map(len).max(), len(col))
-                    worksheet.set_column(i, i, column_width + 2)
+                    max_length = max(
+                        df[col].astype(str).apply(len).max(),
+                        len(str(col))
+                    )
+                    # Limit column width to 50 characters
+                    worksheet.set_column(i, i, min(max_length + 2, 50))
+                
+                # Freeze the header row
+                worksheet.freeze_panes(1, 0)
+                
+                # Add auto-filter
+                worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
+                
         except ImportError:
             # Fall back to openpyxl if xlsxwriter is not available
-            print("xlsxwriter not found, trying openpyxl instead...")
+            print("xlsxwriter not found, using openpyxl instead...")
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Export', index=False)
+                df.to_excel(writer, sheet_name='Compliance Export', index=False)
+                workbook = writer.book
+                worksheet = writer.active
+                
+                # Basic formatting for openpyxl
+                from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+                header_fill = PatternFill(start_color='4F81BD', end_color='4F81BD', fill_type='solid')
+                header_font = Font(bold=True, color='FFFFFF')
+                border = Border(
+                    left=Side(style='thin'),
+                    right=Side(style='thin'),
+                    top=Side(style='thin'),
+                    bottom=Side(style='thin')
+                )
+                
+                # Format headers
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.border = border
+                    cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                
+                # Format data cells
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        cell.border = border
+                        cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                
+                # Freeze header row
+                worksheet.freeze_panes = 'A2'
+                
+                # Auto-filter
+                worksheet.auto_filter.ref = worksheet.dimensions
     
         output.seek(0)
         return output.getvalue()
@@ -209,8 +274,10 @@ def export_to_excel(data):
         # If neither excel writer is available, save as CSV instead
         print(f"Excel libraries not available: {str(e)}. Saving as CSV instead.")
         csv_data = export_to_csv(data)
-        # Update the error message for clarity
         raise ImportError(f"Excel export failed - missing libraries. File saved as CSV instead: {str(e)}")
+    except Exception as e:
+        print(f"Error in export_to_excel: {str(e)}")
+        raise
 
 def export_to_csv(data):
     """Export data to CSV format"""
@@ -396,16 +463,75 @@ def export_data(data=None, file_format='xlsx', user_id='user123', options=None):
         
         if file_format not in export_functions:
             raise ValueError(f"Unsupported export format: {file_format}")
+
+        # Format data into a flat table structure
+        formatted_data = []
+        for item in data:
+            # Framework info
+            framework_info = {
+                'Framework ID': item.get('framework_id', ''),
+                'Framework Name': item.get('framework_name', ''),
+                'Framework Description': item.get('framework_description', ''),
+                'Framework Category': item.get('framework_category', ''),
+                'Framework Status': item.get('framework_status', ''),
+                'Framework Version': item.get('framework_current_version', ''),
+            }
+            
+            # Policy info
+            policy_info = {
+                'Policy ID': item.get('policy_id', ''),
+                'Policy Name': item.get('policy_name', ''),
+                'Policy Description': item.get('policy_description', ''),
+                'Policy Department': item.get('policy_department', ''),
+                'Policy Status': item.get('policy_status', ''),
+                'Policy Active/Inactive': item.get('policy_active_inactive', ''),
+                'Policy Version': item.get('policy_current_version', ''),
+            }
+            
+            # Subpolicy info
+            subpolicy_info = {
+                'Subpolicy ID': item.get('subpolicy_id', ''),
+                'Subpolicy Name': item.get('subpolicy_name', ''),
+                'Subpolicy Description': item.get('subpolicy_description', ''),
+                'Subpolicy Status': item.get('subpolicy_status', ''),
+                'Subpolicy Control': item.get('subpolicy_control', ''),
+                'Subpolicy Identifier': item.get('subpolicy_identifier', ''),
+            }
+            
+            # Compliance info
+            compliance_info = {
+                'Compliance ID': item.get('compliance_id', ''),
+                'Compliance Description': item.get('compliance_description', ''),
+                'Compliance Version': item.get('compliance_version', ''),
+                'Compliance Status': item.get('compliance_status', ''),
+                'Active/Inactive': item.get('compliance_active_inactive', ''),
+                'Criticality': item.get('compliance_criticality', ''),
+                'Maturity Level': item.get('compliance_maturity_level', ''),
+                'Mandatory/Optional': item.get('compliance_mandatory_optional', ''),
+                'Manual/Automatic': item.get('compliance_manual_automatic', ''),
+                'Is Risk': item.get('compliance_is_risk', ''),
+                'Possible Damage': item.get('compliance_possible_damage', ''),
+                'Mitigation': item.get('compliance_mitigation', ''),
+                'Impact': item.get('compliance_impact', ''),
+                'Probability': item.get('compliance_probability', ''),
+                'Created By': item.get('compliance_created_by', ''),
+                'Created Date': item.get('compliance_created_date', ''),
+                'Identifier': item.get('compliance_identifier', ''),
+            }
+            
+            # Combine all info into a single row
+            row = {**framework_info, **policy_info, **subpolicy_info, **compliance_info}
+            formatted_data.append(row)
         
         # Create export record
         export_id = save_export_record({
-            'export_data': data,
+            'export_data': formatted_data,
             'file_type': file_format,
             'user_id': user_id,
             'file_name': file_name,
             'status': 'pending',
             'metadata': {
-                'record_count': len(data) if isinstance(data, list) else 1,
+                'record_count': len(formatted_data),
                 'filters': options.get('filters', {}),
                 'columns': options.get('columns', [])
             }
@@ -417,7 +543,7 @@ def export_data(data=None, file_format='xlsx', user_id='user123', options=None):
         # Export to file
         print(f"Converting data to {file_format} format...")
         start_time = datetime.datetime.now()
-        file_buffer = export_functions[file_format](data)
+        file_buffer = export_functions[file_format](formatted_data)
         print(f"Data converted successfully. File size: {len(file_buffer)} bytes")
         
         # Save locally first
@@ -471,10 +597,11 @@ def export_data(data=None, file_format='xlsx', user_id='user123', options=None):
             'file_url': s3_result['url'],
             'file_name': file_name,
             'local_path': local_path,
+            'file_buffer': file_buffer,
             'metadata': {
                 'file_size': len(file_buffer),
                 'format': file_format,
-                'record_count': len(data) if isinstance(data, list) else 1,
+                'record_count': len(formatted_data),
                 'export_duration': duration
             }
         }

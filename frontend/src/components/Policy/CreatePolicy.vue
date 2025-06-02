@@ -1,1363 +1,940 @@
 <template>
   <div class="create-policy-container">
-    <!-- Loading Overlay -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Loading...</p>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="error-message">
-      {{ error }}
-      <button class="close-btn" @click="error = null">✕</button>
-    </div>
-
-    <!-- Policy Form Section -->
-    <div v-if="!showApprovalForm">
-      <h2>Create New Policy</h2>
-     
-      <!-- Framework Selection - Show only when no framework is selected -->
-      <div class="framework-policy-row" v-if="!selectedFramework || showFrameworkForm">
-        <div class="framework-policy-selects">
-          <div>
-            <label>Framework</label>
-            <select v-model="selectedFramework" style="font-size: 0.9rem" :disabled="loading">
-              <option value="">Select</option>
-              <option value="create">+ Create New Framework</option>
-              <option v-for="f in frameworks" :key="f.id" :value="f.id">{{ f.name }}</option>
-            </select>
-          </div>
-        </div>
+    <h2 @click="showTreePopup = true" style="cursor:pointer; text-decoration:underline;">Create New Policy</h2>
+    
+    <!-- Search Bar and Create Policy Button -->
+    <div class="search-bar">
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          placeholder="Search Policy..." 
+        />
       </div>
-
-      <!-- Framework Creation Form -->
-      <div v-if="showFrameworkForm" class="framework-form-container">
-        <div class="framework-form">
-          <div class="form-row">
-            <div class="form-group policy-name">
-              <label>Framework Name</label>
-              <div class="input-with-icon">
-                <i class="fas fa-file-alt"></i>
-                <input
-                  type="text"
-                  placeholder="Enter Framework name"
-                  v-model="newFramework.FrameworkName"
-                  style="text-align: left !important;"
-                />
-              </div>
-            </div>
-            <div class="form-group created-by">
-              <label>Created By</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user"></i>
-                <select v-model="newFramework.CreatedByName">
-                  <option value="">Select Creator</option>
-                  <option v-for="user in users" :key="user.UserId" :value="user.UserName">
-                    {{ user.UserName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row single-column">
-            <div class="form-group description">
-              <label>Description</label>
-              <div class="input-with-icon">
-                <i class="fas fa-align-left"></i>
-                <textarea
-                  placeholder="Enter framework description"
-                  v-model="newFramework.FrameworkDescription"
-                  rows="3"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group version">
-              <label>Identifier</label>
-              <div class="input-with-icon">
-                <i class="fas fa-code-branch"></i>
-                <input
-                  type="text"
-                  placeholder="Enter Identifier"
-                  v-model="newFramework.Version"
-                />
-              </div>
-            </div>
-            <div class="form-group category">
-              <label>Category</label>
-              <div class="input-with-icon">
-                <i class="fas fa-tag"></i>
-                <input
-                  type="text"
-                  placeholder="Enter category"
-                  v-model="newFramework.Category"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group date">
-              <label>Effective Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.EffectiveDate"
-                />
-              </div>
-            </div>
-            <div class="form-group date">
-              <label>Effective Start Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.StartDate"
-                />
-              </div>
-            </div>
-            <div class="form-group date">
-              <label>Effective End Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.EndDate"
-                />
-              </div>
-            </div>
-            <div class="form-group upload">
-              <label>Upload Document</label>
-              <div class="input-with-icon">
-                <i class="fas fa-file-upload"></i>
-                <span>Choose File</span>
-                <button class="browse-btn">Browse</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group reviewer">
-              <label>Reviewer</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user-check"></i>
-                <select v-model="newFramework.Reviewer">
-                  <option value="">Select Reviewer</option>
-                  <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                    {{ user.UserName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="submit-btn" @click="handleCreateFramework">Submit</button>
-            <button class="cancel-btn" @click="showFrameworkForm = false">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Policy Actions - Show when framework is selected -->
-      <div v-if="selectedFramework && !showFrameworkForm" class="policy-actions-container">
-        <div class="selected-framework-info">
-          <span>Selected Framework: {{ getSelectedFrameworkName() }}</span>
-          <button class="change-framework-btn" @click="handleChangeFramework">
-            <i class="fas fa-exchange-alt"></i> Change Framework
-          </button>
-        </div>
-        <button
-          class="add-policy-btn"
-          @click="handleAddPolicy"
-          :disabled="loading"
-          style="font-size: 0.9rem"
-        >
-          <i class="fas fa-plus"></i> Add Policy
+      <div class="button-group">
+        <button class="create-framework-btn" @click="isFrameworkFormVisible = true">
+          <i class="fas fa-plus icon"></i> Create Framework
+        </button>
+        <button class="create-policy-btn" @click="toggleForm">
+          <i class="fas fa-plus icon"></i> Create Policy
         </button>
       </div>
+    </div>
 
-      <!-- Policies and Subpolicies Grid -->
-      <div class="policy-rows">
-        <div v-for="(policy, idx) in policiesForm" :key="idx" class="policy-row">
-          <!-- Policy Card -->
-          <div class="policy-card">
-            <div class="policy-card-header">
-              <b style="font-size: 0.95rem">{{ policy.PolicyName || `Policy ${idx + 1}` }}</b>
-              <button class="remove-btn" @click="handleRemovePolicy(idx)" title="Remove Policy">✕</button>
-            </div>
-           
-            <!-- Policy Card Fields -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Policy Name</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-file-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy name"
-                    v-model="policy.PolicyName"
-                    @input="handlePolicyChange(idx, 'PolicyName', $event.target.value)"
-                  />
+    <!-- Framework Dropdown -->
+    <div class="framework-dropdown">
+      <select v-model="selectedFramework" @change="handleFrameworkChange">
+        <option value="ISO 27001">ISO 27001</option>
+        <option value="NIST">NIST</option>
+      </select>
+    </div>
+    
+    <!-- Policy Table -->
+    <div class="policy-list-container">
+      <table class="policy-table">
+        <thead>
+          <tr>
+            <th>Policy Name</th>
+            <th>Version</th>
+            <th>Category</th>
+            <th>Framework</th>
+            <th>Status</th>
+            <th>Created By</th>
+            <th>Authorized By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="policy in paginatedPolicies" :key="`${policy.name}-${policy.version}`">
+            <!-- Main Policy Row -->
+            <tr class="main-policy-row">
+              <td>{{ policy.name }}</td>
+              <td>
+                <div class="version-dropdown">
+                  <select
+                    :value="selectedVersions[policy.name]"
+                    @change="handleVersionChange(policy.name, $event.target.value)"
+                  >
+                    <option 
+                      v-for="version in groupedPolicies[policy.name]" 
+                      :key="version.version" 
+                      :value="version.version"
+                    >
+                      {{ version.version }}
+                    </option>
+                  </select>
+                  <i class="fas fa-chevron-down dropdown-icon"></i>
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Policy Identifier</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-fingerprint"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy identifier"
-                    v-model="policy.Identifier"
-                    @input="handlePolicyChange(idx, 'Identifier', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
+              </td>
+              <td>{{ policy.category }}</td>
+              <td>{{ policy.framework }}</td>
+              <td>
+                <span :class="['status-badge', `status-${policy.status.toLowerCase().replace(' ', '-')}`]">
+                  {{ policy.status }}
+                </span>
+              </td>
+              <td>{{ policy.createdBy }}</td>
+              <td>{{ policy.authorizedBy }}</td>
+            </tr>
+            <!-- Subpolicies Rows -->
+            <tr 
+              v-for="(subPolicy, index) in policy.subPolicies" 
+              :key="`${subPolicy.id}-${index}`" 
+              class="sub-policy-row"
+            >
+              <td class="sub-policy-cell">
+                <div class="sub-policy-indicator"></div>
+                {{ subPolicy.name }}
+              </td>
+              <td>{{ subPolicy.version }}</td>
+              <td>{{ policy.category }}</td>
+              <td>{{ policy.framework }}</td>
+              <td>
+                <span :class="['status-badge', `status-${subPolicy.status.toLowerCase().replace(' ', '-')}`]">
+                  {{ subPolicy.status }}
+                </span>
+              </td>
+              <td>{{ subPolicy.createdBy }}</td>
+              <td>{{ subPolicy.authorizedBy }}</td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-            <!-- Description -->
-            <div class="form-group description">
-              <label>Description</label>
-              <div class="input-with-icon">
-                <i class="fas fa-align-left"></i>
-                <textarea
-                  placeholder="Enter policy description"
-                  v-model="policy.PolicyDescription"
-                  @input="handlePolicyChange(idx, 'PolicyDescription', $event.target.value)"
-                  rows="3"
-                ></textarea>
+    <!-- Pagination -->
+    <div class="policy-pagination">
+      <span>{{ indexOfFirstPolicy + 1 }} - {{ Math.min(indexOfLastPolicy, currentPolicies.length) }} of {{ currentPolicies.length }}</span>
+      <div>
+        <button @click="prevPage" :disabled="currentPage === 1">Prev</button>
+        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+      </div>
+    </div>
+
+    <!-- Create Policy Form Popup -->
+    <div v-if="isFormVisible" class="form-popup">
+      <div class="form-container form-scrollable">
+        <div class="form-header">
+          <h3 style="font-size: 1rem">Control Info</h3>
+          <button @click="toggleForm">X</button>
+        </div>
+        <div class="form-body policy-grid-body">
+          <!-- Framework and Policy Selection -->
+          <div class="framework-policy-row">
+            <div class="framework-policy-selects">
+              <div>
+                <label>Frame work</label>
+                <select v-model="selectedFramework" style="font-size: 0.9rem">
+                  <option value="">Select</option>
+                  <option v-for="f in frameworks" :key="f.id" :value="f.id">{{ f.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label>Policy</label>
+                <select 
+                  v-model="selectedPolicy" 
+                  @change="handleSelectPolicy" 
+                  :disabled="!selectedFramework" 
+                  style="font-size: 0.9rem"
+                >
+                  <option value="">Select</option>
+                  <option v-for="p in frameworkPolicies" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+              </div>
+              <button 
+                class="add-policy-btn" 
+                @click="handleAddPolicy" 
+                :disabled="!selectedFramework" 
+                style="font-size: 0.9rem"
+              >
+                <i class="fas fa-plus"></i> Add Policy
+              </button>
+            </div>
+          </div>
+
+          <!-- Policies and Subpolicies Grid -->
+          <div class="policy-rows">
+            <div v-for="(policy, idx) in policiesForm" :key="idx" class="policy-row">
+              <!-- Policy Card -->
+              <div class="policy-card">
+                <div class="policy-card-header">
+                  <b style="font-size: 0.95rem">{{ policy.policyName || `Policy ${idx + 1}` }}</b>
+                  <button class="remove-btn" @click="handleRemovePolicy(idx)" title="Remove Policy">✕</button>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Policy Name" 
+                  v-model="policy.policyName" 
+                  @input="handlePolicyChange(idx, 'policyName', $event.target.value)" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Category" 
+                  v-model="policy.category" 
+                  @input="handlePolicyChange(idx, 'category', $event.target.value)" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Version" 
+                  v-model="policy.version" 
+                  @input="handlePolicyChange(idx, 'version', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Effective Start date" 
+                  v-model="policy.effectiveStartDate" 
+                  @input="handlePolicyChange(idx, 'effectiveStartDate', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Effective End Date" 
+                  v-model="policy.effectiveEndDate" 
+                  @input="handlePolicyChange(idx, 'effectiveEndDate', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Created at" 
+                  v-model="policy.createdAt" 
+                  @input="handlePolicyChange(idx, 'createdAt', $event.target.value)" 
+                />
+                <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+
+                <!-- Add details -->
+                <div class="form-section form-subsection">
+                  <div class="form-subsection-header">
+                    <span>Add details</span>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Title" 
+                    v-model="policy.details.title" 
+                    @input="handlePolicyDetailsChange(idx, 'title', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Introduction" 
+                    v-model="policy.details.introduction" 
+                    @input="handlePolicyDetailsChange(idx, 'introduction', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Objectives" 
+                    v-model="policy.details.objectives" 
+                    @input="handlePolicyDetailsChange(idx, 'objectives', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Scope" 
+                    v-model="policy.details.scope" 
+                    @input="handlePolicyDetailsChange(idx, 'scope', $event.target.value)" 
+                  />
+                </div>
+
+                <!-- Request Approvals -->
+                <div class="form-section form-subsection">
+                  <label><b>Request Approvals</b></label>
+                  <input 
+                    type="text" 
+                    placeholder="Title" 
+                    v-model="policy.approvals.title" 
+                    @input="handlePolicyApprovalsChange(idx, 'title', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Description" 
+                    v-model="policy.approvals.description" 
+                    @input="handlePolicyApprovalsChange(idx, 'description', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Author" 
+                    v-model="policy.approvals.author" 
+                    @input="handlePolicyApprovalsChange(idx, 'author', $event.target.value)" 
+                  />
+                  <input 
+                    type="date" 
+                    placeholder="Due Date" 
+                    v-model="policy.approvals.dueDate" 
+                    @input="handlePolicyApprovalsChange(idx, 'dueDate', $event.target.value)" 
+                  />
+                </div>
+                <button class="add-sub-policy-btn" @click="handleAddSubPolicy(idx)">
+                  <i class="fas fa-plus"></i> Add Sub Policy
+                </button>
+              </div>
+
+              <!-- Subpolicies Cards -->
+              <div class="subpolicies-row">
+                <div v-for="(sub, subIdx) in policy.subPolicies" :key="subIdx" class="subpolicy-card">
+                  <div class="policy-card-header">
+                    <b style="font-size: 0.9rem">{{ sub.policyName || `Sub Policy ${subIdx + 1}` }}</b>
+                    <button class="remove-btn" @click="handleRemoveSubPolicy(idx, subIdx)" title="Remove Sub Policy">✕</button>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Policy Name" 
+                    v-model="sub.policyName" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'policyName', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Version" 
+                    v-model="sub.version" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'version', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Sub policy" 
+                    v-model="sub.subPolicy" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'subPolicy', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Created By" 
+                    v-model="sub.createdBy" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'createdBy', $event.target.value)" 
+                  />
+                  <input 
+                    type="date" 
+                    placeholder="Created Date" 
+                    v-model="sub.createdDate" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'createdDate', $event.target.value)" 
+                  />
+                  <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+
+                  <!-- Add details -->
+                  <div class="form-section form-subsection">
+                    <div class="form-subsection-header">
+                      <span>Add details</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="Title" 
+                      v-model="sub.details.title" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'title', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Introduction" 
+                      v-model="sub.details.introduction" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'introduction', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Objective" 
+                      v-model="sub.details.objective" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'objective', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Scope" 
+                      v-model="sub.details.scope" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'scope', $event.target.value)" 
+                    />
+                  </div>
+
+                  <!-- Request Approvals -->
+                  <div class="form-section form-subsection">
+                    <label><b>Request Approvals</b></label>
+                    <input 
+                      type="text" 
+                      placeholder="Title" 
+                      v-model="sub.approvals.title" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'title', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Description" 
+                      v-model="sub.approvals.description" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'description', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Author" 
+                      v-model="sub.approvals.author" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'author', $event.target.value)" 
+                    />
+                    <input 
+                      type="date" 
+                      placeholder="Due Date" 
+                      v-model="sub.approvals.dueDate" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'dueDate', $event.target.value)" 
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+          <button class="create-btn" style="font-size: 1rem; margin-top: 24px">Submit</button>
+        </div>
+      </div>
+    </div>
 
-            <!-- Scope and Department -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Scope</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-bullseye"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy scope"
-                    v-model="policy.Scope"
-                    @input="handlePolicyChange(idx, 'Scope', $event.target.value)"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Department</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-building"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter department"
-                    v-model="policy.Department"
-                    @input="handlePolicyChange(idx, 'Department', $event.target.value)"
-                  />
-                </div>
+    <!-- Create Framework Form Popup -->
+    <div v-if="isFrameworkFormVisible" class="form-popup framework-form">
+      <div class="form-container">
+        <div class="form-header">
+          <h3>Create Framework</h3>
+          <button @click="isFrameworkFormVisible = false">X</button>
+        </div>
+        <div class="form-body">
+          <form class="form-section" @submit.prevent="handleFrameworkFormSubmit">
+            <div class="form-group">
+              <label>Framework ID</label>
+              <input type="text" placeholder="Enter framework id" />
+            </div>
+            
+            <div class="form-group">
+              <label>Framework Name</label>
+              <input type="text" placeholder="Enter framework name" />
+            </div>
+            
+            <div class="form-group">
+              <label>Version</label>
+              <input type="text" placeholder="Enter version" />
+            </div>
+            
+            <div class="form-group">
+              <label>Upload Document</label>
+              <div class="upload-input-container">
+                <input type="file" id="framework-doc" class="file-input" />
+                <label for="framework-doc" class="upload-label">
+                  <span class="upload-text">Choose File</span>
+                </label>
               </div>
             </div>
+            
+            <div class="form-group">
+              <label>Effective Start Date</label>
+              <input type="date" />
+            </div>
+            
+            <div class="form-group">
+              <label>Effective End Date</label>
+              <input type="date" />
+            </div>
+            
+            <div class="form-group">
+              <label>Created By</label>
+              <input type="text" placeholder="Enter creator name" />
+            </div>
+            <button class="create-btn" type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
 
-            <!-- Objective and Applicability -->
-            <div class="policy-form-row objective-applicability-row">
-              <div class="form-group">
-                <label>Objective</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-bullseye"></i>
-                  <textarea
-                    placeholder="Enter policy objective"
-                    v-model="policy.Objective"
-                    @input="handlePolicyChange(idx, 'Objective', $event.target.value)"
-                    rows="3"
-                  ></textarea>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Applicability</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-users"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter applicability"
-                    v-model="policy.Applicability"
-                    @input="handlePolicyChange(idx, 'Applicability', $event.target.value)"
-                  />
-                </div>
+    <!-- Extraction Screens Popup -->
+    <div v-if="showExtractionScreens && extractionSlides.length > 0" class="extraction-popup-overlay">
+      <div class="extraction-popup">
+        <div class="form-header extraction-header" style="padding-bottom: 0">
+          <!-- Stepper Navigation Bar as Tabs -->
+          <div class="extraction-stepper">
+            <div
+              v-for="(slide, idx) in extractionSlides"
+              :key="idx"
+              :class="['extraction-step', { active: extractionStep === idx }]"
+              @click="extractionStep = idx"
+              :style="{ cursor: extractionStep !== idx ? 'pointer' : 'default' }"
+            >
+              {{ slide.type === 'framework' ? 'Framework' : 
+                 slide.type === 'policy' ? `Policy ${slide.index !== undefined ? slide.index + 1 : ''}` : 
+                 'Authorizer' }}
+              <span
+                class="tab-close"
+                v-if="extractionStep === idx"
+                @click.stop="showExtractionScreens = false"
+              >
+                X
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="form-body extraction-body">
+          <!-- Render slide content based on type -->
+          <div v-if="extractionSlides[extractionStep].type === 'framework'">
+            <label>Title:</label>
+            <input :value="extractionSlides[extractionStep].data.title" readonly />
+            <label>Description:</label>
+            <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+          </div>
+          <div v-else-if="extractionSlides[extractionStep].type === 'policy'">
+            <div class="policy-main">
+              <b>Policy</b>
+              <label>Title:</label>
+              <input :value="extractionSlides[extractionStep].data.title" readonly />
+              <label>Description:</label>
+              <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+              <label v-if="extractionSlides[extractionStep].data.objective">Objective:</label>
+              <textarea v-if="extractionSlides[extractionStep].data.objective" :value="extractionSlides[extractionStep].data.objective" readonly></textarea>
+              <label v-if="extractionSlides[extractionStep].data.scope">Scope:</label>
+              <textarea v-if="extractionSlides[extractionStep].data.scope" :value="extractionSlides[extractionStep].data.scope" readonly></textarea>
+            </div>
+            <div v-if="extractionSlides[extractionStep].data.subPolicies && extractionSlides[extractionStep].data.subPolicies.length" class="subpolicies-group">
+              <div v-for="(sub, i) in extractionSlides[extractionStep].data.subPolicies" :key="i" class="subpolicy-card extraction-subpolicy">
+                <b>Sub Policy {{ i + 1 }}</b>
+                <label>Title:</label>
+                <input :value="sub.title" readonly />
+                <label>Description:</label>
+                <textarea :value="sub.description" readonly></textarea>
               </div>
             </div>
-
-            <!-- Coverage Rate -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Coverage Rate (%)</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-percentage"></i>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    placeholder="Enter coverage rate"
-                    v-model="policy.CoverageRate"
-                    @input="handlePolicyChange(idx, 'CoverageRate', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Start and End Date -->
-            <div class="policy-form-row date-row">
-              <div class="form-group">
-                <label>Start Date</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-calendar-alt"></i>
-                  <input
-                    type="date"
-                    v-model="policy.StartDate"
-                    @input="handlePolicyChange(idx, 'StartDate', $event.target.value)"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>End Date</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-calendar-alt"></i>
-                  <input
-                    type="date"
-                    v-model="policy.EndDate"
-                    @input="handlePolicyChange(idx, 'EndDate', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
-            <button class="add-sub-policy-btn" @click="handleAddSubPolicy(idx)">
-              <i class="fas fa-plus"></i> Add Sub Policy
+          </div>
+          <div v-else-if="extractionSlides[extractionStep].type === 'authorizer'">
+            <label>Title:</label>
+            <input :value="extractionSlides[extractionStep].data.title" readonly />
+            <label>Description:</label>
+            <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+            <label>Created By:</label>
+            <input :value="extractionSlides[extractionStep].data.createdBy" readonly />
+            <label>Created date:</label>
+            <input :value="extractionSlides[extractionStep].data.createdDate" readonly />
+            <label>Authorized By:</label>
+            <input :value="extractionSlides[extractionStep].data.authorizedBy" readonly />
+            <label>Assign task for authorization:</label>
+            <input :value="extractionSlides[extractionStep].data.assignTask" readonly />
+          </div>
+          <div style="text-align: right; margin-top: 24px">
+            <button
+              v-if="extractionStep < extractionSlides.length - 1"
+              class="create-btn"
+              style="min-width: 100px"
+              @click="extractionStep = extractionStep + 1"
+            >
+              next &gt;
+            </button>
+            <button
+              v-else
+              class="create-btn"
+              style="min-width: 100px"
+              @click="showExtractionScreens = false"
+            >
+              Done
             </button>
           </div>
- 
-          <!-- Subpolicies Cards -->
-          <div class="subpolicies-row">
-            <div v-for="(sub, subIdx) in policy.subpolicies" :key="subIdx" class="subpolicy-card">
-              <div class="policy-card-header">
-                <b style="font-size: 0.9rem">{{ sub.SubPolicyName || `Sub Policy ${subIdx + 1}` }}</b>
-                <button class="remove-btn" @click="handleRemoveSubPolicy(idx, subIdx)" title="Remove Sub Policy">✕</button>
-              </div>
- 
-              <!-- Sub Policy Card Fields -->
-              <div class="form-group">
-                <label>Sub Policy Name</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-file-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter sub policy name"
-                    v-model="sub.SubPolicyName"
-                    @input="handleSubPolicyChange(idx, subIdx, 'SubPolicyName', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Identifier</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-fingerprint"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter identifier"
-                    v-model="sub.Identifier"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Identifier', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Control</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-shield-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter control"
-                    v-model="sub.Control"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Control', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Description</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-align-left"></i>
-                  <textarea
-                    placeholder="Enter description"
-                    v-model="sub.Description"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Description', $event.target.value)"
-                    rows="3"
-                  ></textarea>
-                </div>
-              </div>
- 
-              <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
-            </div>
-          </div>
         </div>
       </div>
-      <div class="form-actions" v-if="policiesForm.length > 0">
-        <button 
-          class="create-btn" 
-          @click="handleSubmitPolicy" 
-          :disabled="loading"
-          style="font-size: 1rem; margin-top: 24px"
-        >
-          {{ loading ? 'Submitting...' : 'Submit' }}
-        </button>
-      </div>
     </div>
- 
-    <!-- Approval Form Section -->
-    <div v-else class="approval-section">
-      <div class="approval-header">
-        <h2>Request Approvals</h2>
-        <button class="back-btn" @click="showApprovalForm = false">
-          <i class="fas fa-arrow-left"></i> Back to Policy Form
-        </button>
-      </div>
-     
-      <div class="approval-form-container">
-        <div class="approval-form">
-          <div class="form-group">
-            <label>Created By</label>
-            <select
-              v-model="approvalForm.createdBy"
-              :disabled="loading"
-            >
-              <option value="">Select Creator</option>
-              <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                {{ user.UserName }}
-              </option>
+
+    <!-- Tree View Popup for Framework/Policy/Subpolicy Selection -->
+    <div v-if="showTreePopup" class="tree-popup-overlay">
+      <div class="tree-popup tree-popup-static">
+        <div class="tree-popup-header">
+          <div style="display:flex;align-items:center;gap:24px;">
+            <select v-model="treeSelectedFramework" class="tree-framework-select">
+              <option value="" disabled>Select Framework</option>
+              <option v-for="(fw, idx) in treeFrameworks" :key="idx" :value="fw.title">{{ fw.title }}</option>
             </select>
+            <button v-if="treeSelectedFramework" class="tree-expand-btn" @click="expandAllTree">Expand All</button>
           </div>
-          <div class="form-group">
-            <label>Reviewer</label>
-            <select
-              v-model="approvalForm.reviewer"
-              :disabled="loading"
-            >
-              <option value="">Select Reviewer</option>
-              <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                {{ user.UserName }}
-              </option>
-            </select>
+          <button class="tree-popup-close" @click="showTreePopup = false">×</button>
+        </div>
+        <div class="org-tree-root">
+          <div v-if="treeSelectedFramework" class="org-tree-center">
+            <!-- Framework Node -->
+            <div class="org-tree-framework-row">
+              <div class="org-tree-framework-node" ref="frameworkNode">
+                <span>{{ treeSelectedFramework }}</span>
+                <span v-if="!showPolicies" class="org-tree-arrow-down clickable" @click="togglePolicies">
+                  <i class="fas fa-chevron-down"></i>
+                </span>
+              </div>
+            </div>
+            <!-- Policies Row -->
+            <transition name="fade-slide">
+              <div v-if="showPolicies" class="org-tree-policies-row" ref="policiesRow">
+                <div v-for="(policy, pIdx) in treePolicies" :key="'policy-'+pIdx" class="org-tree-policy-block">
+                  <div class="org-tree-policy-node">
+                    <span>{{ policy.title }}</span>
+                    <span v-if="!expandedPolicies[pIdx]" class="org-tree-arrow-down clickable" @click="togglePolicyExpand(pIdx)">
+                      <i class="fas fa-chevron-down"></i>
+                    </span>
+                  </div>
+                  <transition name="fade-slide">
+                    <div v-if="expandedPolicies[pIdx] && policy.subPolicies && policy.subPolicies.length" class="org-tree-subpolicies-row">
+                      <div class="org-tree-subpolicies-blocks">
+                        <div v-for="(sub, sIdx) in policy.subPolicies" :key="'sub-'+sIdx" class="org-tree-subpolicy-block">
+                          <div class="org-tree-subpolicy-node">
+                            <span>{{ sub.title }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </transition>
+                </div>
+              </div>
+            </transition>
           </div>
-          <button 
-            class="create-btn" 
-            @click="handleFinalSubmit"
-            :disabled="loading || !approvalForm.createdBy || !approvalForm.reviewer"
-          >
-            {{ loading ? 'Submitting...' : 'Submit' }}
-          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
- 
-<script>
-import { ref, watch, onMounted } from 'vue'
-import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
- 
+<script>
+import { ref, computed, onMounted } from 'vue'
+import frameworkSample from '../../data/frameworkSample.json'
+
 export default {
   name: 'CreatePolicy',
   setup() {
+    const searchQuery = ref('')
+    const currentPage = ref(1)
+    const selectedVersions = ref({})
+    const isFormVisible = ref(false)
     const selectedFramework = ref('')
+    const selectedPolicy = ref('')
+    const isFrameworkFormVisible = ref(false)
+    const showExtractionScreens = ref(false)
+    const extractedData = ref(null)
+    const extractionStep = ref(0)
+    const extractionSlides = ref([])
     const policiesForm = ref([])
+    const frameworkPolicies = ref([])
     const selectedPolicyIdx = ref(null)
-    const showApprovalForm = ref(false)
-    const showFrameworkForm = ref(false)
-    const approvalForm = ref({
-      createdBy: '',
-      reviewer: ''
+    const showTreePopup = ref(false)
+    const treeSelectedFramework = ref('')
+    const showPolicies = ref(false)
+    const expandedPolicies = ref({})
+    const treeFrameworks = computed(() => [{ title: frameworkSample.framework.title }])
+    const treePolicies = computed(() => treeSelectedFramework.value ? frameworkSample.policies : [])
+    const svgWidth = 700
+    const svgPolicyLineHeight = 60
+    const svgSubWidth = 260
+    const svgSubLineHeight = 50
+
+    const policiesPerPage = 4
+
+    // Sample frameworks data
+    const frameworks = [
+      { id: 'iso27001', name: 'ISO 27001' },
+      { id: 'nist', name: 'NIST' },
+      { id: 'cobit', name: 'COBIT' }
+    ]
+
+    // Sample policies data
+    const policies = [
+      { 
+        id: 'HR-001', 
+        version: '1.0',
+        name: 'Employee Code of Conduct',
+        category: 'HR',
+        status: 'Active',
+        effectiveStartDate: '01/01/2024',
+        effectiveEndDate: '31/12/2024',
+        createdBy: 'John Doe',
+        authorizedBy: 'Jane Smith',
+        framework: 'ISO 27001',
+        subPolicies: [
+          {
+            id: 'HR-001-SP1',
+            name: 'Dress Code Policy',
+            version: '1.0',
+            status: 'Active',
+            effectiveStartDate: '01/01/2024',
+            effectiveEndDate: '31/12/2024',
+            createdBy: 'John Doe',
+            authorizedBy: 'Jane Smith'
+          },
+          {
+            id: 'HR-001-SP2',
+            name: 'Workplace Behavior Policy',
+            version: '1.0',
+            status: 'Active',
+            effectiveStartDate: '01/01/2024',
+            effectiveEndDate: '31/12/2024',
+            createdBy: 'John Doe',
+            authorizedBy: 'Jane Smith'
+          }
+        ]
+      },
+      // ... other policies
+    ]
+
+    // Group policies by name
+    const groupedPolicies = computed(() => {
+      return policies.reduce((acc, policy) => {
+        if (!acc[policy.name]) {
+          acc[policy.name] = []
+        }
+        acc[policy.name].push(policy)
+        return acc
+      }, {})
     })
-    const frameworks = ref([])
-    const loading = ref(false)
-    const error = ref(null)
-    const users = ref([])
-    const frameworkFormData = ref(null)
- 
-    const newFramework = ref({
-      FrameworkName: '',
-      Identifier: '',
-      FrameworkDescription: '',
-      Category: '',
-      EffectiveDate: '',
-      StartDate: '',
-      EndDate: '',
-      CreatedByName: '',
-      DocURL: '',
-      Reviewer: ''
+
+    // Initialize selected versions
+    onMounted(() => {
+      const initialVersions = {}
+      Object.keys(groupedPolicies.value).forEach(name => {
+        if (groupedPolicies.value[name] && groupedPolicies.value[name].length > 0) {
+          initialVersions[name] = groupedPolicies.value[name][0].version
+        }
+      })
+      selectedVersions.value = initialVersions
     })
- 
-    // Fetch all frameworks on component mount
-    async function fetchFrameworks() {
-      try {
-        loading.value = true
-        const response = await axios.get(`${API_BASE_URL}/frameworks/`)
-        frameworks.value = response.data.map(fw => ({
-          id: fw.FrameworkId,
-          name: fw.FrameworkName
-        }))
-      } catch (err) {
-        console.error('Error fetching frameworks:', err)
-        error.value = 'Failed to fetch frameworks'
-      } finally {
-        loading.value = false
+
+    const handleVersionChange = (policyName, version) => {
+      selectedVersions.value = {
+        ...selectedVersions.value,
+        [policyName]: version
       }
     }
- 
-    // Watch for framework selection changes
-    watch(selectedFramework, (newValue) => {
-      if (newValue === 'create') {
-        showFrameworkForm.value = true
-        selectedFramework.value = ''
-      }
+
+    // Get current policies based on selected versions
+    const currentPolicies = computed(() => {
+      return Object.entries(groupedPolicies.value)
+        .filter(([name]) => name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+        .map(([name, versions]) => {
+          const selectedVersion = selectedVersions.value[name]
+          const policy = versions.find(v => v.version === selectedVersion)
+          return policy || versions[0]
+        })
+        .filter(Boolean)
     })
- 
-    const handleCreateFramework = async () => {
-      // Only store framework details in memory and move to add policy
-      error.value = null
-      frameworkFormData.value = { ...newFramework.value }
-      showFrameworkForm.value = false
-      // Add an initial empty policy
-      handleAddPolicy()
-      // Set selectedFramework to a dummy value to show the policy form
-      selectedFramework.value = '__new__'
-      // Reset the framework form
-      newFramework.value = {
-        FrameworkName: '',
-        Identifier: '',
-        FrameworkDescription: '',
-        Category: '',
-        EffectiveDate: '',
-        StartDate: '',
-        EndDate: '',
-        CreatedByName: '',
-        DocURL: '',
-        Reviewer: ''
-      }
+
+    // Pagination Logic
+    const indexOfLastPolicy = computed(() => currentPage.value * policiesPerPage)
+    const indexOfFirstPolicy = computed(() => indexOfLastPolicy.value - policiesPerPage)
+    const paginatedPolicies = computed(() => 
+      currentPolicies.value.slice(indexOfFirstPolicy.value, indexOfLastPolicy.value)
+    )
+    const totalPages = computed(() => 
+      Math.ceil(currentPolicies.value.length / policiesPerPage)
+    )
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) currentPage.value++
     }
- 
+
+    const prevPage = () => {
+      if (currentPage.value > 1) currentPage.value--
+    }
+
+    const toggleForm = () => {
+      isFormVisible.value = !isFormVisible.value
+    }
+
+    const handleFrameworkChange = (e) => {
+      selectedFramework.value = e.target.value
+    }
+
     // Policy form handlers
     const handleAddPolicy = () => {
       policiesForm.value.push({
-        PolicyName: '',
-        Identifier: '',
-        PolicyDescription: '',
-        Scope: '',
-        Objective: '',
-        Department: '',
-        Applicability: '',
-        StartDate: '',
-        EndDate: '',
-        CreatedByName: '',
-        DocURL: '',
-        subpolicies: []
+        policyName: '',
+        version: '',
+        category: '',
+        effectiveStartDate: '',
+        effectiveEndDate: '',
+        createdAt: '',
+        details: { title: '', introduction: '', objectives: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' },
+        subPolicies: []
       })
       selectedPolicyIdx.value = policiesForm.value.length - 1
     }
- 
+
+    const handleSelectPolicy = (e) => {
+      const policyName = e.target.value
+      if (!policyName) return
+      
+      if (policiesForm.value.some(p => p.policyName === policyName)) {
+        selectedPolicyIdx.value = policiesForm.value.findIndex(p => p.policyName === policyName)
+        return
+      }
+
+      const found = frameworkPolicies.value.find(p => p.name === policyName)
+      policiesForm.value.push({
+        policyName: found.name,
+        version: found.version,
+        category: '',
+        effectiveStartDate: '',
+        effectiveEndDate: '',
+        createdAt: '',
+        details: { title: '', introduction: '', objectives: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' },
+        subPolicies: []
+      })
+      selectedPolicyIdx.value = policiesForm.value.length - 1
+    }
+
     const handleRemovePolicy = (idx) => {
       policiesForm.value = policiesForm.value.filter((_, i) => i !== idx)
       selectedPolicyIdx.value = null
     }
- 
+
     const handlePolicyChange = (idx, field, value) => {
       policiesForm.value[idx][field] = value
     }
- 
+
+    const handlePolicyDetailsChange = (idx, field, value) => {
+      policiesForm.value[idx].details[field] = value
+    }
+
+    const handlePolicyApprovalsChange = (idx, field, value) => {
+      policiesForm.value[idx].approvals[field] = value
+    }
+
     const handleAddSubPolicy = (policyIdx) => {
-      policiesForm.value[policyIdx].subpolicies.push({
-        SubPolicyName: '',
-        Identifier: '',
-        Control: '',
-        Description: '',
-        CreatedByName: '',
-        PermanentTemporary: 'Permanent'
+      policiesForm.value[policyIdx].subPolicies.push({
+        policyName: '',
+        version: '',
+        subPolicy: '',
+        createdBy: '',
+        createdDate: '',
+        details: { title: '', introduction: '', objective: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' }
       })
     }
- 
+
     const handleRemoveSubPolicy = (policyIdx, subIdx) => {
-      policiesForm.value[policyIdx].subpolicies =
-        policiesForm.value[policyIdx].subpolicies.filter((_, j) => j !== subIdx)
+      policiesForm.value[policyIdx].subPolicies = 
+        policiesForm.value[policyIdx].subPolicies.filter((_, j) => j !== subIdx)
     }
- 
+
     const handleSubPolicyChange = (policyIdx, subIdx, field, value) => {
-      policiesForm.value[policyIdx].subpolicies[subIdx][field] = value
+      policiesForm.value[policyIdx].subPolicies[subIdx][field] = value
     }
- 
-    const handleSubmitPolicy = () => {
-      showApprovalForm.value = true
+
+    const handleSubPolicyDetailsChange = (policyIdx, subIdx, field, value) => {
+      policiesForm.value[policyIdx].subPolicies[subIdx].details[field] = value
     }
- 
-    // Add this function to fetch users
-    async function fetchUsers() {
-      try {
-        loading.value = true
-        const response = await axios.get(`${API_BASE_URL}/users/`)
-        users.value = response.data
-      } catch (err) {
-        console.error('Error fetching users:', err)
-        error.value = 'Failed to fetch users'
-      } finally {
-        loading.value = false
+
+    const handleSubPolicyApprovalsChange = (policyIdx, subIdx, field, value) => {
+      policiesForm.value[policyIdx].subPolicies[subIdx].approvals[field] = value
+    }
+
+    // Framework form submit handler
+    const handleFrameworkFormSubmit = (e) => {
+      e.preventDefault()
+      // Build slides dynamically based on JSON structure
+      const slides = []
+      if (frameworkSample.framework) {
+        slides.push({
+          type: 'framework',
+          data: frameworkSample.framework
+        })
       }
-    }
-
-    const handleFinalSubmit = async () => {
-      try {
-        loading.value = true
-        error.value = null
-
-        // Only check framework fields if creating a new framework
-        const isCreatingNewFramework = selectedFramework.value === '__new__';
-        if (isCreatingNewFramework) {
-          if (!frameworkFormData.value || !frameworkFormData.value.FrameworkName) {
-            error.value = 'Please fill in all required framework fields.'
-            loading.value = false
-            return
-          }
-        }
-
-        // Find the selected creator and reviewer users
-        const creatorUser = users.value.find(u => u.UserId === approvalForm.value.createdBy)
-        const reviewerUser = users.value.find(u => u.UserId === approvalForm.value.reviewer)
-
-        if (!creatorUser) {
-          error.value = 'Please select a creator'
-          loading.value = false
-          return
-        }
-
-        // Validate required fields for each policy
-        for (const policy of policiesForm.value) {
-          if (!policy.PolicyName || !policy.Identifier || !policy.StartDate) {
-            error.value = 'Please fill in all required fields (Policy Name, Identifier, and Start Date) for all policies'
-            loading.value = false
-            return
-          }
-
-          // Set default values for optional fields
-          policy.Status = policy.Status || 'Under Review'
-          policy.ActiveInactive = policy.ActiveInactive || 'Inactive'
-          policy.CreatedByName = creatorUser.UserName
-          policy.Reviewer = reviewerUser ? reviewerUser.UserId : null
-
-          // Validate subpolicies
-          for (const sub of policy.subpolicies) {
-            if (!sub.SubPolicyName || !sub.Identifier) {
-              error.value = 'Please fill in all required fields (Name and Identifier) for all subpolicies'
-              loading.value = false
-              return
-            }
-            // Set default values for subpolicies
-            sub.Status = sub.Status || 'Under Review'
-            sub.PermanentTemporary = sub.PermanentTemporary || 'Permanent'
-            sub.CreatedByName = creatorUser.UserName
-          }
-        }
-
-        if (isCreatingNewFramework) {
-          // Prepare the full payload for new framework
-          const payload = {
-            ...frameworkFormData.value,
-            CreatedByName: creatorUser.UserName,
-            Reviewer: reviewerUser ? reviewerUser.UserId : null,
-            policies: policiesForm.value.map(policy => ({
-              ...policy,
-              CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
-              CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
-              subpolicies: policy.subpolicies.map(sub => ({
-                ...sub,
-                CreatedByName: creatorUser.UserName,
-                CreatedByDate: new Date().toISOString().split('T')[0],
-                Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
-              }))
-            }))
-          }
-
-          // Send a single API call to create the framework with policies and subpolicies
-          const response = await axios.post(`${API_BASE_URL}/frameworks/`, payload)
-          if (response.data.error) {
-            throw new Error(response.data.error)
-          }
-        } else {
-          // Add policies to existing framework
-          const frameworkId = selectedFramework.value;
-          for (const policy of policiesForm.value) {
-            const policyPayload = {
-              ...policy,
-              CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
-              CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
-              subpolicies: policy.subpolicies.map(sub => ({
-                ...sub,
-                CreatedByName: creatorUser.UserName,
-                CreatedByDate: new Date().toISOString().split('T')[0],
-                Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
-              }))
-            };
-            try {
-              const response = await axios.post(`${API_BASE_URL}/frameworks/${frameworkId}/policies/`, policyPayload);
-              if (response.data.error) {
-                throw new Error(response.data.error)
-              }
-            } catch (err) {
-              console.error('Error submitting policy:', err);
-              const errorMessage = err.response?.data?.details || err.response?.data?.error || 'Failed to submit policy';
-              error.value = typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage;
-              loading.value = false;
-              return;
-            }
-          }
-        }
-
-        // Reset forms
-        policiesForm.value = []
-        approvalForm.value = {
-          createdBy: '',
-          reviewer: ''
-        }
-        selectedFramework.value = ''
-        showApprovalForm.value = false
-        frameworkFormData.value = null
-
-      } catch (err) {
-        console.error('Error submitting policies:', err)
-        const errorMessage = err.response?.data?.details || err.response?.data?.error || 'Failed to submit policies';
-        error.value = typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage;
-      } finally {
-        loading.value = false
+      if (frameworkSample.policies && Array.isArray(frameworkSample.policies)) {
+        frameworkSample.policies.forEach((policy, idx) => {
+          slides.push({
+            type: 'policy',
+            data: policy,
+            index: idx
+          })
+        })
       }
+      if (frameworkSample.authorizer) {
+        slides.push({
+          type: 'authorizer',
+          data: frameworkSample.authorizer
+        })
+      }
+      extractionSlides.value = slides
+      showExtractionScreens.value = true
+      extractionStep.value = 0
+      isFrameworkFormVisible.value = false
     }
 
-    const getSelectedFrameworkName = () => {
-      const framework = frameworks.value.find(f => f.id === selectedFramework.value)
-      return framework ? framework.name : ''
+    function togglePolicies() { showPolicies.value = !showPolicies.value }
+    function togglePolicyExpand(idx) {
+      expandedPolicies.value = { ...expandedPolicies.value, [idx]: !expandedPolicies.value[idx] }
+    }
+    function expandAllTree() {
+      showPolicies.value = true
+      const all = {}
+      treePolicies.value.forEach((_, idx) => { all[idx] = true })
+      expandedPolicies.value = all
     }
 
-    const handleChangeFramework = () => {
-      selectedFramework.value = ''
-      policiesForm.value = []
+    function getPolicyX(idx) {
+      // Spread policies evenly
+      const count = treePolicies.value.length
+      if (count === 1) return svgWidth/2
+      const gap = svgWidth/(count+1)
+      return gap*(idx+1)
+    }
+    function getSubX(count, idx) {
+      if (count === 1) return svgSubWidth/2
+      const gap = svgSubWidth/(count+1)
+      return gap*(idx+1)
     }
 
-    // Fetch frameworks and users on mount
-    onMounted(() => {
-      fetchFrameworks()
-      fetchUsers()
-    })
- 
+    // Adjust Y coordinates for SVG lines to connect to node edges
+    const frameworkNodeHeight = 48 + 16; // node height + padding
+    const policyNodeHeight = 40 + 12; // node height + padding
+    // For framework to policy
+    function getFrameworkToPolicyY1() { return frameworkNodeHeight; }
+    function getFrameworkToPolicyY2() { return svgPolicyLineHeight - 8; }
+    // For policy to subpolicy
+    function getPolicyToSubY1() { return policyNodeHeight; }
+    function getPolicyToSubY2() { return svgSubLineHeight - 8; }
+
     return {
+      searchQuery,
+      currentPage,
+      selectedVersions,
+      isFormVisible,
       selectedFramework,
+      selectedPolicy,
+      isFrameworkFormVisible,
+      showExtractionScreens,
+      extractedData,
+      extractionStep,
+      extractionSlides,
       policiesForm,
+      frameworkPolicies,
       selectedPolicyIdx,
       frameworks,
-      showApprovalForm,
-      showFrameworkForm,
-      approvalForm,
-      newFramework,
-      loading,
-      error,
-      users,
+      policies,
+      groupedPolicies,
+      currentPolicies,
+      paginatedPolicies,
+      indexOfFirstPolicy,
+      indexOfLastPolicy,
+      totalPages,
+      handleVersionChange,
+      nextPage,
+      prevPage,
+      toggleForm,
+      handleFrameworkChange,
       handleAddPolicy,
+      handleSelectPolicy,
       handleRemovePolicy,
       handlePolicyChange,
+      handlePolicyDetailsChange,
+      handlePolicyApprovalsChange,
       handleAddSubPolicy,
       handleRemoveSubPolicy,
       handleSubPolicyChange,
-      handleSubmitPolicy,
-      handleFinalSubmit,
-      handleCreateFramework,
-      getSelectedFrameworkName,
-      handleChangeFramework,
-      frameworkFormData,
+      handleSubPolicyDetailsChange,
+      handleSubPolicyApprovalsChange,
+      handleFrameworkFormSubmit,
+      showTreePopup,
+      treeSelectedFramework,
+      showPolicies,
+      expandedPolicies,
+      treeFrameworks,
+      treePolicies,
+      togglePolicies,
+      togglePolicyExpand,
+      expandAllTree,
+      svgWidth,
+      svgPolicyLineHeight,
+      svgSubWidth,
+      svgSubLineHeight,
+      getPolicyX,
+      getSubX,
+      getFrameworkToPolicyY1,
+      getFrameworkToPolicyY2,
+      getPolicyToSubY1,
+      getPolicyToSubY2
     }
   }
 }
 </script>
- 
+
 <style scoped>
 /* Import the existing CSS file */
 @import './CreatePolicy.css';
-
-/* Enhanced Loading and Error States */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #4299e1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.loading-overlay p {
-  margin-top: 16px;
-  color: #4a5568;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error-message {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #fc8181, #f56565);
-  color: white;
-  padding: 16px 24px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 1000;
-  box-shadow: 0 6px 16px rgba(245, 101, 101, 0.2);
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 4px;
-  opacity: 0.8;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  opacity: 1;
-  transform: scale(1.1);
-}
-
-/* Form Animations */
-.policy-card, .subpolicy-card {
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Enhanced Button States */
-button {
-  position: relative;
-  overflow: hidden;
-}
-
-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.5);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%);
-  transform-origin: 50% 50%;
-}
-
-button:focus:not(:active)::after {
-  animation: ripple 1s ease-out;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0, 0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(100, 100);
-    opacity: 0;
-  }
-}
-
-/* Enhanced Form Field Focus States */
-input:focus, select:focus, textarea:focus {
-  transform: translateY(-1px);
-}
-
-/* Card Hover Effects */
-.policy-card:hover, .subpolicy-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-}
-
-/* Framework Form Field Styling */
-.framework-form-container {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  margin-top: 20px;
-}
-
-.framework-form {
-  max-width: 100%;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.form-group {
-  position: relative;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 8px;
-}
-
-.input-with-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-with-icon i {
-  position: absolute;
-  left: 16px;
-  color: #718096;
-  font-size: 16px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  height: 45px;
-  padding: 8px 16px 8px 45px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #2d3748;
-  background: white;
-}
-
-/* Colored borders */
-.blue-border .input-with-icon input,
-.blue-border .input-with-icon select {
-  border-left: 3px solid #4299e1;
-}
-
-.green-border .input-with-icon input,
-.green-border .input-with-icon select {
-  border-left: 3px solid #48bb78;
-}
-
-.orange-border .input-with-icon input,
-.orange-border .input-with-icon select {
-  border-left: 3px solid #ed8936;
-}
-
-.red-border .input-with-icon input,
-.red-border .input-with-icon select {
-  border-left: 3px solid #f56565;
-}
-
-/* Upload field styling */
-.upload-field {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  height: 45px;
-}
-
-.upload-field span {
-  margin-left: 30px;
-  color: #718096;
-  font-size: 14px;
-}
-
-.browse-btn {
-  margin-left: auto;
-  padding: 4px 12px;
-  background: #4299e1;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* Date input styling */
-input[type="date"] {
-  padding-right: 16px;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  position: absolute;
-  right: 8px;
-  cursor: pointer;
-}
-
-/* Select styling */
-select {
-  appearance: none;
-  padding-right: 30px;
-  background-image: url("data:image/svg+xml,...");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  cursor: pointer;
-}
-
-/* Framework selection styling */
-.framework-policy-row {
-  margin-bottom: 24px;
-}
-
-.framework-policy-selects {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.framework-policy-selects > div {
-  flex: 0 0 300px; /* Fixed width for the select container */
-}
-
-.framework-policy-selects label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 8px;
-}
-
-.framework-policy-selects select {
-  width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #2d3748;
-  background: white;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.framework-policy-selects select:focus {
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.framework-policy-selects select:hover {
-  border-color: #cbd5e0;
-}
-
-/* Approval Form Transitions */
-.approval-section {
-  animation: fadeScale 0.4s ease-out;
-}
-
-@keyframes fadeScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Enhanced Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-/* Policy Actions Container */
-.policy-actions-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding: 16px 24px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.selected-framework-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.selected-framework-info span {
-  font-size: 0.95rem;
-  color: #2d3748;
-  font-weight: 500;
-}
-
-.change-framework-btn {
-  background: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px 16px;
-  color: #4a5568;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.change-framework-btn:hover {
-  background: #f7fafc;
-  border-color: #cbd5e0;
-  color: #2d3748;
-}
-
-/* Update these specific styles */
-
-.policy-card {
-  width: 320px;
-  padding: 16px; /* Reduced padding */
-  box-sizing: border-box; /* Important: include padding in width calculation */
-}
-
-/* Base styles for all inputs in policy card */
-.policy-card input,
-.policy-card textarea {
-  width: 100%;
-  max-width: 100%; /* Changed from fixed width to 100% */
-  padding: 6px 8px;
-  height: 32px;
-  font-size: 12px;
-  box-sizing: border-box; /* Important: include padding in width calculation */
-}
-
-/* Form row styling */
-.policy-form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%; /* Ensure row takes full width */
-}
-
-/* Description field specific styling */
-.policy-card .form-group.description {
-  width: 70%; /* Decreased from 80% to 70% */
-  margin: 0 auto;
-  max-width: 280px; /* Add max-width to prevent overflow */
-}
-
-.policy-card .form-group.description textarea {
-  width: 100%;
-  min-height: 80px;
-  max-width: 100%; /* Ensure textarea doesn't overflow its container */
-  box-sizing: border-box;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
-}
-
-/* Date fields row styling */
-.policy-card .date-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
-.policy-card .date-row .form-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.policy-card .date-row input {
-  width: 100%;
-}
-
-/* Objective and Applicability row */
-.policy-card .objective-applicability-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
-.policy-card .objective-applicability-row .form-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.policy-card .objective-applicability-row textarea,
-.policy-card .objective-applicability-row input {
-  width: 100%;
-  height: 32px;
-}
-
-/* Form groups in a row */
-.policy-form-row .form-group {
-  flex: 1; /* Changed to flex: 1 to ensure equal width */
-  min-width: 0; /* Prevent flex items from overflowing */
-  width: calc(50% - 4px); /* Ensure exact half width minus gap */
-}
-
-/* Date input specific styling */
-.policy-form-row input[type="date"] {
-  width: 100%; /* Changed from fixed width to 100% */
-  min-width: 0; /* Allow shrinking */
-  padding-right: 20px; /* Space for calendar icon */
-}
-
-/* Single form groups (not in a row) */
-.policy-card .form-group:not(.policy-form-row .form-group) {
-  width: 100%;
-}
-
-/* Textarea specific styling */
-.policy-card textarea {
-  height: auto;
-  min-height: 50px;
-  width: 100%;
-  resize: vertical;
-}
-
-/* Remove any fixed max-width constraints */
-.policy-form-row input,
-.policy-form-row .form-group input {
-  max-width: none;
-}
-
-/* Add these new styles for subpolicy card */
-.subpolicy-card {
-  width: 300px; /* Smaller than policy card */
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.subpolicy-card .form-group {
-  margin-bottom: 10px;
-}
-
-.subpolicy-card input,
-.subpolicy-card textarea {
-  width: 100%;
-  max-width: 100%;
-  padding: 6px 8px;
-  height: 32px;
-  font-size: 12px;
-  box-sizing: border-box;
-}
-
-.subpolicy-card textarea {
-  height: auto;
-  min-height: 50px;
-  resize: vertical;
-}
-
-.subpolicy-card label {
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-/* Form row styling for subpolicy */
-.subpolicy-card .policy-form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
-.subpolicy-card .policy-form-row .form-group {
-  flex: 1;
-  min-width: 0;
-  width: calc(50% - 4px);
-}
-
-/* Ensure all inputs stay within boundaries */
-.subpolicy-card .form-group input,
-.subpolicy-card .form-group textarea {
-  width: 100%;
-  max-width: none;
-}
-
-/* Adjust the subpolicies row spacing */
-.subpolicies-row {
-  margin-top: 16px;
-  gap: 16px;
-}
-</style>
+</style> 

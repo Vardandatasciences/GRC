@@ -69,7 +69,7 @@
           <button class="accept-btn" @click="showAcceptOptions(incident)">
             Accept
           </button>
-          <button class="reject-btn" @click="rejectIncident(incident)">
+          <button class="reject-btn" @click="rejectIncident(incident.IncidentId)">
             Reject
           </button>
         </div>
@@ -79,120 +79,13 @@
     <!-- Mapped Risks View -->
     <div v-if="showMappedRisks" class="mapped-risks-container">
       <div class="mapped-risks-header">
-        <button class="back-btn" @click="returnToNotifications">
+        <button class="back-btn" @click="showMappedRisks = false">
           &larr; Back to Notifications
         </button>
         <h2>Mapped Risks for Incident: {{ selectedIncident.IncidentTitle }}</h2>
       </div>
       
-      <!-- Display risk form inline instead of as a popup -->
-      <div v-if="showCreateRiskForm" class="add-risk-form">
-        <h3>Create New Risk</h3>
-        <form @submit.prevent="submitNewRisk" class="risk-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Compliance ID</label>
-              <input 
-                type="number" 
-                v-model="riskForm.ComplianceId" 
-                readonly 
-                class="readonly-field"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label>Category *</label>
-              <select v-model="riskForm.Category" required>
-                <option value="">Select Category</option>
-                <option value="Operational">Operational</option>
-                <option value="Compliance">Compliance</option>
-                <option value="IT Security">IT Security</option>
-                <option value="Financial">Financial</option>
-                <option value="Strategic">Strategic</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label>Criticality *</label>
-              <select v-model="riskForm.Criticality" required>
-                <option value="">Select Criticality</option>
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-            
-            <div class="form-group wide">
-              <label>Risk Description *</label>
-              <textarea v-model="riskForm.RiskDescription" required></textarea>
-            </div>
-            
-            <div class="form-group wide">
-              <label>Possible Damage</label>
-              <textarea v-model="riskForm.PossibleDamage"></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>Risk Likelihood *</label>
-              <input 
-                type="number" 
-                step="0.1" 
-                v-model="riskForm.RiskLikelihood" 
-                required 
-                placeholder="Enter value (e.g. 8.5)"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label>Risk Impact *</label>
-              <input 
-                type="number" 
-                step="0.1" 
-                v-model="riskForm.RiskImpact" 
-                required 
-                placeholder="Enter value (e.g. 6.0)"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label>Risk Exposure Rating</label>
-              <input 
-                type="number" 
-                step="0.1" 
-                v-model="riskForm.RiskExposureRating" 
-                placeholder="Enter value (e.g. 7.2)"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label>Risk Priority *</label>
-              <select v-model="riskForm.RiskPriority" required>
-                <option value="">Select Priority</option>
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-            
-            <div class="form-group wide">
-              <label>Risk Mitigation</label>
-              <textarea v-model="riskForm.RiskMitigation"></textarea>
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" @click="showCreateRiskForm = false">
-              Cancel
-            </button>
-            <button type="submit" class="submit-btn">Create Risk</button>
-          </div>
-        </form>
-      </div>
-      
-      <!-- Fixed the double v-if with a v-else-if structure -->
-      <div v-else-if="mappedRisks.length > 0" class="risk-list">
+      <div class="risk-list" v-if="mappedRisks.length > 0">
         <table class="risk-table">
           <thead>
             <tr>
@@ -241,30 +134,137 @@
         </div>
       </div>
       
-      <!-- Fixed the double directive issue -->
-      <div v-else class="empty-risks">
+      <div class="empty-risks" v-else>
         <p v-if="loadingRisks">Loading mapped risks...</p>
         <p v-else>No risks mapped to this incident</p>
         
-        <div class="risk-buttons">
-          <button class="create-risk-btn own-risk" @click="showOwnRiskForm">
-            Create Own Risk
-          </button>
-          <button class="create-risk-btn ai-risk" @click="showNewRiskForm">
-            Create AI Suggestion Risk
-          </button>
+        <button class="create-risk-btn" @click="showNewRiskForm">
+          Create New Risk
+        </button>
+      </div>
+      
+      <!-- Overlay Create Risk Form -->
+      <div v-if="showCreateRiskForm" class="modal-overlay">
+        <div class="risk-form-container modal-content">
+          <div class="form-header">
+            <h2>Create New Risk</h2>
+            <button class="close-btn" @click="showCreateRiskForm = false">×</button>
+          </div>
+          
+          <form @submit.prevent="submitNewRisk" class="risk-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Compliance ID</label>
+                <input 
+                  type="number" 
+                  v-model="riskForm.ComplianceId" 
+                  readonly 
+                  class="readonly-field"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>Category *</label>
+                <select v-model="riskForm.Category" required>
+                  <option value="">Select Category</option>
+                  <option value="Operational">Operational</option>
+                  <option value="Compliance">Compliance</option>
+                  <option value="IT Security">IT Security</option>
+                  <option value="Financial">Financial</option>
+                  <option value="Strategic">Strategic</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Criticality *</label>
+                <select v-model="riskForm.Criticality" required>
+                  <option value="">Select Criticality</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Description *</label>
+                <textarea v-model="riskForm.RiskDescription" required></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Possible Damage</label>
+                <textarea v-model="riskForm.PossibleDamage"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Likelihood *</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  v-model="riskForm.RiskLikelihood" 
+                  required 
+                  placeholder="Enter value (e.g. 8.5)"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Impact *</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  v-model="riskForm.RiskImpact" 
+                  required 
+                  placeholder="Enter value (e.g. 6.0)"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Exposure Rating</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  v-model="riskForm.RiskExposureRating" 
+                  placeholder="Enter value (e.g. 7.2)"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Priority *</label>
+                <select v-model="riskForm.RiskPriority" required>
+                  <option value="">Select Priority</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Risk Mitigation</label>
+                <textarea v-model="riskForm.RiskMitigation"></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="cancel-btn" @click="showCreateRiskForm = false">
+                Cancel
+              </button>
+              <button type="submit" class="submit-btn">Create Risk</button>
+            </div>
+          </form>
         </div>
       </div>
       
       <div v-if="loadingRiskAnalysis" class="loading-analysis">
         <p>Analyzing incident with AI assistant...</p>
+        <!-- You could add a spinner here -->
       </div>
     </div>
     
     <!-- Risk Instance Form -->
     <div v-if="showRiskInstanceForm" class="risk-instance-form-container">
       <div class="form-header">
-        <button class="back-btn" @click="returnToMappedRisks">
+        <button class="back-btn" @click="showRiskInstanceForm = false; showMappedRisks = true;">
           &larr; Back to Mapped Risks
         </button>
         <h2>Create Risk Instance</h2>
@@ -306,13 +306,11 @@
           
           <div class="form-group">
             <label>Risk Appetite</label>
-            <select 
-              v-model="riskInstanceForm.Appetite" 
-              :disabled="rejectedIncident && showRiskInstanceForm"
-              :class="{'readonly-field': rejectedIncident && showRiskInstanceForm}">
+            <select v-model="riskInstanceForm.Appetite">
               <option value="">Select Appetite</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
+              <option value="Risk Averse">Risk Averse</option>
+              <option value="Risk Neutral">Risk Neutral</option>
+              <option value="Risk Seeking">Risk Seeking</option>
             </select>
           </div>
           
@@ -380,12 +378,12 @@
             <textarea v-model="riskInstanceForm.RiskMitigation"></textarea>
           </div>
           
-          <!-- <div class="form-group">
+          <div class="form-group">
             <label>Risk Owner *</label>
             <input type="text" v-model="riskInstanceForm.RiskOwner" required />
-          </div> -->
+          </div>
           
-          <!-- <div class="form-group">
+          <div class="form-group">
             <label>Risk Status *</label>
             <select v-model="riskInstanceForm.RiskStatus" required>
               <option value="">Select Status</option>
@@ -394,7 +392,7 @@
               <option value="Closed">Closed</option>
               <option value="Resolved">Resolved</option>
             </select>
-          </div> -->
+          </div>
         </div>
         
         <div class="form-actions">
@@ -428,58 +426,10 @@
       </div>
     </div>
     
-    <!-- Add Reject Modal -->
-    <div v-if="showRejectModal" class="modal-overlay">
-      <div class="stylish-accept-modal">
-        <div class="stylish-header">
-          <i class="fas fa-exclamation-circle header-icon" style="color: #dc3545;"></i>
-          <h2>Incident Rejected</h2>
-          <button class="close-btn" @click="showRejectModal = false">×</button>
-        </div>
-        <div class="success-content">
-          <p>This incident has been marked as rejected. Would you like to create a risk instance?</p>
-          <div class="options-buttons">
-            <button class="option-btn create-btn stylish-btn" @click="createRiskInstanceForRejected">
-              <i class="fas fa-clipboard-list"></i>
-              Create Risk Instance
-            </button>
-            <button class="option-btn map-btn stylish-btn" @click="showRejectModal = false">
-              <i class="fas fa-times"></i>
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <!-- Empty State -->
     <div class="empty-state" v-if="incidents.length === 0 && !showMappedRisks && !showRiskInstanceForm">
       <p v-if="loading">Loading notifications...</p>
       <p v-else>No notifications found</p>
-    </div>
-    
-    <!-- Add a new success modal -->
-    <div v-if="showSuccessModal" class="modal-overlay">
-      <div class="stylish-accept-modal">
-        <div class="stylish-header">
-          <i class="fas fa-check-circle header-icon success-icon"></i>
-          <h2>Risk Created Successfully</h2>
-          <button class="close-btn" @click="showSuccessModal = false">×</button>
-        </div>
-        <div class="success-content">
-          <p>Your risk has been created and added to the system.</p>
-          <div class="options-buttons">
-            <button class="option-btn create-btn stylish-btn" @click="createInstanceFromNewRisk">
-              <i class="fas fa-clipboard-list"></i>
-              Create Risk Instance
-            </button>
-            <button class="option-btn map-btn stylish-btn" @click="showSuccessModal = false">
-              <i class="fas fa-check"></i>
-              Done
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -540,10 +490,6 @@ export default {
       showDaysDropdown: false,
       selectedDays: 7,
       daysOptions: [7, 14, 30],
-      showSuccessModal: false,
-      newlyCreatedRisk: null, // To store the newly created risk for instance creation
-      showRejectModal: false,
-      rejectedIncident: null,
     }
   },
   computed: {
@@ -646,78 +592,37 @@ export default {
       this.showMappedRisks = false
     },
     submitRiskInstance() {
-      // Create a deep copy of the form data
-      const requestData = JSON.parse(JSON.stringify(this.riskInstanceForm));
+      // Convert the numeric string values to actual numbers
+      const formData = {
+        ...this.riskInstanceForm,
+        // Ensure numeric fields are sent as numbers, not strings
+        RiskLikelihood: parseFloat(this.riskInstanceForm.RiskLikelihood) || 0,
+        RiskImpact: parseFloat(this.riskInstanceForm.RiskImpact) || 0,
+        RiskExposureRating: this.riskInstanceForm.RiskExposureRating ? 
+          parseFloat(this.riskInstanceForm.RiskExposureRating) : null
+      };
       
-      // Set required fields
-      requestData.RiskOwner = 'System Owner';
-      requestData.RiskStatus = 'Open';
-      requestData.IncidentId = this.selectedIncident.IncidentId;
+      console.log('Submitting risk instance:', formData);
       
-      // Process RiskMitigation field dynamically
-      if (requestData.RiskMitigation) {
-        if (typeof requestData.RiskMitigation === 'string') {
-          // Split the text into sentences
-          let sentences = requestData.RiskMitigation
-            .split('.')
-            .map(sentence => sentence.trim())
-            .filter(sentence => sentence.length > 0);
+      // Add the IncidentId from the selected incident
+      formData.IncidentId = this.selectedIncident.IncidentId;
+      
+      axios.post('http://localhost:8000/api/risk-instances/', formData)
+        .then(response => {
+          console.log('Risk instance created:', response.data);
+          alert('Risk instance created successfully!');
           
-          // Create numbered object format
-          let mitigationObj = {};
-          sentences.forEach((sentence, index) => {
-            mitigationObj[(index + 1).toString()] = sentence;
-          });
+          // Return to the mapped risks view
+          this.showRiskInstanceForm = false;
+          this.showMappedRisks = true;
           
-          // If no valid sentences were found, create a simple entry
-          if (Object.keys(mitigationObj).length === 0) {
-            mitigationObj = {"1": requestData.RiskMitigation};
-          }
-          
-          requestData.RiskMitigation = mitigationObj;
-        }
-      } else {
-        // Set to empty object if not present
-        requestData.RiskMitigation = {};
-      }
-      
-      console.log('Submitting risk instance with data:', requestData);
-      
-      // Send the request using axios for better error handling
-      axios.post('http://localhost:8000/api/risk-instances/', requestData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => {
-        console.log('Risk instance created:', response.data);
-        alert('Risk instance created successfully!');
-        
-        // Return to the mapped risks view
-        this.showRiskInstanceForm = false;
-        this.showMappedRisks = true;
-        
-        // Reset the form
-        this.resetRiskInstanceForm();
-      })
-      .catch(error => {
-        console.error('Error creating risk instance:', error);
-        let errorMessage = 'Unknown error';
-        
-        if (error.response) {
-          if (typeof error.response.data === 'object') {
-            errorMessage = JSON.stringify(error.response.data);
-          } else if (error.response.data) {
-            errorMessage = error.response.data;
-          } else {
-            errorMessage = `Status ${error.response.status}: ${error.response.statusText}`;
-          }
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-        
-        alert(`Error creating risk instance: ${errorMessage}`);
-      });
+          // Reset the form for next time
+          this.resetRiskInstanceForm();
+        })
+        .catch(error => {
+          console.error('Error creating risk instance:', error.response?.data || error.message);
+          alert(`Error creating risk instance: ${error.response?.data || 'Please check your form data and try again.'}`);
+        });
     },
     resetRiskInstanceForm() {
       this.riskInstanceForm = {
@@ -740,12 +645,130 @@ export default {
         Date: new Date().toISOString().split('T')[0]
       }
     },
-    rejectIncident(incident) {
-      this.rejectedIncident = incident;
-      this.showRejectModal = true;
+    rejectIncident(id) {
+      console.log(`Rejected incident ${id}`)
+      // Handle rejection logic
+    },
+    showNewRiskForm() {
+      // Show loading indicator
+      this.loadingRiskAnalysis = true;
       
-      // Log the rejection (you can add an API call here if needed)
-      console.log(`Rejected incident ${incident.IncidentId}`);
+      // Prepare the data for analysis
+      const incidentData = {
+        title: this.selectedIncident.IncidentTitle,
+        description: this.selectedIncident.Description
+      };
+      
+      console.log('Sending to API:', incidentData);
+      
+      // Call the SLM API to get analysis
+      axios.post('http://localhost:8000/api/analyze-incident/', incidentData)
+        .then(response => {
+          console.log('SLM Analysis:', response.data);
+          
+          // Map the SLM response to the form fields
+          this.mapAnalysisToForm(response.data);
+          
+          // Pre-fill the ComplianceId from the incident
+          this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
+          
+          // Show the create risk form
+          this.showCreateRiskForm = true;
+          this.loadingRiskAnalysis = false;
+        })
+        .catch(error => {
+          console.error('Error analyzing incident:', error.response || error);
+          alert('Failed to analyze incident. Creating blank form instead.');
+          
+          // Still pre-fill the ComplianceId
+          this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
+          
+          // Show the create risk form anyway
+          this.showCreateRiskForm = true;
+          this.loadingRiskAnalysis = false;
+        });
+    },
+    submitNewRisk() {
+      // First, make a copy of the form data
+      const formData = {
+        ...this.riskForm,
+        // Ensure numeric fields are sent as numbers, not strings
+        ComplianceId: parseInt(this.riskForm.ComplianceId) || null,
+        RiskLikelihood: parseFloat(this.riskForm.RiskLikelihood) || 0,
+        RiskImpact: parseFloat(this.riskForm.RiskImpact) || 0,
+        RiskExposureRating: this.riskForm.RiskExposureRating ? 
+          parseFloat(this.riskForm.RiskExposureRating) : null
+      };
+      
+      // Ensure all required fields are present and valid
+      if (!formData.Category) {
+        formData.Category = 'IT Security'; // Default category
+      }
+      
+      if (!formData.Criticality) {
+        formData.Criticality = 'Medium'; // Default criticality
+      }
+      
+      if (!formData.RiskPriority) {
+        formData.RiskPriority = 'Medium'; // Default priority
+      }
+      
+      // Ensure RiskDescription is present
+      if (!formData.RiskDescription || formData.RiskDescription.trim() === '') {
+        formData.RiskDescription = 'Risk identified from incident analysis';
+      }
+      
+      // Truncate RiskMitigation to 100 characters to comply with backend validation
+      if (formData.RiskMitigation && formData.RiskMitigation.length > 100) {
+        formData.RiskMitigation = formData.RiskMitigation.substring(0, 97) + '...';
+      }
+      
+      console.log('Submitting new risk:', formData);
+      
+      axios.post('http://localhost:8000/api/risks/', formData)
+        .then(response => {
+          console.log('Risk created:', response.data);
+          alert('Risk created successfully!');
+          
+          // Add the newly created risk to the mapped risks array
+          this.mappedRisks.push(response.data);
+          
+          // Close the form but stay on mapped risks view
+          this.showCreateRiskForm = false;
+          // Keep this true
+          this.showMappedRisks = true;
+          
+          // Reset the form for next time
+          this.resetRiskForm();
+        })
+        .catch(error => {
+          console.error('Error creating risk:', error.response?.data || error.message);
+          
+          let errorMessage = 'Please check your form data and try again.';
+          if (error.response && error.response.data) {
+            errorMessage = error.response.data;
+          }
+          
+          this.showErrorAlert('Error creating risk', errorMessage);
+        });
+    },
+    resetRiskForm() {
+      this.riskForm = {
+        ComplianceId: null,
+        Criticality: '',
+        PossibleDamage: '',
+        Category: '',
+        RiskDescription: '',
+        RiskLikelihood: '',
+        RiskImpact: '',
+        RiskExposureRating: '',
+        RiskPriority: '',
+        RiskMitigation: ''
+      };
+    },
+    showAcceptOptions(incident) {
+      this.selectedIncident = incident;
+      this.showAcceptModal = true;
     },
     proceedWithPredefinedRisk() {
       this.showAcceptModal = false;
@@ -757,20 +780,6 @@ export default {
       this.fetchMappedRisks(this.selectedIncident.ComplianceId);
     },
     proceedWithNewRisk() {
-      this.showAcceptModal = false;
-      this.showMappedRisks = true;
-      
-      // No form display here - just go to the mapped risks screen
-      // Remove all of these form-related lines:
-      // this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
-      // this.riskForm.Criticality = '';
-      // this.riskForm.PossibleDamage = '';
-      // etc...
-      
-      // Don't show the form
-      // this.showCreateRiskForm = true;
-    },
-    proceedWithAIRisk() {
       this.showAcceptModal = false;
       this.showMappedRisks = true;
       
@@ -811,10 +820,6 @@ export default {
           this.showCreateRiskForm = true;
           this.loadingRiskAnalysis = false;
         });
-    },
-    showAcceptOptions(incident) {
-      this.selectedIncident = incident;
-      this.showAcceptModal = true;
     },
     mapAnalysisToForm(analysis) {
       // Map the SLM analysis fields to the risk form fields
@@ -902,172 +907,6 @@ export default {
     selectDays(days) {
       this.selectedDays = days;
       this.showDaysDropdown = false;
-    },
-    showOwnRiskForm() {
-      // Pre-fill only the ComplianceId from the incident
-      this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
-      
-      // Reset other form fields
-      this.riskForm.Criticality = '';
-      this.riskForm.PossibleDamage = '';
-      this.riskForm.Category = '';
-      this.riskForm.RiskDescription = '';
-      this.riskForm.RiskLikelihood = '';
-      this.riskForm.RiskImpact = '';
-      this.riskForm.RiskExposureRating = '';
-      this.riskForm.RiskPriority = '';
-      this.riskForm.RiskMitigation = '';
-      
-      // Show the create risk form
-      this.showCreateRiskForm = true;
-    },
-    showNewRiskForm() {
-      // Show loading indicator
-      this.loadingRiskAnalysis = true;
-      
-      // Prepare the data for analysis
-      const incidentData = {
-        title: this.selectedIncident.IncidentTitle,
-        description: this.selectedIncident.Description
-      };
-      
-      console.log('Sending to API:', incidentData);
-      
-      // Call the SLM API to get analysis
-      axios.post('http://localhost:8000/api/analyze-incident/', incidentData)
-        .then(response => {
-          console.log('SLM Analysis:', response.data);
-          
-          // Map the SLM response to the form fields
-          this.mapAnalysisToForm(response.data);
-          
-          // Pre-fill the ComplianceId from the incident
-          this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
-          
-          // Show the create risk form
-          this.showCreateRiskForm = true;
-          this.loadingRiskAnalysis = false;
-        })
-        .catch(error => {
-          console.error('Error analyzing incident:', error.response || error);
-          alert('Failed to analyze incident. Creating blank form instead.');
-          
-          // Still pre-fill the ComplianceId
-          this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
-          
-          // Show the create risk form anyway
-          this.showCreateRiskForm = true;
-          this.loadingRiskAnalysis = false;
-        });
-    },
-    submitNewRisk() {
-      // Convert numeric string values to actual numbers
-      const formData = {
-        ...this.riskForm,
-        ComplianceId: parseInt(this.riskForm.ComplianceId) || null,
-        RiskLikelihood: parseFloat(this.riskForm.RiskLikelihood) || 0,
-        RiskImpact: parseFloat(this.riskForm.RiskImpact) || 0,
-        RiskExposureRating: this.riskForm.RiskExposureRating ? 
-          parseFloat(this.riskForm.RiskExposureRating) : null
-      };
-      
-      console.log('Submitting new risk:', formData);
-      
-      axios.post('http://localhost:8000/api/risks/', formData)
-        .then(response => {
-          console.log('Risk created:', response.data);
-          
-          // Store the newly created risk
-          this.newlyCreatedRisk = response.data;
-          
-          // Add the newly created risk to the mapped risks array
-          this.mappedRisks.push(response.data);
-          
-          // Hide the form but stay on mapped risks view
-          this.showCreateRiskForm = false;
-          
-          // Show success modal instead of alert
-          this.showSuccessModal = true;
-          
-          // Reset the form for next time
-          this.resetRiskForm();
-        })
-        .catch(error => {
-          console.error('Error creating risk:', error.response?.data || error.message);
-          
-          let errorMessage = 'Please check your form data and try again.';
-          if (error.response && error.response.data) {
-            errorMessage = error.response.data;
-          }
-          
-          this.showErrorAlert('Error creating risk', errorMessage);
-        });
-    },
-    resetRiskForm() {
-      this.riskForm = {
-        ComplianceId: null,
-        Criticality: '',
-        PossibleDamage: '',
-        Category: '',
-        RiskDescription: '',
-        RiskLikelihood: '',
-        RiskImpact: '',
-        RiskExposureRating: '',
-        RiskPriority: '',
-        RiskMitigation: ''
-      };
-    },
-    createInstanceFromNewRisk() {
-      // Close the success modal
-      this.showSuccessModal = false;
-      
-      // Pre-fill the risk instance form with values from the newly created risk
-      this.currentRisk = this.newlyCreatedRisk;
-      
-      // Similar to showCreateRiskInstanceForm method
-      this.riskInstanceForm = {
-        ...this.riskInstanceForm,
-        RiskId: this.currentRisk.RiskId,
-        Category: this.currentRisk.Category,
-        Criticality: this.currentRisk.Criticality,
-        PossibleDamage: this.currentRisk.PossibleDamage,
-        RiskDescription: this.currentRisk.RiskDescription,
-        RiskLikelihood: this.currentRisk.RiskLikelihood,
-        RiskImpact: this.currentRisk.RiskImpact,
-        RiskPriority: this.currentRisk.RiskPriority,
-        RiskMitigation: this.currentRisk.RiskMitigation,
-        Date: new Date().toISOString().split('T')[0]
-      }
-      
-      // Show the risk instance form
-      this.showRiskInstanceForm = true;
-      this.showMappedRisks = false;
-    },
-    createRiskInstanceForRejected() {
-      // Close the reject modal
-      this.showRejectModal = false;
-      
-      // Set the current incident for risk instance creation
-      this.selectedIncident = this.rejectedIncident;
-      
-      // Initialize a blank risk instance form
-      this.resetRiskInstanceForm();
-      
-      // Set incident-related fields
-      this.riskInstanceForm.IncidentId = this.rejectedIncident.IncidentId;
-      this.riskInstanceForm.Category = this.rejectedIncident.RiskCategory || '';
-      this.riskInstanceForm.RiskDescription = this.rejectedIncident.Description || '';
-      this.riskInstanceForm.Date = new Date().toISOString().split('T')[0];
-      this.riskInstanceForm.Appetite = 'No';  // Set default to No for rejected incidents
-      
-      // Show the risk instance form
-      this.showRiskInstanceForm = true;
-    },
-    returnToNotifications() {
-      this.showMappedRisks = false;
-    },
-    returnToMappedRisks() {
-      this.showRiskInstanceForm = false;
     },
   }
 }
@@ -1716,73 +1555,5 @@ export default {
   justify-content: center;
   gap: 24px;
   margin-top: 32px;
-}
-
-.risk-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.own-risk {
-  background-color: #6c757d;
-}
-
-.own-risk:hover {
-  background-color: #5a6268;
-}
-
-.ai-risk {
-  background-color: #4285f4;
-}
-
-.ai-risk:hover {
-  background-color: #3367d6;
-}
-
-/* Add these styles for the inline form */
-.add-risk-form {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.add-risk-form h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #2c3e50;
-  font-size: 1.2rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group.wide {
-  grid-column: span 3;
-}
-
-.success-icon {
-  color: #28a745;
-}
-
-.success-content {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.success-content p {
-  margin-bottom: 20px;
-  font-size: 16px;
-  color: #22314a;
 }
 </style>

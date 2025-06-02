@@ -1,105 +1,104 @@
 <template>
-    <div class="incident-form-page">
-      <div class="incident-form-page-header">
-        <h2 class="incident-form-page-title">Create Incident </h2>
+    <div class="incident-container">
+      <div class="incident-header">
+        <button class="create-incident-btn" @click="showModal = true">
+          <i class="fas fa-plus"></i> Create Incident
+        </button>
       </div>
-      <div class="incident-form-box">
-        <div class="incident-form-box-title">
+      <div class="incident-table-wrapper">
+        <table class="incident-table">
+          <thead>
+            <tr>
+              <th>Incident ID</th>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Risk Category</th>
+              <th>Priority Level</th>
+              <th>Attachments</th>
+              <th>Comments</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Manual</td>
+              <td>Work in features</td>
+              <td>24/7/25</td>
+              <td>23:59</td>
+              <td>Hr details</td>
+              <td>High</td>
+              <td><a href="https://www.cyberlink.com" target="_blank">www.cyberlink.com</a></td>
+              <td>Need to be done</td>
+              <td>Work</td>
+            </tr>
+            <tr v-for="i in 4" :key="i">
+              <td v-for="j in 10" :key="j"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="showModal" class="incident-modal-overlay">
+        <div class="incident-modal">
+          <div class="incident-modal-title">Create New Incident</div>
+          <form class="incident-form" @submit.prevent="submitIncident">
+            <label>Incident Title
+              <input type="text" v-model="form.title" placeholder="Enter incident title" required />
+            </label>
+            <label>Description
+              <textarea v-model="form.description" placeholder="Enter incident description" required></textarea>
+            </label>
+            <div class="incident-form-row">
+              <label>Date
+                <input type="date" v-model="form.date" required />
+              </label>
+              <label>Time
+                <input type="time" v-model="form.time" required />
+              </label>
+            </div>
+            <label>Risk Category
+              <input type="text" v-model="form.riskCategory" placeholder="Enter risk category" required />
+            </label>
+            <label>Priority Level
+              <select v-model="form.priorityLevel" required>
+                <option value="">Select priority level</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </label>
+            <label>Comments
+              <textarea v-model="form.comments" placeholder="Enter any additional comments"></textarea>
+            </label>
+            <label>Attachments (text or URL)
+              <input type="text" v-model="form.attachments" placeholder="Enter attachment info or URL" />
+            </label>
+            <label>Mitigation
+              <textarea v-model="form.mitigation" placeholder="Enter mitigation steps or plan"></textarea>
+            </label>
+            <div class="incident-form-actions">
+              <button type="submit" class="incident-submit-btn">Create Incident</button>
+              <button type="button" class="incident-cancel-btn" @click="showModal = false">Cancel</button>
+            </div>
+          </form>
         </div>
-        <form class="incident-create-form" @submit.prevent="submitIncident">
-          <!-- Row 1: Basic Info (4 columns) -->
-          <label>
-            <span><i class="fas fa-heading"></i> Incident Title</span>
-            <input type="text" v-model="form.title" placeholder="Enter incident title" required />
-          </label>
-          
-          <label>
-            <span><i class="fas fa-exclamation-circle"></i> Priority Level</span>
-            <select v-model="form.priorityLevel" class="priority-select" required>
-              <option value="">Select priority level</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
-          
-          <label>
-            <span><i class="fas fa-tag"></i> Risk Category</span>
-            <select v-model="form.riskCategory" class="risk-select" required>
-              <option value="">Select risk category</option>
-              <option value="IT Security">IT Security</option>
-              <option value="Compliance">Compliance</option>
-              <option value="Operational">Operational</option>
-              <option value="Financial">Financial</option>
-              <option value="Strategic">Strategic</option>
-            </select>
-          </label>
-          
-          <label>
-            <span><i class="fas fa-map-marker-alt"></i> Origin</span>
-            <input type="text" value="Manual" disabled />
-          </label>
-          
-          <!-- Row 2: Identified Dates (2 columns) -->
-          <label>
-            <span><i class="fas fa-calendar-check"></i> Identified Date</span>
-            <input type="date" v-model="form.identifiedDate" required />
-          </label>
-          
-          <label>
-            <span><i class="fas fa-history"></i> Identified Time</span>
-            <input type="time" v-model="form.identifiedTime" required />
-          </label>
-          
-          <!-- Row 3: Description and Comments (2 columns each) -->
-          <label class="field-half">
-            <span><i class="fas fa-align-left"></i> Description</span>
-            <textarea v-model="form.description" placeholder="Enter incident description" required></textarea>
-          </label>
-          
-          <label class="field-half">
-            <span><i class="fas fa-shield-alt"></i> Mitigation</span>
-            <textarea v-model="form.mitigation" placeholder="Enter mitigation steps or plan"></textarea>
-          </label>
-          
-          <!-- Row 4: Comments and Attachments -->
-          <label class="field-half">
-            <span><i class="fas fa-comments"></i> Comments</span>
-            <textarea v-model="form.comments" placeholder="Enter any additional comments"></textarea>
-          </label>
-          
-          <label class="field-half">
-            <span><i class="fas fa-paperclip"></i> Attachments</span>
-            <input type="text" v-model="form.attachments" placeholder="Enter attachment URL" />
-          </label>
-  
-          <!-- Row 5: Action buttons -->
-          <div class="incident-form-actions">
-            <button type="reset" class="incident-cancel-btn">
-              Clear
-            </button>
-            <button type="submit" class="incident-submit-btn">
-              Create
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   </template>
   
   <script>
-  import axios from 'axios';
-  import './CreateIncident.css';
-  
   export default {
     name: 'CreateIncident',
     data() {
       return {
+        showModal: false,
         form: {
           title: '',
           description: '',
-          identifiedDate: '',
-          identifiedTime: '',
+          date: '',
+          time: '',
           riskCategory: '',
           priorityLevel: '',
           comments: '',
@@ -108,92 +107,178 @@
         }
       }
     },
-    mounted() {
-      this.setDefaultDates();
-    },
     methods: {
-      setDefaultDates() {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}`;
-        
-        const hours = String(today.getHours()).padStart(2, '0');
-        const minutes = String(today.getMinutes()).padStart(2, '0');
-        const formattedTime = `${hours}:${minutes}`;
-        
-        this.form.identifiedDate = formattedDate;
-        this.form.identifiedTime = formattedTime;
-      },
-      async submitIncident() {
-        // Prevent double submissions
-        const submitBtn = document.querySelector('.incident-submit-btn');
-        if (submitBtn) submitBtn.disabled = true;
-        
-        try {
-          // Get current date and time for the removed fields
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const day = String(now.getDate()).padStart(2, '0');
-          const currentDate = `${year}-${month}-${day}`;
-          
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const currentTime = `${hours}:${minutes}`;
-          
-          // Map frontend fields to backend fields
-          const payload = {
-            IncidentTitle: this.form.title,
-            Description: this.form.description,
-            Mitigation: this.form.mitigation,
-            Date: currentDate,
-            Time: currentTime,
-            IdentifiedAt: `${this.form.identifiedDate}T${this.form.identifiedTime}`,
-            Origin: "Manual",
-            Comments: this.form.comments,
-            RiskCategory: this.form.riskCategory,
-            RiskPriority: this.form.priorityLevel,
-            Attachments: this.form.attachments
-          };
-  
-          console.log("incident_data:", payload);
-  
-          await axios.post('http://localhost:8000/incidents/create/', payload);
-          
-          // Show success message with animation
-          this.$nextTick(() => {
-            const successMessage = document.createElement('div');
-            successMessage.className = 'form-success-message';
-            successMessage.textContent = 'Incident created successfully!';
-            document.body.appendChild(successMessage);
-            
-            setTimeout(() => {
-              successMessage.remove();
-            }, 3000);
-          });
-          
-          // Reset form
-          this.form = {
-            title: '',
-            description: '',
-            identifiedDate: '',
-            identifiedTime: '',
-            riskCategory: '',
-            priorityLevel: '',
-            comments: '',
-            attachments: '',
-            mitigation: ''
-          };
-          this.setDefaultDates();
-        } catch (error) {
-          alert('Failed to create incident: ' + (error.response?.data?.detail || error.message));
-        } finally {
-          if (submitBtn) submitBtn.disabled = false;
-        }
+      submitIncident() {
+        alert('Incident created!');
+        this.showModal = false;
+        this.form = {
+          title: '',
+          description: '',
+          date: '',
+          time: '',
+          riskCategory: '',
+          priorityLevel: '',
+          comments: '',
+          attachments: '',
+          mitigation: ''
+        };
       }
     }
   }
   </script>
-    
+  
+  <style scoped>
+  .incident-container {
+    padding: 32px 32px 32px 220px;
+    background: #f5f5f5;
+    min-height: 100vh;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  }
+  .incident-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 18px;
+  }
+  .create-incident-btn {
+    background: #4f7cff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(79,124,255,0.08);
+    transition: background 0.2s;
+  }
+  .create-incident-btn i {
+    font-size: 1.2rem;
+  }
+  .create-incident-btn:hover {
+    background: #365bb3;
+  }
+  .incident-table-wrapper {
+    overflow-x: auto;
+  }
+  .incident-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  .incident-table th, .incident-table td {
+    border: 2px solid #222;
+    padding: 10px 8px;
+    text-align: left;
+    min-width: 90px;
+  }
+  .incident-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+    font-size: 1.15rem;
+  }
+  .incident-table td {
+    background: #fff;
+  }
+  .incident-table a {
+    color: #4f7cff;
+    text-decoration: underline;
+  }
+  .incident-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  }
+  .incident-modal {
+    background: #fff;
+    border: 3px solid #222;
+    border-radius: 12px;
+    padding: 36px 38px 28px 38px;
+    min-width: 420px;
+    max-width: 98vw;
+    width: 500px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+  .incident-modal-title {
+    font-size: 1.35rem;
+    font-weight: bold;
+    margin-bottom: 18px;
+    color: #222;
+  }
+  .incident-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .incident-form label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .incident-form input[type="text"],
+  .incident-form input[type="date"],
+  .incident-form input[type="time"],
+  .incident-form select,
+  .incident-form textarea {
+    padding: 8px 12px;
+    border: 1.5px solid #bbb;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: none;
+  }
+  .incident-form textarea {
+    min-height: 48px;
+    max-height: 120px;
+  }
+  .incident-form-row {
+    display: flex;
+    gap: 18px;
+  }
+  .incident-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 18px;
+    margin-top: 10px;
+  }
+  .incident-submit-btn {
+    background: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .incident-submit-btn:hover {
+    background: #388e3c;
+  }
+  .incident-cancel-btn {
+    background: #e53935;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .incident-cancel-btn:hover {
+    background: #b71c1c;
+  }
+  </style>
+  

@@ -20,7 +20,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('grc.urls')),  # Add this line
-    path('', include('grc.urls')),  # Make sure this line is present and correct
+    path('', include('grc.urls')),  # Include the GRC app URLs
 ]
-

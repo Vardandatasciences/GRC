@@ -208,8 +208,6 @@
 
 <script>
 import Chart from 'chart.js/auto'
-import { MatrixController, MatrixElement } from 'chartjs-chart-matrix'
-Chart.register(MatrixController, MatrixElement)
 
 export default {
   name: 'RiskDashboard',
@@ -401,58 +399,60 @@ export default {
     renderHeatmapScatterChart() {
       if (this.heatmapChartInstance) this.heatmapChartInstance.destroy()
       const ctx = this.$refs.heatmapChart.getContext('2d')
-      // Example risk data: each dot is a risk (x: Likelihood, y: Impact, v: count/severity)
-      const risks = [
-        { x: 1, y: 5, v: 25 }, { x: 2, y: 5, v: 1 }, { x: 5, y: 5, v: 1 },
-        { x: 1, y: 4, v: 5 },
-        { x: 2, y: 3, v: 1 }, { x: 4, y: 3, v: 1 },
-        { x: 2, y: 2, v: 1 }, { x: 3, y: 2, v: 1 },
-        { x: 3, y: 1, v: 2 }, { x: 1, y: 1, v: 1 }, { x: 3, y: 5, v: 0 },
-        // ... add more as needed
-      ]
-      function getColor(val) {
-        if (val >= 20) return '#388e3c'; // deep green
-        if (val >= 5) return '#43a047'; // green
-        if (val === 2) return '#fbc02d'; // yellow
-        if (val === 1) return '#f57c00'; // orange
-        if (val === 0) return '#d32f2f'; // red
-        return '#222';
+      
+      // Convert matrix data to scatter points
+      const scatterData = []
+      for (let y = 0; y < this.heatmapMatrixData.length; y++) {
+        for (let x = 0; x < this.heatmapMatrixData[y].length; x++) {
+          if (this.heatmapMatrixData[y][x] > 0) {
+            scatterData.push({
+              x: x,
+              y: y,
+              r: this.heatmapMatrixData[y][x] * 5 // Size of the point based on value
+            })
+          }
+        }
       }
+
       this.heatmapChartInstance = new Chart(ctx, {
         type: 'scatter',
         data: {
           datasets: [{
-            label: 'Risk Heatmap',
-            data: risks,
-            pointBackgroundColor: risks.map(r => getColor(r.v)),
-            pointRadius: risks.map(r => Math.max(6, r.v * 1.5)),
-            pointHoverRadius: risks.map(r => Math.max(8, r.v * 2)),
-            showLine: false
+            data: scatterData,
+            backgroundColor: 'rgba(66, 133, 244, 0.6)',
+            borderColor: 'rgba(66, 133, 244, 1)',
+            borderWidth: 1
           }]
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title: ctx => `Likelihood: ${ctx[0].raw.x}, Impact: ${ctx[0].raw.y}`,
-                label: ctx => `Count: ${ctx.raw.v}`
+          scales: {
+            x: {
+              type: 'category',
+              labels: this.heatmapLabelsX,
+              grid: {
+                display: true
+              }
+            },
+            y: {
+              type: 'category',
+              labels: this.heatmapLabelsY,
+              grid: {
+                display: true
               }
             }
           },
-          scales: {
-            x: {
-              min: 1, max: 5,
-              title: { display: true, text: 'Likelihood', font: { size: 14 } },
-              ticks: { stepSize: 1, font: { size: 13 } },
-              grid: { color: '#e6e6e6' }
+          plugins: {
+            legend: {
+              display: false
             },
-            y: {
-              min: 1, max: 5,
-              title: { display: true, text: 'Impact', font: { size: 14 } },
-              ticks: { stepSize: 1, font: { size: 13 } },
-              grid: { color: '#e6e6e6' }
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.raw.r / 5
+                  return `Value: ${value}`
+                }
+              }
             }
           }
         }
