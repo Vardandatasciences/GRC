@@ -1,0 +1,60 @@
+# Python bytecode
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.py[cod]
+
+# Django migration files (optional to ignore)
+# If you want to keep them, comment this out
+**/migrations/*.py
+**/migrations/*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+VENV/
+.venv/
+
+# Environment files
+.env
+.env.*  # for .env.local, .env.prod etc.
+
+# SQLite database (if using for local dev)
+db.sqlite3
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+
+# Static and media root (if dynamically generated)
+staticfiles/
+media/
+
+# Coverage, testing, and CI
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+nosetests.xml
+*.cover
+.tox/
+.junit/
+
+# Node.js frontend artifacts (if using React/Vue with Django)
+node_modules/
+dist/
+build/
+*.lock
+
+# pip tools
+pip-log.txt
+pip-delete-this-directory.txt
