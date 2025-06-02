@@ -1,3 +1,0 @@
-REST_FRAMEWORK = {
-    'STRICT_JSON': False,
-} 

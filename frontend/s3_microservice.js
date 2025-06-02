@@ -7,8 +7,8 @@ const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 
 // Configure AWS S3
-const bucketName = process.env.AWS_BUCKET_NAME;
-const region = process.env.AWS_REGION;
+const bucketName = process.env.AWS_BUCKET_NAME || 'grc-files-vardaan';
+const region = process.env.AWS_REGION || 'us-east-1';
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
@@ -23,7 +23,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'root',
-  database: process.env.DB_NAME || 'grc_test',
+  database: process.env.DB_NAME || 'grc',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -173,6 +173,72 @@ async function uploadFile(file, fileType, fileName, userId, params = {}) {
 
       const insertedFile = rows[0];
       
+      // Check if this is an audit report upload (based on metadata)
+      if (params.documentType === 'audit_report' && params.auditId) {
+        try {
+          console.log(`Starting audit report save process for audit ID: ${params.auditId}`);
+          
+          // First, fetch policy details from the audit table - note the column case sensitivity!
+          // In MySQL, column names in queries are typically case-insensitive, but let's match exactly
+          // what's in your audit table schema
+          const [auditRows] = await connection.execute(
+            'SELECT AuditId, PolicyId, SubPolicyId, FrameworkId FROM audit WHERE AuditId = ?',
+            [params.auditId]
+          );
+          
+          // Debug the results more clearly
+          console.log('Audit query results:', JSON.stringify(auditRows));
+          
+          if (auditRows && auditRows.length > 0) {
+            const auditInfo = auditRows[0];
+            console.log('Found audit details:', JSON.stringify(auditInfo));
+            
+            // Log the exact values we're using
+            console.log('Using values for audit_report:', {
+              AuditId: params.auditId,
+              Report: uploadResult.Location,
+              PolicyId: auditInfo.PolicyId,
+              SubPolicyId: auditInfo.SubPolicyId,
+              FrameworkId: auditInfo.FrameworkId
+            });
+            
+            // Update the audit_report table with the report URL and details from audit table
+            const insertResult = await connection.execute(
+              'INSERT INTO audit_report (AuditId, Report, PolicyId, SubPolicyId, FrameworkId) VALUES (?, ?, ?, ?, ?) ' +
+              'ON DUPLICATE KEY UPDATE Report = ?',
+              [
+                params.auditId, 
+                uploadResult.Location, 
+                auditInfo.PolicyId || null, 
+                auditInfo.SubPolicyId || null, 
+                auditInfo.FrameworkId || null,
+                uploadResult.Location
+              ]
+            );
+            
+            console.log(`Saved report URL to audit_report table. Insert result:`, JSON.stringify(insertResult));
+          } else {
+            console.error(`No audit details found for ID: ${params.auditId}`);
+            
+            // Fallback: try to insert with just AuditId and Report
+            console.log('Attempting fallback insert with only AuditId and Report');
+            const fallbackResult = await connection.execute(
+              'INSERT INTO audit_report (AuditId, Report) VALUES (?, ?) ' +
+              'ON DUPLICATE KEY UPDATE Report = ?',
+              [params.auditId, uploadResult.Location, uploadResult.Location]
+            );
+            
+            console.log('Fallback insert result:', JSON.stringify(fallbackResult));
+          }
+        } catch (reportErr) {
+          console.error(`Error saving to audit_report table:`, reportErr);
+          console.error(`Error details: ${reportErr.message}`);
+          console.error(`Error SQL state: ${reportErr.sqlState}, code: ${reportErr.code}`);
+          
+          // Continue with the upload response even if this fails
+        }
+      }
+      
       return {
         success: true,
         file: {
@@ -205,6 +271,72 @@ async function uploadFile(file, fileType, fileName, userId, params = {}) {
   
         const insertedFile = rows[0];
         
+        // Check if this is an audit report upload (based on params)
+        if (params.documentType === 'audit_report' && params.auditId) {
+          try {
+            console.log(`Starting audit report save process for audit ID: ${params.auditId}`);
+            
+            // First, fetch policy details from the audit table - note the column case sensitivity!
+            // In MySQL, column names in queries are typically case-insensitive, but let's match exactly
+            // what's in your audit table schema
+            const [auditRows] = await connection.execute(
+              'SELECT AuditId, PolicyId, SubPolicyId, FrameworkId FROM audit WHERE AuditId = ?',
+              [params.auditId]
+            );
+            
+            // Debug the results more clearly
+            console.log('Audit query results:', JSON.stringify(auditRows));
+            
+            if (auditRows && auditRows.length > 0) {
+              const auditInfo = auditRows[0];
+              console.log('Found audit details:', JSON.stringify(auditInfo));
+              
+              // Log the exact values we're using
+              console.log('Using values for audit_report:', {
+                AuditId: params.auditId,
+                Report: uploadResult.Location,
+                PolicyId: auditInfo.PolicyId,
+                SubPolicyId: auditInfo.SubPolicyId,
+                FrameworkId: auditInfo.FrameworkId
+              });
+              
+              // Update the audit_report table with the report URL and details from audit table
+              const insertResult = await connection.execute(
+                'INSERT INTO audit_report (AuditId, Report, PolicyId, SubPolicyId, FrameworkId) VALUES (?, ?, ?, ?, ?) ' +
+                'ON DUPLICATE KEY UPDATE Report = ?',
+                [
+                  params.auditId, 
+                  uploadResult.Location, 
+                  auditInfo.PolicyId || null, 
+                  auditInfo.SubPolicyId || null, 
+                  auditInfo.FrameworkId || null,
+                  uploadResult.Location
+                ]
+              );
+              
+              console.log(`Saved report URL to audit_report table. Insert result:`, JSON.stringify(insertResult));
+            } else {
+              console.error(`No audit details found for ID: ${params.auditId}`);
+              
+              // Fallback: try to insert with just AuditId and Report
+              console.log('Attempting fallback insert with only AuditId and Report');
+              const fallbackResult = await connection.execute(
+                'INSERT INTO audit_report (AuditId, Report) VALUES (?, ?) ' +
+                'ON DUPLICATE KEY UPDATE Report = ?',
+                [params.auditId, uploadResult.Location, uploadResult.Location]
+              );
+              
+              console.log('Fallback insert result:', JSON.stringify(fallbackResult));
+            }
+          } catch (reportErr) {
+            console.error(`Error saving to audit_report table:`, reportErr);
+            console.error(`Error details: ${reportErr.message}`);
+            console.error(`Error SQL state: ${reportErr.sqlState}, code: ${reportErr.code}`);
+            
+            // Continue with the upload response even if this fails
+          }
+        }
+        
         return {
           success: true,
           file: {
@@ -217,6 +349,74 @@ async function uploadFile(file, fileType, fileName, userId, params = {}) {
             s3Key: uniqueFileName
           }
         };
+      } else if (dbError.code === 'ER_NO_SUCH_TABLE' && dbError.message.includes('s3_files')) {
+        // If s3_files table doesn't exist but we're uploading an audit report
+        if (params.documentType === 'audit_report' && params.auditId) {
+          try {
+            console.log(`Starting audit report save process for audit ID: ${params.auditId}`);
+            
+            // First, fetch policy details from the audit table - note the column case sensitivity!
+            // In MySQL, column names in queries are typically case-insensitive, but let's match exactly
+            // what's in your audit table schema
+            const [auditRows] = await connection.execute(
+              'SELECT AuditId, PolicyId, SubPolicyId, FrameworkId FROM audit WHERE AuditId = ?',
+              [params.auditId]
+            );
+            
+            // Debug the results more clearly
+            console.log('Audit query results:', JSON.stringify(auditRows));
+            
+            if (auditRows && auditRows.length > 0) {
+              const auditInfo = auditRows[0];
+              console.log('Found audit details:', JSON.stringify(auditInfo));
+              
+              // Log the exact values we're using
+              console.log('Using values for audit_report:', {
+                AuditId: params.auditId,
+                Report: uploadResult.Location,
+                PolicyId: auditInfo.PolicyId,
+                SubPolicyId: auditInfo.SubPolicyId,
+                FrameworkId: auditInfo.FrameworkId
+              });
+              
+              // Save directly to audit_report table without trying to use s3_files
+              await connection.execute(
+                'INSERT INTO audit_report (AuditId, Report, PolicyId, SubPolicyId, FrameworkId) VALUES (?, ?, ?, ?, ?) ' +
+                'ON DUPLICATE KEY UPDATE Report = ?',
+                [
+                  params.auditId, 
+                  uploadResult.Location, 
+                  auditInfo.PolicyId || null, 
+                  auditInfo.SubPolicyId || null, 
+                  auditInfo.FrameworkId || null,
+                  uploadResult.Location
+                ]
+              );
+              console.log(`Saved report URL to audit_report table for audit ${params.auditId}`);
+              
+              return {
+                success: true,
+                file: {
+                  url: uploadResult.Location,
+                  fileType: extension,
+                  fileName: fileName,
+                  uploadedAt: new Date().toISOString(),
+                  metadata: params,
+                  s3Key: uniqueFileName
+                }
+              };
+            } else {
+              console.error(`No audit details found for ID: ${params.auditId}`);
+            }
+          } catch (reportErr) {
+            console.error(`Error saving to audit_report table:`, reportErr);
+            console.error(`Error details: ${reportErr.message}`);
+            console.error(`Error SQL state: ${reportErr.sqlState}, code: ${reportErr.code}`);
+            // If both tables fail, rethrow the original error
+          }
+        }
+        // If it's a different error, rethrow it
+        throw dbError;
       } else {
         // If it's a different error, rethrow it
         throw dbError;

@@ -1,208 +1,101 @@
-
-from django.urls import path, include
 from django.urls import path
-from .routes.policy import (
-    framework_list, framework_detail, policy_detail, policy_list,
-    add_policy_to_framework, add_subpolicy_to_policy, 
-    subpolicy_detail, copy_framework, copy_policy,
-    create_framework_version, create_policy_version,
-    export_policies_to_excel,
-    update_policy_approval,
-    submit_policy_review,
-    # list_rejected_policy_approvals_for_user,
-    resubmit_policy_approval,
-    list_users,
-    get_framework_explorer_data,
-    get_framework_policies,
-    toggle_framework_status,
-    toggle_policy_status,
-    get_framework_details,
-    get_policy_details,
-    all_policies_get_frameworks,
-    all_policies_get_framework_versions,
-    all_policies_get_framework_version_policies,
-    all_policies_get_policies,
-    all_policies_get_policy_versions,
-    all_policies_get_subpolicies,
-    all_policies_get_policy_version_subpolicies,
-    all_policies_get_subpolicy_details,
-    get_policy_dashboard_summary,
-    get_policy_status_distribution,
-    get_reviewer_workload,
-    get_recent_policy_activity,
-    get_avg_policy_approval_time,
-    get_policy_analytics,
-    get_policy_kpis,
-    acknowledge_policy,
-    get_policies_by_framework,
-    get_subpolicies_by_policy,  
-    get_latest_policy_approval,
-    get_latest_policy_approval_by_role,
-    get_latest_reviewer_version,
-    submit_subpolicy_review,
-    resubmit_subpolicy,
-    get_policy_version,
-    get_subpolicy_version,
-    submit_policy_approval_review,
-    get_policy_version_history,
-    list_policy_approvals_for_reviewer,
-    list_rejected_policy_approvals_for_user,
-    get_rejected_policies_for_user,
-    resubmit_rejected_policy
-)
-from .routes.frameworks import (
-    create_framework_approval,
-    get_framework_approvals,
-    update_framework_approval,
-    submit_framework_review,
-    get_latest_framework_approval,
-    resubmit_framework
-)
-from .routes.incidents import(
-    list_incidents,create_incident,schedule_manual_incident,reject_incident,create_incident_from_audit_finding,incident_mttd,incident_mttr,
-    incident_mttc,incident_mttrv,first_response_time,incident_volume,escalation_rate,repeat_rate,
-    incident_metrics,get_incident_counts,incident_count,incidents_by_severity,incident_root_causes,detection_accuracy,incident_closure_rate,
-    incident_origins,incident_types,incident_cost,incident_reopened_count,false_positive_rate,update_incident_status
-
-)
 from . import views
-from rest_framework.routers import DefaultRouter
-from .views import RiskViewSet, RiskInstanceViewSet
-
-router = DefaultRouter()
-router.register(r'risks', views.RiskViewSet)
-router.register(r'risk-instances', views.RiskInstanceViewSet)
+from . import report_views
+from . import audit_report_views
+from . import kpi_functions
+from . import audit_report_handlers
+from .views import (
+    add_compliance_to_audit, get_assign_data, load_review_data, save_review_progress, load_latest_review_version,
+    load_continuing_data, load_audit_continuing_data, save_audit_json_version
+)
 
 urlpatterns = [
-    path('login/', views.login, name='login'),
-    path('register/', views.register, name='register'),
-    path('test-connection/', views.test_connection, name='test-connection'),
-    path('api/', include(router.urls)),
-    path('api/last-incident/', views.last_incident, name='last-incident'),
-    path('api/compliance-by-incident/<int:incident_id>/', views.get_compliance_by_incident, name='compliance-by-incident'),
-    path('api/risks-by-incident/<int:incident_id>/', views.get_risks_by_incident, name='risks-by-incident'),
-    path('api/analyze-incident/', views.analyze_incident, name='analyze-incident'),
-    path('api/risk/metrics', views.risk_metrics, name='risk_metrics'),
-    path('users/', views.get_users, name='get-users'),
-    path('api/risk-workflow/', views.risk_workflow, name='risk-workflow'),
-    path('api/risk-assign/', views.assign_risk_instance, name='risk-assign'),
-    path('api/custom-users/', views.get_custom_users, name='custom-users'),
-    path('api/user-risks/<int:user_id>/', views.get_user_risks, name='user-risks'),
-    path('api/risk-update-status/', views.update_risk_status, name='risk-update-status'),
-    path('api/risk-mitigations/<int:risk_id>/', views.get_risk_mitigations, name='risk-mitigations'),
-    path('api/update-mitigation-status/', views.update_mitigation_status, name='update-mitigation-status'),
-    path('api/assign-reviewer/', views.assign_reviewer, name='assign-reviewer'),
-    path('api/reviewer-tasks/<int:user_id>/', views.get_reviewer_tasks, name='reviewer-tasks'),
-    # path('api/update-mitigation-approval/', views.update_mitigation_approval, name='update-mitigation-approval'),
-    path('api/complete-review/', views.complete_review, name='complete-review'),
-    # path('api/user-notifications/<int:user_id>/', views.get_user_notifications, name='user-notifications'),
-    path('api/reviewer-comments/<int:risk_id>/', views.get_reviewer_comments, name='reviewer-comments'),
-    path('api/latest-review/<int:risk_id>/', views.get_latest_review, name='latest-review'),
-    path('api/get-assigned-reviewer/<int:risk_id>/', views.get_assigned_reviewer, name='get-assigned-reviewer'),
-    path('api/risk-update-mitigation/<int:risk_id>/', views.update_risk_mitigation, name='risk-update-mitigation'),
-    path('api/risk-form-details/<int:risk_id>/', views.get_risk_form_details, name='risk-form-details'),
-    path('api/logs/', views.GRCLogList.as_view(), name='log-list'),
-    path('api/logs/<int:pk>/', views.GRCLogDetail.as_view(), name='log-detail'),
-    path('api/get-previous-versions/<int:risk_id>/', views.get_previous_versions, name='get-previous-versions'),
-    path('api/save-uploaded-file/', views.save_uploaded_file, name='save-uploaded-file'),
-    path('api/save-uploaded-file-simple/', views.save_uploaded_file_simple, name='save-uploaded-file-simple'),
-    path('api/export-risks/', views.export_risks, name='export-risks'),
-    path('api/risk-due-reminders/', views.send_due_date_reminders, name='risk-due-reminders'),
+    # Framework endpoints
+    path('frameworks/', views.get_frameworks, name='get_frameworks'),
+    path('frameworks/<int:framework_id>/policies/', views.get_policies_by_framework, name='get_policies_by_framework'),
+    
+    # User endpoints
+    path('users/', views.get_users, name='get_users'),
 
-    path('frameworks/', framework_list, name='framework-list'),
-    path('frameworks/<int:pk>/', framework_detail, name='framework-detail'),
-    path('frameworks/<int:pk>/copy/', copy_framework, name='copy-framework'),
-    path('frameworks/<int:pk>/create-version/', create_framework_version, name='create-framework-version'),
-    path('frameworks/<int:framework_id>/export/', export_policies_to_excel, name='export-framework-policies'),
-    path('policies/', policy_list, name='policy-list'),
-    path('policies/<int:pk>/', policy_detail, name='policy-detail'),
-    path('policies/<int:pk>/copy/', copy_policy, name='copy-policy'),
-    path('policies/<int:pk>/create-version/', create_policy_version, name='create-policy-version'),
-    path('subpolicies/<int:pk>/', subpolicy_detail, name='subpolicy-detail'),
-    path('api/frameworks/<int:framework_id>/policies/', add_policy_to_framework, name='add-policy-to-framework'),
-    path('policies/<int:policy_id>/subpolicies/', add_subpolicy_to_policy, name='add-subpolicy-to-policy'),
-    path('api/subpolicies/<int:pk>/review/', submit_subpolicy_review, name='submit-subpolicy-review'),
-    path('api/subpolicies/<int:pk>/resubmit/', resubmit_subpolicy, name='resubmit-subpolicy'),
-    path('api/policy-approvals/reviewer/', list_policy_approvals_for_reviewer, name='policy-approvals-for-reviewer'),
-    path('api/policy-approvals/<int:approval_id>/', update_policy_approval, name='update_policy_approval'),
-    path('api/policy-approvals/<int:approval_id>/review/', submit_policy_review, name='submit_policy_review'),
-    path('api/policy-approvals/rejected/<int:user_id>/', list_rejected_policy_approvals_for_user),
-    path('api/policy-approvals/resubmit/<int:approval_id>/', resubmit_policy_approval),
-    path('api/users/', list_users, name='list-users'),
-    path('api/framework-explorer/', get_framework_explorer_data, name='framework-explorer'),
-    path('api/frameworks/<int:framework_id>/policies-list/', get_framework_policies, name='framework-policies'),
-    path('api/frameworks/<int:framework_id>/toggle-status/', toggle_framework_status, name='toggle-framework-status'),
-    path('api/policies/<int:policy_id>/toggle-status/', toggle_policy_status, name='toggle-policy-status'),
-    path('api/frameworks/<int:framework_id>/details/', get_framework_details, name='framework-details'),
-    path('api/policies/<int:policy_id>/details/', get_policy_details, name='policy-details'),
-    path('api/all-policies/frameworks/', all_policies_get_frameworks, name='all-policies-frameworks'),
-    path('api/all-policies/frameworks/<int:framework_id>/versions/', all_policies_get_framework_versions, name='all-policies-framework-versions'),
-    path('api/all-policies/framework-versions/<int:version_id>/policies/', all_policies_get_framework_version_policies, name='all-policies-framework-version-policies'),
-    path('api/all-policies/policies/', all_policies_get_policies, name='all-policies-policies'),
-    path('api/all-policies/policies/<int:policy_id>/versions/', all_policies_get_policy_versions, name='all-policies-policy-versions'),
-    path('api/all-policies/subpolicies/', all_policies_get_subpolicies, name='all-policies-subpolicies'),
-    path('api/all-policies/policy-versions/<int:version_id>/subpolicies/', all_policies_get_policy_version_subpolicies, name='all-policies-policy-version-subpolicies'),
-    path('api/all-policies/subpolicies/<int:subpolicy_id>/', all_policies_get_subpolicy_details, name='all-policies-subpolicy-details'),
-    path('api/policy-dashboard/', get_policy_dashboard_summary),
-    path('api/policy-status-distribution/', get_policy_status_distribution),
-    path('api/reviewer-workload/', get_reviewer_workload),
-    path('api/recent-policy-activity/', get_recent_policy_activity),
-    path('api/avg-policy-approval-time/', get_avg_policy_approval_time),
-    path('api/policy-analytics/', get_policy_analytics, name='policy-analytics'),
-    path('policy-analytics/', get_policy_analytics),
-    path('api/policy-kpis/', get_policy_kpis),    
-    path('api/acknowledge-policy/<int:policy_id>/', acknowledge_policy, name='acknowledge-policy'),      
-    path('api/frameworks/<int:framework_id>/get-policies/', get_policies_by_framework, name='get-policies-by-framework'),
-    path('api/policies/<int:policy_id>/get-subpolicies/', get_subpolicies_by_policy, name='get-subpolicies-by-policy'),
-    path('api/policies/<int:policy_id>/version/', get_policy_version, name='get-policy-version'),
-    path('api/subpolicies/<int:subpolicy_id>/version/', get_subpolicy_version, name='get-subpolicy-version'),
-    path('api/policy-approvals/latest/<int:policy_id>/', get_latest_policy_approval, name='get-latest-policy-approval'),
-    path('api/policy-approvals/latest-by-role/<int:policy_id>/<str:role>/', get_latest_policy_approval_by_role, name='get-latest-policy-approval-by-role'),
-    path('api/policies/<int:policy_id>/reviewer-version/', get_latest_reviewer_version, name='get-policy-reviewer-version'),
-    path('api/policies/<int:policy_id>/submit-review/', submit_policy_approval_review, name='submit-policy-approval-review'),
-    path('api/policies/<int:policy_id>/version-history/', get_policy_version_history, name='get-policy-version-history'),
-    path('api/frameworks/<int:framework_id>/create-approval/', create_framework_approval, name='create-framework-approval'),
-    path('api/framework-approvals/', get_framework_approvals, name='get-framework-approvals'),
-    path('api/framework-approvals/<int:framework_id>/', get_framework_approvals, name='get-framework-approvals-by-id'),
-    path('api/framework-approvals/<int:approval_id>/update/', update_framework_approval, name='update-framework-approval'),
-    path('api/frameworks/<int:framework_id>/submit-review/', submit_framework_review, name='submit-framework-review'),
-    path('api/framework-approvals/latest/<int:framework_id>/', get_latest_framework_approval, name='get-latest-framework-approval'),
-    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework'),
+    # Data endpoints for assignment
+    path('assign-data/', get_assign_data, name='get_assign_data'),
+    
+    # Policy allocation endpoint
+    path('allocate-policy/', views.allocate_policy, name='allocate_policy'),
 
-    path('incidents/', list_incidents, name='list-incidents'),
-    path('api/incidents/', list_incidents, name='api-list-incidents'),
-    path('incident/create/', create_incident, name='create-incident-singular'),
-    path('incident/schedule-manual/', schedule_manual_incident, name='schedule_manual_incident'),
-    path('incident/reject/', reject_incident, name='reject_incident'),
-    path('incidents/create/', create_incident, name='create-incident'),
-    path('incident/from-audit-finding/', create_incident_from_audit_finding, name='incident_from_audit_finding'),
-    path('api/incident/mttd/', incident_mttd, name='incident-mttd'),
-    path('api/incident/mttr/', incident_mttr, name='incident_mttr'),
-    path('api/incident/mttc/',incident_mttc, name='incident-mttc'),
-    path('api/incident/mttrv/',incident_mttrv, name='incident-mttrv'),
-    path('api/incident/first-response-time/', first_response_time, name='first-response-time'),
-    path('api/incident/incident-volume/', incident_volume, name='incident-volume'),
-    path('api/incident/escalation-rate/', escalation_rate, name='escalation-rate'),
-    path('api/incident/repeat-rate/', repeat_rate, name='repeat-rate'),
-    path('api/incident/metrics/', incident_metrics, name='incident-metrics'),
-    path('api/incidents/counts/', get_incident_counts, name='incident-counts'),
-    path('api/incident/count/', incident_count, name='incident-count'),
-    path('api/incident/by-severity/', incidents_by_severity, name='incidents-by-severity'),
-    path('api/incident/root-causes/', incident_root_causes, name='incident-root-causes'),
-    path('api/incident/origins/', incident_origins, name='incident-origins'),
-    path('api/incident/types/', incident_types, name='incident-types'),
-    path('api/incident/incident-cost/', incident_cost, name='incident-cost'),
-    path('api/incident/cost/', incident_cost, name='incident-cost-alt'),
-    path('api/incident/reopened-count/', incident_reopened_count, name='incident-reopened-count'),
-    path('api/incident/false-positive-rate/', false_positive_rate, name='false-positive-rate'),
-    path('api/incident/detection-accuracy/', detection_accuracy, name='detection-accuracy'),
-    path('api/incident/incident-closure-rate/', incident_closure_rate, name='incident-closure-rate'),
-    path('incidents/<int:incident_id>/status/', update_incident_status, name='update-incident-status'),
-    path('api/policy/rejected/<int:user_id>/', get_rejected_policies_for_user),
-    path('api/policy/resubmit/<int:approval_id>/', resubmit_rejected_policy),
+    # Audit endpoints
+    path('audits/', views.get_all_audits, name='get_all_audits'),
+    path('my-audits/', views.get_my_audits, name='get_my_audits'),
+    path('my-reviews/', views.get_my_reviews, name='get_my_reviews'),
+    path('audits/<int:audit_id>/', views.get_audit_details, name='get_audit_details'),
+    path('audits/<int:audit_id>/status/', views.update_audit_status, name='update_audit_status'),
+    path('audits/<int:audit_id>/review-status/', views.update_review_status, name='update_review_status'),
+    path('audits/<int:audit_id>/get-status/', views.get_audit_status, name='get_audit_status'),
+    path('audits/<int:audit_id>/compliances/', views.get_audit_compliances, name='get_audit_compliances'),
+    path('audits/<int:audit_id>/submit/', views.submit_audit_findings, name='submit_audit_findings'),
+    
+    # Audit Version endpoints
+    path('audits/<int:audit_id>/versions/', views.get_audit_versions, name='get_audit_versions'),
+    path('audits/<int:audit_id>/versions/<str:version>/', views.get_audit_version_details, name='get_audit_version_details'),
+    path('audits/<int:audit_id>/check-version/', views.check_audit_version, name='check_audit_version'),
+    
+    # New endpoint for saving audit JSON to version table
+    path('audits/<int:audit_id>/save-audit-version/', save_audit_json_version, name='save_audit_json_version'),
+    
+    # Audit Finding endpoints
+    path('audit-findings/<int:compliance_id>/', views.update_audit_finding, name='update_audit_finding'),
+    path('audit-findings/<int:compliance_id>/upload-evidence/', views.upload_evidence, name='upload_evidence'),
+    
+    # Compliance endpoints
+    path('compliance/', views.get_all_compliance, name='get_all_compliance'),
+    path('subpolicies/<int:subpolicy_id>/compliance/', views.get_compliance_by_subpolicy, name='get_compliance_by_subpolicy'),
+    
+    # New endpoint for adding compliance items in audit context
+    path('audits/<int:audit_id>/add-compliance/', add_compliance_to_audit, name='add_compliance_to_audit'),
+    
+    # Migration helper endpoints
+    path('add-majorminor-column/', views.add_majorminor_column, name='add_majorminor_column'),
+    
+    # Fixed subpolicy version field
+    path('fix-subpolicy-version/', views.fix_subpolicy_version_field, name='fix_subpolicy_version_field'),
+    path('fix-audit-table/', views.fix_audit_table, name='fix_audit_table'),
 
+    # Endpoint for saving review progress
+    path('audits/<int:audit_id>/save-review/', save_review_progress, name='save_review_progress'),
+
+    # New endpoint for loading review data
+    path('audits/<int:audit_id>/load-review/', load_review_data, name='load_review_data'),
+    
+    # Endpoint for loading latest review version data regardless of prefix (A or R)
+    path('audits/<int:audit_id>/load-latest-review-version/', load_latest_review_version, name='load_latest_review_version'),
+    
+    # Endpoint for loading continuing data for auditors after reviewer feedback
+    path('audits/<int:audit_id>/load-continuing-data/', load_continuing_data, name='load_continuing_data'),
+    
+    # Alias for load-continuing-data for consistency with frontend API call
+    path('audits/<int:audit_id>/load-audit-continuing-data/', load_audit_continuing_data, name='load_audit_continuing_data'),
+
+    # Add this to urlpatterns
+    path('audits/<int:audit_id>/debug-status-transition/', views.debug_audit_status_transition, name='debug_audit_status_transition'),
+
+    # New debug endpoint
+    path('debug/audit-version-schema/', views.debug_audit_version_schema, name='debug_audit_version_schema'),
+
+    # New debug endpoint for checking audit versions
+    path('debug/audit-versions/<int:audit_id>/', views.debug_audit_versions, name='debug_audit_versions'),
+
+    # New endpoint for generating and downloading audit report - using the simplified version
+    path('generate-audit-report/<int:audit_id>/', report_views.generate_audit_report, name='generate-audit-report'),
+    
+    # Audit Reports endpoints
+    path('audit-reports/', audit_report_views.get_audit_reports, name='get_audit_reports'),
+    path('audit-reports/<int:audit_id>/versions/', audit_report_views.get_audit_report_versions, name='get_audit_report_versions'),
+    path('audit-reports/<int:audit_id>/versions/<str:version>/delete/', audit_report_views.delete_audit_report_version, name='delete_audit_report_version'),
+    path('audit-reports/<int:audit_id>/versions/<str:version>/s3-link/', audit_report_views.get_audit_report_s3_link, name='get_audit_report_s3_link'),
+    path('audit-reports/check/', audit_report_handlers.check_audit_reports, name='check_audit_reports'),
+    path('audit-reports/details/', audit_report_handlers.get_report_details, name='get_report_details'),
+    
+    # KPI endpoints
+    path('kpi/audit-completion/', kpi_functions.get_audit_completion_kpi, name='get_audit_completion_kpi'),
+    path('kpi/audit-completion-trend/', kpi_functions.get_audit_completion_trend, name='get_audit_completion_trend'),
 ]
-
-
-
-

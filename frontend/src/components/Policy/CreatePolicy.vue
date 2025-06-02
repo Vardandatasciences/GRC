@@ -1,1363 +1,2000 @@
 <template>
   <div class="create-policy-container">
-    <!-- Loading Overlay -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Loading...</p>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="error-message">
-      {{ error }}
-      <button class="close-btn" @click="error = null">✕</button>
-    </div>
-
-    <!-- Policy Form Section -->
-    <div v-if="!showApprovalForm">
-      <h2>Create New Policy</h2>
-     
-      <!-- Framework Selection - Show only when no framework is selected -->
-      <div class="framework-policy-row" v-if="!selectedFramework || showFrameworkForm">
-        <div class="framework-policy-selects">
-          <div>
-            <label>Framework</label>
-            <select v-model="selectedFramework" style="font-size: 0.9rem" :disabled="loading">
-              <option value="">Select</option>
-              <option value="create">+ Create New Framework</option>
-              <option v-for="f in frameworks" :key="f.id" :value="f.id">{{ f.name }}</option>
-            </select>
-          </div>
-        </div>
+    <h2>Create New Policy</h2>
+    
+    <!-- Search Bar and Create Policy Button -->
+    <div class="search-bar">
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          placeholder="Search Policy..." 
+        />
       </div>
-
-      <!-- Framework Creation Form -->
-      <div v-if="showFrameworkForm" class="framework-form-container">
-        <div class="framework-form">
-          <div class="form-row">
-            <div class="form-group policy-name">
-              <label>Framework Name</label>
-              <div class="input-with-icon">
-                <i class="fas fa-file-alt"></i>
-                <input
-                  type="text"
-                  placeholder="Enter Framework name"
-                  v-model="newFramework.FrameworkName"
-                  style="text-align: left !important;"
-                />
-              </div>
-            </div>
-            <div class="form-group created-by">
-              <label>Created By</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user"></i>
-                <select v-model="newFramework.CreatedByName">
-                  <option value="">Select Creator</option>
-                  <option v-for="user in users" :key="user.UserId" :value="user.UserName">
-                    {{ user.UserName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row single-column">
-            <div class="form-group description">
-              <label>Description</label>
-              <div class="input-with-icon">
-                <i class="fas fa-align-left"></i>
-                <textarea
-                  placeholder="Enter framework description"
-                  v-model="newFramework.FrameworkDescription"
-                  rows="3"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group version">
-              <label>Identifier</label>
-              <div class="input-with-icon">
-                <i class="fas fa-code-branch"></i>
-                <input
-                  type="text"
-                  placeholder="Enter Identifier"
-                  v-model="newFramework.Version"
-                />
-              </div>
-            </div>
-            <div class="form-group category">
-              <label>Category</label>
-              <div class="input-with-icon">
-                <i class="fas fa-tag"></i>
-                <input
-                  type="text"
-                  placeholder="Enter category"
-                  v-model="newFramework.Category"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group date">
-              <label>Effective Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.EffectiveDate"
-                />
-              </div>
-            </div>
-            <div class="form-group date">
-              <label>Effective Start Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.StartDate"
-                />
-              </div>
-            </div>
-            <div class="form-group date">
-              <label>Effective End Date</label>
-              <div class="input-with-icon">
-                <i class="fas fa-calendar"></i>
-                <input
-                  type="date"
-                  v-model="newFramework.EndDate"
-                />
-              </div>
-            </div>
-            <div class="form-group upload">
-              <label>Upload Document</label>
-              <div class="input-with-icon">
-                <i class="fas fa-file-upload"></i>
-                <span>Choose File</span>
-                <button class="browse-btn">Browse</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group reviewer">
-              <label>Reviewer</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user-check"></i>
-                <select v-model="newFramework.Reviewer">
-                  <option value="">Select Reviewer</option>
-                  <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                    {{ user.UserName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="submit-btn" @click="handleCreateFramework">Submit</button>
-            <button class="cancel-btn" @click="showFrameworkForm = false">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Policy Actions - Show when framework is selected -->
-      <div v-if="selectedFramework && !showFrameworkForm" class="policy-actions-container">
-        <div class="selected-framework-info">
-          <span>Selected Framework: {{ getSelectedFrameworkName() }}</span>
-          <button class="change-framework-btn" @click="handleChangeFramework">
-            <i class="fas fa-exchange-alt"></i> Change Framework
-          </button>
-        </div>
-        <button
-          class="add-policy-btn"
-          @click="handleAddPolicy"
-          :disabled="loading"
-          style="font-size: 0.9rem"
-        >
-          <i class="fas fa-plus"></i> Add Policy
+      <div class="button-group">
+        <button class="create-framework-btn" @click="isFrameworkFormVisible = true">
+          <i class="fas fa-plus icon"></i> Create Framework
+        </button>
+        <button class="create-policy-btn" @click="toggleForm">
+          <i class="fas fa-plus icon"></i> Create Policy
         </button>
       </div>
+    </div>
 
-      <!-- Policies and Subpolicies Grid -->
-      <div class="policy-rows">
-        <div v-for="(policy, idx) in policiesForm" :key="idx" class="policy-row">
-          <!-- Policy Card -->
-          <div class="policy-card">
-            <div class="policy-card-header">
-              <b style="font-size: 0.95rem">{{ policy.PolicyName || `Policy ${idx + 1}` }}</b>
-              <button class="remove-btn" @click="handleRemovePolicy(idx)" title="Remove Policy">✕</button>
-            </div>
-           
-            <!-- Policy Card Fields -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Policy Name</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-file-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy name"
-                    v-model="policy.PolicyName"
-                    @input="handlePolicyChange(idx, 'PolicyName', $event.target.value)"
-                  />
+    <!-- Framework Dropdown -->
+    <div class="framework-dropdown">
+      <select v-model="selectedFramework" @change="handleFrameworkChange">
+        <option value="ISO 27001">ISO 27001</option>
+        <option value="NIST">NIST</option>
+      </select>
+    </div>
+    
+    <!-- Policy Table -->
+    <div class="policy-list-container">
+      <table class="policy-table">
+        <thead>
+          <tr>
+            <th>Policy Name</th>
+            <th>Version</th>
+            <th>Category</th>
+            <th>Framework</th>
+            <th>Status</th>
+            <th>Created By</th>
+            <th>Authorized By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="policy in paginatedPolicies" :key="`${policy.name}-${policy.version}`">
+            <!-- Main Policy Row -->
+            <tr class="main-policy-row">
+              <td>{{ policy.name }}</td>
+              <td>
+                <div class="version-dropdown">
+                  <select
+                    :value="selectedVersions[policy.name]"
+                    @change="handleVersionChange(policy.name, $event.target.value)"
+                  >
+                    <option 
+                      v-for="version in groupedPolicies[policy.name]" 
+                      :key="version.version" 
+                      :value="version.version"
+                    >
+                      {{ version.version }}
+                    </option>
+                  </select>
+                  <i class="fas fa-chevron-down dropdown-icon"></i>
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Policy Identifier</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-fingerprint"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy identifier"
-                    v-model="policy.Identifier"
-                    @input="handlePolicyChange(idx, 'Identifier', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
+              </td>
+              <td>{{ policy.category }}</td>
+              <td>{{ policy.framework }}</td>
+              <td>
+                <span :class="['status-badge', `status-${policy.status.toLowerCase().replace(' ', '-')}`]">
+                  {{ policy.status }}
+                </span>
+              </td>
+              <td>{{ policy.createdBy }}</td>
+              <td>{{ policy.authorizedBy }}</td>
+            </tr>
+            <!-- Subpolicies Rows -->
+            <tr 
+              v-for="(subPolicy, index) in policy.subPolicies" 
+              :key="`${subPolicy.id}-${index}`" 
+              class="sub-policy-row"
+            >
+              <td class="sub-policy-cell">
+                <div class="sub-policy-indicator"></div>
+                {{ subPolicy.name }}
+              </td>
+              <td>{{ subPolicy.version }}</td>
+              <td>{{ policy.category }}</td>
+              <td>{{ policy.framework }}</td>
+              <td>
+                <span :class="['status-badge', `status-${subPolicy.status.toLowerCase().replace(' ', '-')}`]">
+                  {{ subPolicy.status }}
+                </span>
+              </td>
+              <td>{{ subPolicy.createdBy }}</td>
+              <td>{{ subPolicy.authorizedBy }}</td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-            <!-- Description -->
-            <div class="form-group description">
-              <label>Description</label>
-              <div class="input-with-icon">
-                <i class="fas fa-align-left"></i>
-                <textarea
-                  placeholder="Enter policy description"
-                  v-model="policy.PolicyDescription"
-                  @input="handlePolicyChange(idx, 'PolicyDescription', $event.target.value)"
-                  rows="3"
-                ></textarea>
+    <!-- Pagination -->
+    <div class="policy-pagination">
+      <span>{{ indexOfFirstPolicy + 1 }} - {{ Math.min(indexOfLastPolicy, currentPolicies.length) }} of {{ currentPolicies.length }}</span>
+      <div>
+        <button @click="prevPage" :disabled="currentPage === 1">Prev</button>
+        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+      </div>
+    </div>
+
+    <!-- Create Policy Form Popup -->
+    <div v-if="isFormVisible" class="form-popup">
+      <div class="form-container form-scrollable">
+        <div class="form-header">
+          <h3 style="font-size: 1rem">Control Info</h3>
+          <button @click="toggleForm">X</button>
+        </div>
+        <div class="form-body policy-grid-body">
+          <!-- Framework and Policy Selection -->
+          <div class="framework-policy-row">
+            <div class="framework-policy-selects">
+              <div>
+                <label>Frame work</label>
+                <select v-model="selectedFramework" style="font-size: 0.9rem">
+                  <option value="">Select</option>
+                  <option v-for="f in frameworks" :key="f.id" :value="f.id">{{ f.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label>Policy</label>
+                <select 
+                  v-model="selectedPolicy" 
+                  @change="handleSelectPolicy" 
+                  :disabled="!selectedFramework" 
+                  style="font-size: 0.9rem"
+                >
+                  <option value="">Select</option>
+                  <option v-for="p in frameworkPolicies" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+              </div>
+              <button 
+                class="add-policy-btn" 
+                @click="handleAddPolicy" 
+                :disabled="!selectedFramework" 
+                style="font-size: 0.9rem"
+              >
+                <i class="fas fa-plus"></i> Add Policy
+              </button>
+            </div>
+          </div>
+
+          <!-- Policies and Subpolicies Grid -->
+          <div class="policy-rows">
+            <div v-for="(policy, idx) in policiesForm" :key="idx" class="policy-row">
+              <!-- Policy Card -->
+              <div class="policy-card">
+                <div class="policy-card-header">
+                  <b style="font-size: 0.95rem">{{ policy.policyName || `Policy ${idx + 1}` }}</b>
+                  <button class="remove-btn" @click="handleRemovePolicy(idx)" title="Remove Policy">✕</button>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Policy Name" 
+                  v-model="policy.policyName" 
+                  @input="handlePolicyChange(idx, 'policyName', $event.target.value)" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Category" 
+                  v-model="policy.category" 
+                  @input="handlePolicyChange(idx, 'category', $event.target.value)" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Version" 
+                  v-model="policy.version" 
+                  @input="handlePolicyChange(idx, 'version', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Effective Start date" 
+                  v-model="policy.effectiveStartDate" 
+                  @input="handlePolicyChange(idx, 'effectiveStartDate', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Effective End Date" 
+                  v-model="policy.effectiveEndDate" 
+                  @input="handlePolicyChange(idx, 'effectiveEndDate', $event.target.value)" 
+                />
+                <input 
+                  type="date" 
+                  placeholder="Created at" 
+                  v-model="policy.createdAt" 
+                  @input="handlePolicyChange(idx, 'createdAt', $event.target.value)" 
+                />
+                <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+
+                <!-- Add details -->
+                <div class="form-section form-subsection">
+                  <div class="form-subsection-header">
+                    <span>Add details</span>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Title" 
+                    v-model="policy.details.title" 
+                    @input="handlePolicyDetailsChange(idx, 'title', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Introduction" 
+                    v-model="policy.details.introduction" 
+                    @input="handlePolicyDetailsChange(idx, 'introduction', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Objectives" 
+                    v-model="policy.details.objectives" 
+                    @input="handlePolicyDetailsChange(idx, 'objectives', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Scope" 
+                    v-model="policy.details.scope" 
+                    @input="handlePolicyDetailsChange(idx, 'scope', $event.target.value)" 
+                  />
+                </div>
+
+                <!-- Request Approvals -->
+                <div class="form-section form-subsection">
+                  <label><b>Request Approvals</b></label>
+                  <input 
+                    type="text" 
+                    placeholder="Title" 
+                    v-model="policy.approvals.title" 
+                    @input="handlePolicyApprovalsChange(idx, 'title', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Description" 
+                    v-model="policy.approvals.description" 
+                    @input="handlePolicyApprovalsChange(idx, 'description', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Author" 
+                    v-model="policy.approvals.author" 
+                    @input="handlePolicyApprovalsChange(idx, 'author', $event.target.value)" 
+                  />
+                  <input 
+                    type="date" 
+                    placeholder="Due Date" 
+                    v-model="policy.approvals.dueDate" 
+                    @input="handlePolicyApprovalsChange(idx, 'dueDate', $event.target.value)" 
+                  />
+                </div>
+                <button class="add-sub-policy-btn" @click="handleAddSubPolicy(idx)">
+                  <i class="fas fa-plus"></i> Add Sub Policy
+                </button>
+              </div>
+
+              <!-- Subpolicies Cards -->
+              <div class="subpolicies-row">
+                <div v-for="(sub, subIdx) in policy.subPolicies" :key="subIdx" class="subpolicy-card">
+                  <div class="policy-card-header">
+                    <b style="font-size: 0.9rem">{{ sub.policyName || `Sub Policy ${subIdx + 1}` }}</b>
+                    <button class="remove-btn" @click="handleRemoveSubPolicy(idx, subIdx)" title="Remove Sub Policy">✕</button>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Policy Name" 
+                    v-model="sub.policyName" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'policyName', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Version" 
+                    v-model="sub.version" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'version', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Sub policy" 
+                    v-model="sub.subPolicy" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'subPolicy', $event.target.value)" 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Created By" 
+                    v-model="sub.createdBy" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'createdBy', $event.target.value)" 
+                  />
+                  <input 
+                    type="date" 
+                    placeholder="Created Date" 
+                    v-model="sub.createdDate" 
+                    @input="handleSubPolicyChange(idx, subIdx, 'createdDate', $event.target.value)" 
+                  />
+                  <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+
+                  <!-- Add details -->
+                  <div class="form-section form-subsection">
+                    <div class="form-subsection-header">
+                      <span>Add details</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="Title" 
+                      v-model="sub.details.title" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'title', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Introduction" 
+                      v-model="sub.details.introduction" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'introduction', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Objective" 
+                      v-model="sub.details.objective" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'objective', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Scope" 
+                      v-model="sub.details.scope" 
+                      @input="handleSubPolicyDetailsChange(idx, subIdx, 'scope', $event.target.value)" 
+                    />
+                  </div>
+
+                  <!-- Request Approvals -->
+                  <div class="form-section form-subsection">
+                    <label><b>Request Approvals</b></label>
+                    <input 
+                      type="text" 
+                      placeholder="Title" 
+                      v-model="sub.approvals.title" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'title', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Description" 
+                      v-model="sub.approvals.description" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'description', $event.target.value)" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Author" 
+                      v-model="sub.approvals.author" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'author', $event.target.value)" 
+                    />
+                    <input 
+                      type="date" 
+                      placeholder="Due Date" 
+                      v-model="sub.approvals.dueDate" 
+                      @input="handleSubPolicyApprovalsChange(idx, subIdx, 'dueDate', $event.target.value)" 
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+          <button class="create-btn" style="font-size: 1rem; margin-top: 24px">Submit</button>
+        </div>
+      </div>
+    </div>
 
-            <!-- Scope and Department -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Scope</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-bullseye"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter policy scope"
-                    v-model="policy.Scope"
-                    @input="handlePolicyChange(idx, 'Scope', $event.target.value)"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Department</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-building"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter department"
-                    v-model="policy.Department"
-                    @input="handlePolicyChange(idx, 'Department', $event.target.value)"
-                  />
-                </div>
+    <!-- Create Framework Form Popup -->
+    <div v-if="isFrameworkFormVisible" class="form-popup framework-form">
+      <div class="form-container">
+        <div class="form-header">
+          <h3>Create Framework</h3>
+          <button @click="isFrameworkFormVisible = false">X</button>
+        </div>
+        <div class="form-body">
+          <form class="form-section" @submit.prevent="handleFrameworkFormSubmit">
+            <div class="form-group">
+              <label>Framework ID</label>
+              <input type="text" placeholder="Enter framework id" />
+            </div>
+            
+            <div class="form-group">
+              <label>Framework Name</label>
+              <input type="text" placeholder="Enter framework name" />
+            </div>
+            
+            <div class="form-group">
+              <label>Version</label>
+              <input type="text" placeholder="Enter version" />
+            </div>
+            
+            <div class="form-group">
+              <label>Upload Document</label>
+              <div class="upload-input-container">
+                <input type="file" id="framework-doc" class="file-input" />
+                <label for="framework-doc" class="upload-label">
+                  <span class="upload-text">Choose File</span>
+                </label>
               </div>
             </div>
+            
+            <div class="form-group">
+              <label>Effective Start Date</label>
+              <input type="date" />
+            </div>
+            
+            <div class="form-group">
+              <label>Effective End Date</label>
+              <input type="date" />
+            </div>
+            
+            <div class="form-group">
+              <label>Created By</label>
+              <input type="text" placeholder="Enter creator name" />
+            </div>
+            <button class="create-btn" type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
 
-            <!-- Objective and Applicability -->
-            <div class="policy-form-row objective-applicability-row">
-              <div class="form-group">
-                <label>Objective</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-bullseye"></i>
-                  <textarea
-                    placeholder="Enter policy objective"
-                    v-model="policy.Objective"
-                    @input="handlePolicyChange(idx, 'Objective', $event.target.value)"
-                    rows="3"
-                  ></textarea>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Applicability</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-users"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter applicability"
-                    v-model="policy.Applicability"
-                    @input="handlePolicyChange(idx, 'Applicability', $event.target.value)"
-                  />
-                </div>
+    <!-- Extraction Screens Popup -->
+    <div v-if="showExtractionScreens && extractionSlides.length > 0" class="extraction-popup-overlay">
+      <div class="extraction-popup">
+        <div class="form-header extraction-header" style="padding-bottom: 0">
+          <!-- Stepper Navigation Bar as Tabs -->
+          <div class="extraction-stepper">
+            <div
+              v-for="(slide, idx) in extractionSlides"
+              :key="idx"
+              :class="['extraction-step', { active: extractionStep === idx }]"
+              @click="extractionStep = idx"
+              :style="{ cursor: extractionStep !== idx ? 'pointer' : 'default' }"
+            >
+              {{ slide.type === 'framework' ? 'Framework' : 
+                 slide.type === 'policy' ? `Policy ${slide.index !== undefined ? slide.index + 1 : ''}` : 
+                 'Authorizer' }}
+              <span
+                class="tab-close"
+                v-if="extractionStep === idx"
+                @click.stop="showExtractionScreens = false"
+              >
+                X
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="form-body extraction-body">
+          <!-- Render slide content based on type -->
+          <div v-if="extractionSlides[extractionStep].type === 'framework'">
+            <label>Title:</label>
+            <input :value="extractionSlides[extractionStep].data.title" readonly />
+            <label>Description:</label>
+            <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+          </div>
+          <div v-else-if="extractionSlides[extractionStep].type === 'policy'">
+            <div class="policy-main">
+              <b>Policy</b>
+              <label>Title:</label>
+              <input :value="extractionSlides[extractionStep].data.title" readonly />
+              <label>Description:</label>
+              <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+              <label v-if="extractionSlides[extractionStep].data.objective">Objective:</label>
+              <textarea v-if="extractionSlides[extractionStep].data.objective" :value="extractionSlides[extractionStep].data.objective" readonly></textarea>
+              <label v-if="extractionSlides[extractionStep].data.scope">Scope:</label>
+              <textarea v-if="extractionSlides[extractionStep].data.scope" :value="extractionSlides[extractionStep].data.scope" readonly></textarea>
+            </div>
+            <div v-if="extractionSlides[extractionStep].data.subPolicies && extractionSlides[extractionStep].data.subPolicies.length" class="subpolicies-group">
+              <div v-for="(sub, i) in extractionSlides[extractionStep].data.subPolicies" :key="i" class="subpolicy-card extraction-subpolicy">
+                <b>Sub Policy {{ i + 1 }}</b>
+                <label>Title:</label>
+                <input :value="sub.title" readonly />
+                <label>Description:</label>
+                <textarea :value="sub.description" readonly></textarea>
               </div>
             </div>
-
-            <!-- Coverage Rate -->
-            <div class="policy-form-row">
-              <div class="form-group">
-                <label>Coverage Rate (%)</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-percentage"></i>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    placeholder="Enter coverage rate"
-                    v-model="policy.CoverageRate"
-                    @input="handlePolicyChange(idx, 'CoverageRate', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Start and End Date -->
-            <div class="policy-form-row date-row">
-              <div class="form-group">
-                <label>Start Date</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-calendar-alt"></i>
-                  <input
-                    type="date"
-                    v-model="policy.StartDate"
-                    @input="handlePolicyChange(idx, 'StartDate', $event.target.value)"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>End Date</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-calendar-alt"></i>
-                  <input
-                    type="date"
-                    v-model="policy.EndDate"
-                    @input="handlePolicyChange(idx, 'EndDate', $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
-            <button class="add-sub-policy-btn" @click="handleAddSubPolicy(idx)">
-              <i class="fas fa-plus"></i> Add Sub Policy
+          </div>
+          <div v-else-if="extractionSlides[extractionStep].type === 'authorizer'">
+            <label>Title:</label>
+            <input :value="extractionSlides[extractionStep].data.title" readonly />
+            <label>Description:</label>
+            <textarea :value="extractionSlides[extractionStep].data.description" readonly></textarea>
+            <label>Created By:</label>
+            <input :value="extractionSlides[extractionStep].data.createdBy" readonly />
+            <label>Created date:</label>
+            <input :value="extractionSlides[extractionStep].data.createdDate" readonly />
+            <label>Authorized By:</label>
+            <input :value="extractionSlides[extractionStep].data.authorizedBy" readonly />
+            <label>Assign task for authorization:</label>
+            <input :value="extractionSlides[extractionStep].data.assignTask" readonly />
+          </div>
+          <div style="text-align: right; margin-top: 24px">
+            <button
+              v-if="extractionStep < extractionSlides.length - 1"
+              class="create-btn"
+              style="min-width: 100px"
+              @click="extractionStep = extractionStep + 1"
+            >
+              next &gt;
+            </button>
+            <button
+              v-else
+              class="create-btn"
+              style="min-width: 100px"
+              @click="showExtractionScreens = false"
+            >
+              Done
             </button>
           </div>
- 
-          <!-- Subpolicies Cards -->
-          <div class="subpolicies-row">
-            <div v-for="(sub, subIdx) in policy.subpolicies" :key="subIdx" class="subpolicy-card">
-              <div class="policy-card-header">
-                <b style="font-size: 0.9rem">{{ sub.SubPolicyName || `Sub Policy ${subIdx + 1}` }}</b>
-                <button class="remove-btn" @click="handleRemoveSubPolicy(idx, subIdx)" title="Remove Sub Policy">✕</button>
-              </div>
- 
-              <!-- Sub Policy Card Fields -->
-              <div class="form-group">
-                <label>Sub Policy Name</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-file-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter sub policy name"
-                    v-model="sub.SubPolicyName"
-                    @input="handleSubPolicyChange(idx, subIdx, 'SubPolicyName', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Identifier</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-fingerprint"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter identifier"
-                    v-model="sub.Identifier"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Identifier', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Control</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-shield-alt"></i>
-                  <input
-                    type="text"
-                    placeholder="Enter control"
-                    v-model="sub.Control"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Control', $event.target.value)"
-                  />
-                </div>
-              </div>
- 
-              <div class="form-group">
-                <label>Description</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-align-left"></i>
-                  <textarea
-                    placeholder="Enter description"
-                    v-model="sub.Description"
-                    @input="handleSubPolicyChange(idx, subIdx, 'Description', $event.target.value)"
-                    rows="3"
-                  ></textarea>
-                </div>
-              </div>
- 
-              <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="form-actions" v-if="policiesForm.length > 0">
-        <button 
-          class="create-btn" 
-          @click="handleSubmitPolicy" 
-          :disabled="loading"
-          style="font-size: 1rem; margin-top: 24px"
-        >
-          {{ loading ? 'Submitting...' : 'Submit' }}
-        </button>
-      </div>
-    </div>
- 
-    <!-- Approval Form Section -->
-    <div v-else class="approval-section">
-      <div class="approval-header">
-        <h2>Request Approvals</h2>
-        <button class="back-btn" @click="showApprovalForm = false">
-          <i class="fas fa-arrow-left"></i> Back to Policy Form
-        </button>
-      </div>
-     
-      <div class="approval-form-container">
-        <div class="approval-form">
-          <div class="form-group">
-            <label>Created By</label>
-            <select
-              v-model="approvalForm.createdBy"
-              :disabled="loading"
-            >
-              <option value="">Select Creator</option>
-              <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                {{ user.UserName }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Reviewer</label>
-            <select
-              v-model="approvalForm.reviewer"
-              :disabled="loading"
-            >
-              <option value="">Select Reviewer</option>
-              <option v-for="user in users" :key="user.UserId" :value="user.UserId">
-                {{ user.UserName }}
-              </option>
-            </select>
-          </div>
-          <button 
-            class="create-btn" 
-            @click="handleFinalSubmit"
-            :disabled="loading || !approvalForm.createdBy || !approvalForm.reviewer"
-          >
-            {{ loading ? 'Submitting...' : 'Submit' }}
-          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
- 
-<script>
-import { ref, watch, onMounted } from 'vue'
-import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
- 
+<script>
+import { ref, computed, onMounted } from 'vue'
+import frameworkSample from '../../data/frameworkSample.json'
+
 export default {
   name: 'CreatePolicy',
   setup() {
+    const searchQuery = ref('')
+    const currentPage = ref(1)
+    const selectedVersions = ref({})
+    const isFormVisible = ref(false)
     const selectedFramework = ref('')
+    const selectedPolicy = ref('')
+    const isFrameworkFormVisible = ref(false)
+    const showExtractionScreens = ref(false)
+    const extractedData = ref(null)
+    const extractionStep = ref(0)
+    const extractionSlides = ref([])
     const policiesForm = ref([])
+    const frameworkPolicies = ref([])
     const selectedPolicyIdx = ref(null)
-    const showApprovalForm = ref(false)
-    const showFrameworkForm = ref(false)
-    const approvalForm = ref({
-      createdBy: '',
-      reviewer: ''
+
+    const policiesPerPage = 4
+
+    // Sample frameworks data
+    const frameworks = [
+      { id: 'iso27001', name: 'ISO 27001' },
+      { id: 'nist', name: 'NIST' },
+      { id: 'cobit', name: 'COBIT' }
+    ]
+
+    // Sample policies data
+    const policies = [
+      { 
+        id: 'HR-001', 
+        version: '1.0',
+        name: 'Employee Code of Conduct',
+        category: 'HR',
+        status: 'Active',
+        effectiveStartDate: '01/01/2024',
+        effectiveEndDate: '31/12/2024',
+        createdBy: 'John Doe',
+        authorizedBy: 'Jane Smith',
+        framework: 'ISO 27001',
+        subPolicies: [
+          {
+            id: 'HR-001-SP1',
+            name: 'Dress Code Policy',
+            version: '1.0',
+            status: 'Active',
+            effectiveStartDate: '01/01/2024',
+            effectiveEndDate: '31/12/2024',
+            createdBy: 'John Doe',
+            authorizedBy: 'Jane Smith'
+          },
+          {
+            id: 'HR-001-SP2',
+            name: 'Workplace Behavior Policy',
+            version: '1.0',
+            status: 'Active',
+            effectiveStartDate: '01/01/2024',
+            effectiveEndDate: '31/12/2024',
+            createdBy: 'John Doe',
+            authorizedBy: 'Jane Smith'
+          }
+        ]
+      },
+      // ... other policies
+    ]
+
+    // Group policies by name
+    const groupedPolicies = computed(() => {
+      return policies.reduce((acc, policy) => {
+        if (!acc[policy.name]) {
+          acc[policy.name] = []
+        }
+        acc[policy.name].push(policy)
+        return acc
+      }, {})
     })
-    const frameworks = ref([])
-    const loading = ref(false)
-    const error = ref(null)
-    const users = ref([])
-    const frameworkFormData = ref(null)
- 
-    const newFramework = ref({
-      FrameworkName: '',
-      Identifier: '',
-      FrameworkDescription: '',
-      Category: '',
-      EffectiveDate: '',
-      StartDate: '',
-      EndDate: '',
-      CreatedByName: '',
-      DocURL: '',
-      Reviewer: ''
+
+    // Initialize selected versions
+    onMounted(() => {
+      const initialVersions = {}
+      Object.keys(groupedPolicies.value).forEach(name => {
+        if (groupedPolicies.value[name] && groupedPolicies.value[name].length > 0) {
+          initialVersions[name] = groupedPolicies.value[name][0].version
+        }
+      })
+      selectedVersions.value = initialVersions
     })
- 
-    // Fetch all frameworks on component mount
-    async function fetchFrameworks() {
-      try {
-        loading.value = true
-        const response = await axios.get(`${API_BASE_URL}/frameworks/`)
-        frameworks.value = response.data.map(fw => ({
-          id: fw.FrameworkId,
-          name: fw.FrameworkName
-        }))
-      } catch (err) {
-        console.error('Error fetching frameworks:', err)
-        error.value = 'Failed to fetch frameworks'
-      } finally {
-        loading.value = false
+
+    const handleVersionChange = (policyName, version) => {
+      selectedVersions.value = {
+        ...selectedVersions.value,
+        [policyName]: version
       }
     }
- 
-    // Watch for framework selection changes
-    watch(selectedFramework, (newValue) => {
-      if (newValue === 'create') {
-        showFrameworkForm.value = true
-        selectedFramework.value = ''
-      }
+
+    // Get current policies based on selected versions
+    const currentPolicies = computed(() => {
+      return Object.entries(groupedPolicies.value)
+        .filter(([name]) => name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+        .map(([name, versions]) => {
+          const selectedVersion = selectedVersions.value[name]
+          const policy = versions.find(v => v.version === selectedVersion)
+          return policy || versions[0]
+        })
+        .filter(Boolean)
     })
- 
-    const handleCreateFramework = async () => {
-      // Only store framework details in memory and move to add policy
-      error.value = null
-      frameworkFormData.value = { ...newFramework.value }
-      showFrameworkForm.value = false
-      // Add an initial empty policy
-      handleAddPolicy()
-      // Set selectedFramework to a dummy value to show the policy form
-      selectedFramework.value = '__new__'
-      // Reset the framework form
-      newFramework.value = {
-        FrameworkName: '',
-        Identifier: '',
-        FrameworkDescription: '',
-        Category: '',
-        EffectiveDate: '',
-        StartDate: '',
-        EndDate: '',
-        CreatedByName: '',
-        DocURL: '',
-        Reviewer: ''
-      }
+
+    // Pagination Logic
+    const indexOfLastPolicy = computed(() => currentPage.value * policiesPerPage)
+    const indexOfFirstPolicy = computed(() => indexOfLastPolicy.value - policiesPerPage)
+    const paginatedPolicies = computed(() => 
+      currentPolicies.value.slice(indexOfFirstPolicy.value, indexOfLastPolicy.value)
+    )
+    const totalPages = computed(() => 
+      Math.ceil(currentPolicies.value.length / policiesPerPage)
+    )
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) currentPage.value++
     }
- 
+
+    const prevPage = () => {
+      if (currentPage.value > 1) currentPage.value--
+    }
+
+    const toggleForm = () => {
+      isFormVisible.value = !isFormVisible.value
+    }
+
+    const handleFrameworkChange = (e) => {
+      selectedFramework.value = e.target.value
+    }
+
     // Policy form handlers
     const handleAddPolicy = () => {
       policiesForm.value.push({
-        PolicyName: '',
-        Identifier: '',
-        PolicyDescription: '',
-        Scope: '',
-        Objective: '',
-        Department: '',
-        Applicability: '',
-        StartDate: '',
-        EndDate: '',
-        CreatedByName: '',
-        DocURL: '',
-        subpolicies: []
+        policyName: '',
+        version: '',
+        category: '',
+        effectiveStartDate: '',
+        effectiveEndDate: '',
+        createdAt: '',
+        details: { title: '', introduction: '', objectives: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' },
+        subPolicies: []
       })
       selectedPolicyIdx.value = policiesForm.value.length - 1
     }
- 
+
+    const handleSelectPolicy = (e) => {
+      const policyName = e.target.value
+      if (!policyName) return
+      
+      if (policiesForm.value.some(p => p.policyName === policyName)) {
+        selectedPolicyIdx.value = policiesForm.value.findIndex(p => p.policyName === policyName)
+        return
+      }
+
+      const found = frameworkPolicies.value.find(p => p.name === policyName)
+      policiesForm.value.push({
+        policyName: found.name,
+        version: found.version,
+        category: '',
+        effectiveStartDate: '',
+        effectiveEndDate: '',
+        createdAt: '',
+        details: { title: '', introduction: '', objectives: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' },
+        subPolicies: []
+      })
+      selectedPolicyIdx.value = policiesForm.value.length - 1
+    }
+
     const handleRemovePolicy = (idx) => {
       policiesForm.value = policiesForm.value.filter((_, i) => i !== idx)
       selectedPolicyIdx.value = null
     }
- 
+
     const handlePolicyChange = (idx, field, value) => {
       policiesForm.value[idx][field] = value
     }
- 
+
+    const handlePolicyDetailsChange = (idx, field, value) => {
+      policiesForm.value[idx].details[field] = value
+    }
+
+    const handlePolicyApprovalsChange = (idx, field, value) => {
+      policiesForm.value[idx].approvals[field] = value
+    }
+
     const handleAddSubPolicy = (policyIdx) => {
-      policiesForm.value[policyIdx].subpolicies.push({
-        SubPolicyName: '',
-        Identifier: '',
-        Control: '',
-        Description: '',
-        CreatedByName: '',
-        PermanentTemporary: 'Permanent'
+      policiesForm.value[policyIdx].subPolicies.push({
+        policyName: '',
+        version: '',
+        subPolicy: '',
+        createdBy: '',
+        createdDate: '',
+        details: { title: '', introduction: '', objective: '', scope: '' },
+        approvals: { title: '', description: '', author: '', dueDate: '' }
       })
     }
- 
+
     const handleRemoveSubPolicy = (policyIdx, subIdx) => {
-      policiesForm.value[policyIdx].subpolicies =
-        policiesForm.value[policyIdx].subpolicies.filter((_, j) => j !== subIdx)
+      policiesForm.value[policyIdx].subPolicies = 
+        policiesForm.value[policyIdx].subPolicies.filter((_, j) => j !== subIdx)
     }
- 
+
     const handleSubPolicyChange = (policyIdx, subIdx, field, value) => {
-      policiesForm.value[policyIdx].subpolicies[subIdx][field] = value
+      policiesForm.value[policyIdx].subPolicies[subIdx][field] = value
     }
- 
-    const handleSubmitPolicy = () => {
-      showApprovalForm.value = true
+
+    const handleSubPolicyDetailsChange = (policyIdx, subIdx, field, value) => {
+      policiesForm.value[policyIdx].subPolicies[subIdx].details[field] = value
     }
- 
-    // Add this function to fetch users
-    async function fetchUsers() {
-      try {
-        loading.value = true
-        const response = await axios.get(`${API_BASE_URL}/users/`)
-        users.value = response.data
-      } catch (err) {
-        console.error('Error fetching users:', err)
-        error.value = 'Failed to fetch users'
-      } finally {
-        loading.value = false
+
+    const handleSubPolicyApprovalsChange = (policyIdx, subIdx, field, value) => {
+      policiesForm.value[policyIdx].subPolicies[subIdx].approvals[field] = value
+    }
+
+    // Framework form submit handler
+    const handleFrameworkFormSubmit = (e) => {
+      e.preventDefault()
+      // Build slides dynamically based on JSON structure
+      const slides = []
+      if (frameworkSample.framework) {
+        slides.push({
+          type: 'framework',
+          data: frameworkSample.framework
+        })
       }
-    }
-
-    const handleFinalSubmit = async () => {
-      try {
-        loading.value = true
-        error.value = null
-
-        // Only check framework fields if creating a new framework
-        const isCreatingNewFramework = selectedFramework.value === '__new__';
-        if (isCreatingNewFramework) {
-          if (!frameworkFormData.value || !frameworkFormData.value.FrameworkName) {
-            error.value = 'Please fill in all required framework fields.'
-            loading.value = false
-            return
-          }
-        }
-
-        // Find the selected creator and reviewer users
-        const creatorUser = users.value.find(u => u.UserId === approvalForm.value.createdBy)
-        const reviewerUser = users.value.find(u => u.UserId === approvalForm.value.reviewer)
-
-        if (!creatorUser) {
-          error.value = 'Please select a creator'
-          loading.value = false
-          return
-        }
-
-        // Validate required fields for each policy
-        for (const policy of policiesForm.value) {
-          if (!policy.PolicyName || !policy.Identifier || !policy.StartDate) {
-            error.value = 'Please fill in all required fields (Policy Name, Identifier, and Start Date) for all policies'
-            loading.value = false
-            return
-          }
-
-          // Set default values for optional fields
-          policy.Status = policy.Status || 'Under Review'
-          policy.ActiveInactive = policy.ActiveInactive || 'Inactive'
-          policy.CreatedByName = creatorUser.UserName
-          policy.Reviewer = reviewerUser ? reviewerUser.UserId : null
-
-          // Validate subpolicies
-          for (const sub of policy.subpolicies) {
-            if (!sub.SubPolicyName || !sub.Identifier) {
-              error.value = 'Please fill in all required fields (Name and Identifier) for all subpolicies'
-              loading.value = false
-              return
-            }
-            // Set default values for subpolicies
-            sub.Status = sub.Status || 'Under Review'
-            sub.PermanentTemporary = sub.PermanentTemporary || 'Permanent'
-            sub.CreatedByName = creatorUser.UserName
-          }
-        }
-
-        if (isCreatingNewFramework) {
-          // Prepare the full payload for new framework
-          const payload = {
-            ...frameworkFormData.value,
-            CreatedByName: creatorUser.UserName,
-            Reviewer: reviewerUser ? reviewerUser.UserId : null,
-            policies: policiesForm.value.map(policy => ({
-              ...policy,
-              CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
-              CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
-              subpolicies: policy.subpolicies.map(sub => ({
-                ...sub,
-                CreatedByName: creatorUser.UserName,
-                CreatedByDate: new Date().toISOString().split('T')[0],
-                Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
-              }))
-            }))
-          }
-
-          // Send a single API call to create the framework with policies and subpolicies
-          const response = await axios.post(`${API_BASE_URL}/frameworks/`, payload)
-          if (response.data.error) {
-            throw new Error(response.data.error)
-          }
-        } else {
-          // Add policies to existing framework
-          const frameworkId = selectedFramework.value;
-          for (const policy of policiesForm.value) {
-            const policyPayload = {
-              ...policy,
-              CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
-              CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
-              subpolicies: policy.subpolicies.map(sub => ({
-                ...sub,
-                CreatedByName: creatorUser.UserName,
-                CreatedByDate: new Date().toISOString().split('T')[0],
-                Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
-              }))
-            };
-            try {
-              const response = await axios.post(`${API_BASE_URL}/frameworks/${frameworkId}/policies/`, policyPayload);
-              if (response.data.error) {
-                throw new Error(response.data.error)
-              }
-            } catch (err) {
-              console.error('Error submitting policy:', err);
-              const errorMessage = err.response?.data?.details || err.response?.data?.error || 'Failed to submit policy';
-              error.value = typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage;
-              loading.value = false;
-              return;
-            }
-          }
-        }
-
-        // Reset forms
-        policiesForm.value = []
-        approvalForm.value = {
-          createdBy: '',
-          reviewer: ''
-        }
-        selectedFramework.value = ''
-        showApprovalForm.value = false
-        frameworkFormData.value = null
-
-      } catch (err) {
-        console.error('Error submitting policies:', err)
-        const errorMessage = err.response?.data?.details || err.response?.data?.error || 'Failed to submit policies';
-        error.value = typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage;
-      } finally {
-        loading.value = false
+      if (frameworkSample.policies && Array.isArray(frameworkSample.policies)) {
+        frameworkSample.policies.forEach((policy, idx) => {
+          slides.push({
+            type: 'policy',
+            data: policy,
+            index: idx
+          })
+        })
       }
+      if (frameworkSample.authorizer) {
+        slides.push({
+          type: 'authorizer',
+          data: frameworkSample.authorizer
+        })
+      }
+      extractionSlides.value = slides
+      showExtractionScreens.value = true
+      extractionStep.value = 0
+      isFrameworkFormVisible.value = false
     }
 
-    const getSelectedFrameworkName = () => {
-      const framework = frameworks.value.find(f => f.id === selectedFramework.value)
-      return framework ? framework.name : ''
-    }
-
-    const handleChangeFramework = () => {
-      selectedFramework.value = ''
-      policiesForm.value = []
-    }
-
-    // Fetch frameworks and users on mount
-    onMounted(() => {
-      fetchFrameworks()
-      fetchUsers()
-    })
- 
     return {
+      searchQuery,
+      currentPage,
+      selectedVersions,
+      isFormVisible,
       selectedFramework,
+      selectedPolicy,
+      isFrameworkFormVisible,
+      showExtractionScreens,
+      extractedData,
+      extractionStep,
+      extractionSlides,
       policiesForm,
+      frameworkPolicies,
       selectedPolicyIdx,
       frameworks,
-      showApprovalForm,
-      showFrameworkForm,
-      approvalForm,
-      newFramework,
-      loading,
-      error,
-      users,
+      policies,
+      groupedPolicies,
+      currentPolicies,
+      paginatedPolicies,
+      indexOfFirstPolicy,
+      indexOfLastPolicy,
+      totalPages,
+      handleVersionChange,
+      nextPage,
+      prevPage,
+      toggleForm,
+      handleFrameworkChange,
       handleAddPolicy,
+      handleSelectPolicy,
       handleRemovePolicy,
       handlePolicyChange,
+      handlePolicyDetailsChange,
+      handlePolicyApprovalsChange,
       handleAddSubPolicy,
       handleRemoveSubPolicy,
       handleSubPolicyChange,
-      handleSubmitPolicy,
-      handleFinalSubmit,
-      handleCreateFramework,
-      getSelectedFrameworkName,
-      handleChangeFramework,
-      frameworkFormData,
+      handleSubPolicyDetailsChange,
+      handleSubPolicyApprovalsChange,
+      handleFrameworkFormSubmit
     }
   }
 }
 </script>
- 
-<style scoped>
-/* Import the existing CSS file */
-@import './CreatePolicy.css';
 
-/* Enhanced Loading and Error States */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
+<style scoped>
+.create-policy-container {
+    margin-left: 230px;
+    padding: 20px;
+}
+
+.search-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 24px;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.search-container input {
+    border: none;
+    outline: none;
+    padding: 4px;
+    font-size: 11px;
+    width: 250px;
+}
+
+.search-icon {
+    color: #888;
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+.button-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.create-framework-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.create-framework-btn:hover {
+    background-color: #218838;
+}
+
+.create-policy-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.create-policy-btn:hover {
+    background-color: #0056b3;
+}
+
+.policy-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    background-color: white;
+    font-size: 11px;
+    border: 2px solid #000;
+    border-radius: 8px;
+}
+
+.policy-table th, .policy-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border: 1px solid #454545;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.policy-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.policy-table tr:first-child th:first-child {
+    border-top-left-radius: 8px;
+}
+.policy-table tr:first-child th:last-child {
+    border-top-right-radius: 8px;
+}
+.policy-table tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+.policy-table tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+.policy-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.policy-table tbody tr:last-child td {
+    border-bottom: 1px solid #3c3c3c;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: capitalize;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-onhold {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-under-review {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+/* Responsive Table Container */
+.policy-list-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Media Queries for Different Screen Sizes */
+@media screen and (max-width: 1600px) {
+    .policy-table {
+        font-size: 10px;
+    }
+    
+    .policy-table th, .policy-table td {
+        padding: 6px 8px;
+    }
+    
+    .version-dropdown select {
+        font-size: 9px;
+        padding: 2px 18px 2px 5px;
+    }
+}
+
+@media screen and (max-width: 1366px) {
+    .policy-table {
+        font-size: 9px;
+    }
+    
+    .policy-table th, .policy-table td {
+        padding: 5px 6px;
+    }
+    
+    .status-badge {
+        padding: 1px 5px;
+        font-size: 8px;
+        min-width: 50px;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .policy-table {
+        font-size: 10px;
+    }
+    
+    .policy-table th, .policy-table td {
+        padding: 5px 6px;
+        max-width: 100px;
+    }
+    
+    .status-badge {
+        padding: 2px 5px;
+        font-size: 9px;
+        min-width: 60px;
+    }
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 768px) {
+    .policy-list-container {
+        overflow-x: visible;
+    }
+    
+    .policy-table {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .policy-table th, .policy-table td {
+        padding: 8px 10px;
+        max-width: none;
+    }
+    
+    .create-policy-container {
+        padding: 10px;
+    }
+    
+    .search-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-container {
+        width: 100%;
+    }
+    
+    .create-policy-btn {
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .version-dropdown {
+        min-width: 70px;
+    }
+    
+    .version-dropdown select {
+        padding: 3px 20px 3px 6px;
+        font-size: 11px;
+    }
+    
+    .version-dropdown .dropdown-icon {
+        right: 6px;
+        font-size: 9px;
+    }
+}
+
+/* Pagination Styling */
+.policy-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding: 8px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: 11px;
+}
+
+.policy-pagination button {
+    padding: 4px 10px;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 11px;
+}
+
+.policy-pagination button:hover:not(:disabled) {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.policy-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.policy-pagination span {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+/* Scrollbar Styling */
+.policy-list-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.policy-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.policy-list-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.policy-list-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Form Popup Styling */
+.form-popup {
+    position: fixed;
+    top: 0;
+    left: 210px;
+    right: 0;
+    bottom: 0;
+    width: calc(95% - 190px);
+    height: 95vh;
+    background-color: #fff;
+    border: 1px solid #bbbbbb;
+    z-index: 100;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.form-container.form-scrollable {
+    height: 100%;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-header {
+    background: #f4f4f4;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.form-header h3 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.form-header button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #222;
+    margin-left: 10px;
+}
+
+.form-body {
+    padding: 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.form-section {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.form-section label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-section input,
+.form-section select {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-section input:focus,
+.form-section select:focus {
+    border-color: #007bff;
+}
+
+.form-subsection {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid #e9ecef;
+}
+
+.create-btn {
+    background-color: #007bff;
+    color: #fff;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 24px auto;
+    width: auto;
+    min-width: 200px;
+    transition: background-color 0.2s;
+}
+
+.create-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Framework and Policy Selection Section */
+.framework-policy-section {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.framework-policy-section .form-section {
+    flex: 1;
+}
+
+/* Sub Policy Section */
+.sub-policy-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    background: #fff;
+}
+
+.sub-policy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sub-policy-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.add-sub-policy-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.add-sub-policy-btn:hover {
+    color: #0056b3;
+}
+
+/* Version Dropdown Styling */
+.version-dropdown {
+    position: relative;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.version-dropdown select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 20px 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    width: 100%;
+    outline: none;
+}
+
+.version-dropdown .dropdown-icon {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 8px;
+    color: #6c757d;
+}
+
+.version-dropdown select:hover {
+    border-color: #adb5bd;
+}
+
+.version-dropdown select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Update table cell widths */
+.policy-table th:nth-child(1), /* Policy Name */
+.policy-table td:nth-child(1) {
+    min-width: 180px;
+    max-width: 200px;
+    border-left: 1px solid #000;
+}
+
+.policy-table th:nth-child(2), /* Version */
+.policy-table td:nth-child(2) {
+    min-width: 80px;
+    max-width: 100px;
+}
+
+.policy-table th:nth-child(3), /* Category */
+.policy-table td:nth-child(3) {
+    min-width: 80px;
+    max-width: 100px;
+}
+
+.policy-table th:nth-child(4), /* Status */
+.policy-table td:nth-child(4) {
+    min-width: 80px;
+    max-width: 100px;
+}
+
+.policy-table th:nth-child(5), /* Effective Start Date */
+.policy-table td:nth-child(5) {
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.policy-table th:nth-child(6), /* Effective End Date */
+.policy-table td:nth-child(6) {
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.policy-table th:nth-child(7), /* Created By */
+.policy-table td:nth-child(7) {
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.policy-table th:nth-child(8), /* Authorized By */
+.policy-table td:nth-child(8) {
+    min-width: 100px;
+    max-width: 120px;
+    border-right: 1px solid #000;
+}
+
+/* Add subtle hover effect */
+.policy-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.policy-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Policy Grid Body */
+.policy-grid-body {
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 16px 0 32px 0;
+}
+
+.framework-policy-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 18px;
+  margin-left: 18px;
+}
+.framework-policy-selects {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.add-policy-btn {
+  background: #fff;
+  color: #222;
+  border: 1px solid #bbb;
+  border-radius: 16px;
+  font-size: 12px;
+  padding: 2px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.2s;
+}
+.add-policy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.add-policy-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.policy-rows {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 16px;
 }
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #4299e1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.policy-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-width: 100%;
 }
-
-.loading-overlay p {
-  margin-top: 16px;
-  color: #4a5568;
-  font-size: 1rem;
-  font-weight: 500;
+.policy-card, .subpolicy-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  padding: 12px 14px 10px 14px;
+  min-width: 220px;
+  max-width: 260px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
 }
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.policy-card {
+  min-width: 260px;
+  max-width: 300px;
+  border-left: 3px solid #007bff;
 }
-
-.error-message {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #fc8181, #f56565);
-  color: white;
-  padding: 16px 24px;
-  border-radius: 12px;
+.subpolicies-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-width: 0;
+}
+.subpolicy-card {
+  border-left: 3px solid #28a745;
+  min-width: 220px;
+  max-width: 260px;
+}
+.policy-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  z-index: 1000;
-  box-shadow: 0 6px 16px rgba(245, 101, 101, 0.2);
-  animation: slideIn 0.3s ease-out;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.policy-card-header b {
+  font-size: 13px;
+  font-weight: 600;
 }
-
-.close-btn {
+.remove-btn {
   background: none;
   border: none;
-  color: white;
+  color: #d00;
+  font-size: 15px;
   cursor: pointer;
-  font-size: 1.2rem;
-  padding: 4px;
-  opacity: 0.8;
-  transition: all 0.2s ease;
+  margin-left: 6px;
 }
-
-.close-btn:hover {
-  opacity: 1;
-  transform: scale(1.1);
+.remove-btn:hover {
+  color: #a00;
 }
-
-/* Form Animations */
-.policy-card, .subpolicy-card {
-  animation: fadeIn 0.5s ease-out;
+input, select, textarea {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  border: 1px solid #bbb !important;
+  margin-bottom: 2px;
+  background: #fafbfc;
 }
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+input[type="date"] {
+  font-size: 12px !important;
+}
+textarea {
+  min-height: 28px;
+  resize: vertical;
+}
+.upload-btn, .add-sub-policy-btn {
+  background: #f8f9fa;
+  color: #222;
+  border: 1px solid #bbb;
+  border-radius: 16px;
+  font-size: 12px;
+  padding: 2px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin: 2px 0 2px 0;
+  transition: background 0.2s;
+}
+.upload-btn:hover, .add-sub-policy-btn:hover {
+  background: #e9ecef;
+}
+.add-sub-policy-btn {
+  margin-top: 6px;
+  background: #e6f7ea;
+  border: 1px solid #28a745;
+  color: #28a745;
+}
+.add-sub-policy-btn:hover {
+  background: #d4f5e3;
+}
+.form-section.form-subsection {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  border: 1px solid #e9ecef;
+  font-size: 11px;
+}
+.form-subsection-header {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 11px;
+  color: #222;
+  margin-bottom: 2px;
+}
+.create-btn {
+  background-color: #007bff;
+  color: #fff;
+  padding: 8px 0;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  width: 120px;
+  font-size: 13px;
+  margin: 18px auto 0 auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: block;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.create-btn:hover {
+  background: #0056b3;
+}
+@media (max-width: 1200px) {
+  .policy-row {
+    flex-direction: column;
+    gap: 10px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .subpolicies-row {
+    flex-direction: column;
+    gap: 10px;
   }
 }
 
-/* Enhanced Button States */
-button {
-  position: relative;
-  overflow: hidden;
-}
-
-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
+/* Framework Form Styles */
+.form-popup.framework-form {
+  width: 420px;
+  min-width: 320px;
+  max-width: 90vw;
+  height: 95vh;
+  right: auto;
   left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.5);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%);
-  transform-origin: 50% 50%;
+  transform: translateX(-50%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 12px;
+  padding-bottom: 16px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-button:focus:not(:active)::after {
-  animation: ripple 1s ease-out;
+.form-popup.framework-form .form-container {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
 }
 
-@keyframes ripple {
-  0% {
-    transform: scale(0, 0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(100, 100);
-    opacity: 0;
-  }
-}
-
-/* Enhanced Form Field Focus States */
-input:focus, select:focus, textarea:focus {
-  transform: translateY(-1px);
-}
-
-/* Card Hover Effects */
-.policy-card:hover, .subpolicy-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-}
-
-/* Framework Form Field Styling */
-.framework-form-container {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  margin-top: 20px;
-}
-
-.framework-form {
-  max-width: 100%;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
+.form-popup.framework-form .form-section {
+  padding: 16px;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .form-group {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group label {
-  display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 8px;
-}
-
-.input-with-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-with-icon i {
-  position: absolute;
-  left: 16px;
-  color: #718096;
-  font-size: 16px;
+  color: #333;
 }
 
 .form-group input,
+.form-group textarea,
 .form-group select {
   width: 100%;
-  height: 45px;
-  padding: 8px 16px 8px 45px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #2d3748;
-  background: white;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  background: #fff;
 }
 
-/* Colored borders */
-.blue-border .input-with-icon input,
-.blue-border .input-with-icon select {
-  border-left: 3px solid #4299e1;
+/* Upload Input Styling */
+.upload-input-container {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.green-border .input-with-icon input,
-.green-border .input-with-icon select {
-  border-left: 3px solid #48bb78;
+.file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
 }
 
-.orange-border .input-with-icon input,
-.orange-border .input-with-icon select {
-  border-left: 3px solid #ed8936;
-}
-
-.red-border .input-with-icon input,
-.red-border .input-with-icon select {
-  border-left: 3px solid #f56565;
-}
-
-/* Upload field styling */
-.upload-field {
+.upload-label {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  height: 45px;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: #333;
+  box-sizing: border-box;
 }
 
-.upload-field span {
-  margin-left: 30px;
-  color: #718096;
+.upload-label:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.upload-text {
+  color: #666;
+}
+
+.upload-icon {
   font-size: 14px;
+  color: #666;
+  margin-left: 8px;
 }
 
-.browse-btn {
-  margin-left: auto;
-  padding: 4px 12px;
-  background: #4299e1;
-  color: white;
+.form-subsection {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.form-subsection h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+/* Submit Button Styling */
+.create-btn {
+  background-color: #007bff;
+  color: #fff;
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
-  font-size: 14px;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 12px;
+  width: 100%;
+  transition: background-color 0.2s;
 }
 
-/* Date input styling */
+.create-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Date Input Styling */
 input[type="date"] {
-  padding-right: 16px;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  position: absolute;
-  right: 8px;
   cursor: pointer;
+  opacity: 0.6;
 }
 
-/* Select styling */
-select {
-  appearance: none;
-  padding-right: 30px;
-  background-image: url("data:image/svg+xml,...");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  cursor: pointer;
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
-/* Framework selection styling */
-.framework-policy-row {
-  margin-bottom: 24px;
+/* Adjust padding for smaller screens */
+@media screen and (max-width: 480px) {
+  .form-popup.framework-form {
+    width: 100%;
+    max-width: 100%;
+    left: 0;
+    transform: none;
+  }
+  
+  .form-popup.framework-form .form-section {
+    padding: 12px;
+  }
 }
 
-.framework-policy-selects {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.framework-policy-selects > div {
-  flex: 0 0 300px; /* Fixed width for the select container */
-}
-
-.framework-policy-selects label {
-  display: block;
-  font-size: 14px;
+/* Nested Table Styles */
+.main-policy-row {
+  background-color: #f8f9fa;
   font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 8px;
 }
 
-.framework-policy-selects select {
-  width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #2d3748;
-  background: white;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
+.sub-policy-row {
+  background-color: #ffffff;
 }
 
-.framework-policy-selects select:focus {
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+.sub-policy-row:hover {
+  background-color: #f8f9fa;
 }
 
-.framework-policy-selects select:hover {
-  border-color: #cbd5e0;
+.sub-policy-cell {
+  position: relative;
+  padding-left: 30px !important;
 }
 
-/* Approval Form Transitions */
-.approval-section {
-  animation: fadeScale 0.4s ease-out;
-}
-
-@keyframes fadeScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Enhanced Scrollbar Styling */
-::-webkit-scrollbar {
+.sub-policy-indicator {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 8px;
   height: 8px;
+  border-radius: 50%;
+  background-color: #28a745;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.sub-policy-row td {
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 4px;
+.sub-policy-row:last-child td {
+  border-bottom: 1px solid #3c3c3c;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-/* Policy Actions Container */
-.policy-actions-container {
+/* Extraction Popup Styles */
+.extraction-popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.18);
+  z-index: 2000;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding: 16px 24px;
-  background: white;
+}
+.extraction-popup {
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  width: 700px;
+  height: 480px;
+  min-width: 1200px;
+  min-height: 600px;
+  max-width: 700px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2px solid #007bff;
+  margin-left: 190px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
-
-.selected-framework-info {
+.extraction-header {
+  background: #f4f8ff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
 }
-
-.selected-framework-info span {
-  font-size: 0.95rem;
-  color: #2d3748;
-  font-weight: 500;
+.extraction-body {
+  padding: 32px 32px 24px 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 350px;
+  min-height: 200px;
+  overflow-y: auto;
 }
-
-.change-framework-btn {
-  background: none;
-  border: 1px solid #e2e8f0;
+.extraction-slide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  background: #f8faff;
   border-radius: 8px;
-  padding: 8px 16px;
-  color: #4a5568;
-  font-size: 0.9rem;
+  padding: 18px 18px 12px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.policy-slide {
+  flex-direction: row;
+  gap: 32px;
+  background: #f8faff;
+  align-items: flex-start;
+}
+.policy-main {
+  min-width: 220px;
+  max-width: 260px;
+  margin-right: 18px;
+}
+.subpolicies-group {
+  display: flex;
+  flex-direction: row;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.extraction-subpolicy {
+  background: #f4f8ff;
+  border: 1px solid #cce5ff;
+  border-radius: 8px;
+  padding: 12px 10px 10px 10px;
+  min-width: 180px;
+  max-width: 220px;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0,123,255,0.04);
+}
+
+.extraction-slide label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #007bff;
+  margin-bottom: 2px;
+}
+
+.extraction-slide input,
+.extraction-slide textarea {
+  width: 100%;
+  border: 1px solid #bcdffb;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  margin-bottom: 6px;
+  color: #222;
+}
+
+.extraction-slide textarea {
+  min-height: 36px;
+  resize: vertical;
+}
+
+@media (max-width: 700px) {
+  .extraction-popup {
+    min-width: 90vw;
+    max-width: 98vw;
+    padding: 0;
+  }
+  .extraction-body {
+    padding: 12px 6px 12px 6px;
+    min-width: 0;
+  }
+  .policy-slide {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .subpolicies-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.extraction-stepper {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 2px solid #222;
+  background: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+}
+.extraction-step {
   display: flex;
   align-items: center;
-  gap: 8px;
+  background: #fff;
+  border: 2px solid #222;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  font-size: 16x;
+  font-weight: 300;
+  color: #222;
+  padding: 10px 24px 8px 18px;
+  margin-right: -2px;
+  position: relative;
+  z-index: 2;
+  min-width: 120px;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.change-framework-btn:hover {
-  background: #f7fafc;
-  border-color: #cbd5e0;
-  color: #2d3748;
-}
-
-/* Update these specific styles */
-
-.policy-card {
-  width: 320px;
-  padding: 16px; /* Reduced padding */
-  box-sizing: border-box; /* Important: include padding in width calculation */
-}
-
-/* Base styles for all inputs in policy card */
-.policy-card input,
-.policy-card textarea {
-  width: 100%;
-  max-width: 100%; /* Changed from fixed width to 100% */
-  padding: 6px 8px;
-  height: 32px;
-  font-size: 12px;
-  box-sizing: border-box; /* Important: include padding in width calculation */
-}
-
-/* Form row styling */
-.policy-form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%; /* Ensure row takes full width */
-}
-
-/* Description field specific styling */
-.policy-card .form-group.description {
-  width: 70%; /* Decreased from 80% to 70% */
-  margin: 0 auto;
-  max-width: 280px; /* Add max-width to prevent overflow */
-}
-
-.policy-card .form-group.description textarea {
-  width: 100%;
-  min-height: 80px;
-  max-width: 100%; /* Ensure textarea doesn't overflow its container */
   box-sizing: border-box;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  transition: background 0.15s, color 0.15s, z-index 0.15s;
 }
-
-/* Date fields row styling */
-.policy-card .date-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
+.extraction-step.active {
+  background: #fff;
+  color: #222;
+  font-weight: 700;
+  z-index: 3;
+  border-bottom: 2px solid #fff;
 }
-
-.policy-card .date-row .form-group {
-  flex: 1;
-  min-width: 0;
+.extraction-step .tab-close {
+  font-size: 20px;
+  font-weight: 400;
+  margin-left: 10px;
+  color: #222;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
 }
-
-.policy-card .date-row input {
-  width: 100%;
+.extraction-step .tab-close:hover {
+  color: #d00;
 }
-
-/* Objective and Applicability row */
-.policy-card .objective-applicability-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
-.policy-card .objective-applicability-row .form-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.policy-card .objective-applicability-row textarea,
-.policy-card .objective-applicability-row input {
-  width: 100%;
-  height: 32px;
-}
-
-/* Form groups in a row */
-.policy-form-row .form-group {
-  flex: 1; /* Changed to flex: 1 to ensure equal width */
-  min-width: 0; /* Prevent flex items from overflowing */
-  width: calc(50% - 4px); /* Ensure exact half width minus gap */
-}
-
-/* Date input specific styling */
-.policy-form-row input[type="date"] {
-  width: 100%; /* Changed from fixed width to 100% */
-  min-width: 0; /* Allow shrinking */
-  padding-right: 20px; /* Space for calendar icon */
-}
-
-/* Single form groups (not in a row) */
-.policy-card .form-group:not(.policy-form-row .form-group) {
-  width: 100%;
-}
-
-/* Textarea specific styling */
-.policy-card textarea {
-  height: auto;
-  min-height: 50px;
-  width: 100%;
-  resize: vertical;
-}
-
-/* Remove any fixed max-width constraints */
-.policy-form-row input,
-.policy-form-row .form-group input {
-  max-width: none;
-}
-
-/* Add these new styles for subpolicy card */
-.subpolicy-card {
-  width: 300px; /* Smaller than policy card */
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.subpolicy-card .form-group {
-  margin-bottom: 10px;
-}
-
-.subpolicy-card input,
-.subpolicy-card textarea {
-  width: 100%;
-  max-width: 100%;
-  padding: 6px 8px;
-  height: 32px;
-  font-size: 12px;
-  box-sizing: border-box;
-}
-
-.subpolicy-card textarea {
-  height: auto;
-  min-height: 50px;
-  resize: vertical;
-}
-
-.subpolicy-card label {
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-/* Form row styling for subpolicy */
-.subpolicy-card .policy-form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
-.subpolicy-card .policy-form-row .form-group {
-  flex: 1;
-  min-width: 0;
-  width: calc(50% - 4px);
-}
-
-/* Ensure all inputs stay within boundaries */
-.subpolicy-card .form-group input,
-.subpolicy-card .form-group textarea {
-  width: 100%;
-  max-width: none;
-}
-
-/* Adjust the subpolicies row spacing */
-.subpolicies-row {
-  margin-top: 16px;
-  gap: 16px;
-}
-</style>
+</style> 
