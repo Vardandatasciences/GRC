@@ -7,40 +7,104 @@
         {{ isCollapsed ? '»' : '«' }}
       </span>
     </div>
-    <div class="menu">
 
+    <div class="menu">
       <!-- Policy Section -->
-      <div @click="toggleSubmenu('policy')" class="menu-item">
+      <div @click="toggleSubmenu('policy')" class="menu-item has-submenu" :class="{'expanded': openMenus.policy}">
         <i class="fas fa-file-alt icon"></i>
         <span v-if="!isCollapsed">Policy</span>
+        <i v-if="!isCollapsed" class="fas fa-chevron-right submenu-arrow"></i>
       </div>
       <div v-if="!isCollapsed && openMenus.policy" class="submenu">
-        <div class="menu-item" @click="navigate('/policy/dashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>Dashboard</span>
+        <!-- 1. Policy Creation -->
+        <div @click="toggleSubmenu('policyCreation')" class="menu-item has-submenu" :class="{'expanded': openMenus.policyCreation}">
+          <i class="fas fa-plus-square icon"></i>
+          <span>Policy Creation</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
         </div>
-        <div class="menu-item" @click="navigate('/create-policy')">
-          <i class="fas fa-check-square icon"></i>
-          <span>Policy</span>
+        <div v-if="!isCollapsed && openMenus.policyCreation" class="submenu">
+          <div class="menu-item" @click="navigate('/create-policy/create')">
+            <i class="fas fa-plus icon"></i>
+            <span>Create Policy</span>
+          </div>
+          <div class="menu-item" @click="navigate('/create-policy/framework')">
+            <i class="fas fa-sitemap icon"></i>
+            <span>Create Framework</span>
+          </div>
+          <div class="menu-item" @click="navigate('/create-policy/tailoring')">
+            <i class="fas fa-edit icon"></i>
+            <span>Tailoring & Templating</span>
+          </div>
+          <div class="menu-item" @click="navigate('/create-policy/versioning')">
+            <i class="fas fa-code-branch icon"></i>
+            <span>Versioning</span>
+          </div>
         </div>
-        <div class="menu-item" @click="navigate('/policy/performance')">
-          <i class="fas fa-chart-line icon"></i>
-          <span>Performance</span>
-        </div>
-      </div>
 
-      <!-- Compliance Section -->
-      <div @click="toggleSubmenu('compliance')" class="menu-item">
-        <i class="fas fa-balance-scale icon"></i>
-        <span v-if="!isCollapsed">Compliance</span>
-      </div>
-      <div v-if="!isCollapsed && openMenus.compliance" class="submenu">
-        <!-- 1. Compliances -->
-        <div @click="toggleSubmenu('compliancesList')" class="menu-item has-submenu">
-          <i class="fas fa-list-alt icon"></i>
-          <span>Compliances</span>
+        <!-- 2. Policies List -->
+        <div @click="toggleSubmenu('policiesList')" class="menu-item has-submenu" :class="{'expanded': openMenus.policiesList}">
+          <i class="fas fa-list icon"></i>
+          <span>Policies List</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
         </div>
-        <div v-if="openMenus.compliancesList" class="submenu">
+        <div v-if="!isCollapsed && openMenus.policiesList" class="submenu">
+          <div class="menu-item" @click="navigate('/policies-list/all')">
+            <i class="fas fa-list-alt icon"></i>
+            <span>All Policies</span>
+          </div>
+          <div class="menu-item" @click="navigate('/tree-policies')">
+            <i class="fas fa-sitemap icon"></i>
+            <span>Tree Policies</span>
+          </div>
+        </div>
+        
+        <div @click="navigate('/framework-explorer')" class="menu-item">
+            <i class="fas fa-cubes icon"></i>
+            <span>Framework Explorer</span>
+          </div>
+
+        <!-- 3. Policy Approval -->
+        <div class="menu-item" @click="navigate('/policy/approval')">
+          <i class="fas fa-check-circle icon"></i>
+          <span>Policy Approval</span>
+        </div>
+        <div class="menu-item" @click="navigate('/framework-approval')">
+          <i class="fas fa-check-circle icon"></i>
+          <span>Framework Approval</span>
+        </div>
+
+        <!-- 4. Performance Analysis -->
+        <div @click="toggleSubmenu('performanceAnalysis')" class="menu-item has-submenu" :class="{'expanded': openMenus.performanceAnalysis}">
+          <i class="fas fa-chart-line icon"></i>
+          <span>Performance Analysis</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
+        </div>
+        <div v-if="!isCollapsed && openMenus.performanceAnalysis" class="submenu">
+          <div class="menu-item" @click="navigate('/policy/performance/kpis')">
+            <i class="fas fa-chart-bar icon"></i>
+            <span>KPIs Analysis</span>
+          </div>
+          <div class="menu-item" @click="navigate('/policy/performance/dashboard')">
+            <i class="fas fa-tachometer-alt icon"></i>
+            <span>User Dashboard</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Compliances Section -->
+      <div @click="toggleSubmenu('compliances')" class="menu-item has-submenu" :class="{'expanded': openMenus.compliances}">
+        <i class="fas fa-list-alt icon"></i>
+        <span v-if="!isCollapsed">Compliances</span>
+        <i v-if="!isCollapsed" class="fas fa-chevron-right submenu-arrow"></i>
+      </div>
+      <div v-if="!isCollapsed && openMenus.compliances" class="submenu">
+        <!-- 1. Compliances View -->
+        <div @click.stop="toggleSubmenu('compliancesView')" class="menu-item has-submenu" :class="{'expanded': openMenus.compliancesView}">
+          <i class="fas fa-list-alt icon"></i>
+          <span>Compliances View</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
+        </div>
+        <div v-if="openMenus.compliancesView" class="submenu">
           <div class="menu-item" @click="navigate('/compliance/list')">
             <i class="fas fa-clipboard-list icon"></i>
             <span>Compliances List</span>
@@ -52,99 +116,37 @@
         </div>
 
         <!-- 2. Compliance Creation -->
-        <div @click="toggleSubmenu('complianceCreation')" class="menu-item has-submenu">
+        <div @click.stop="toggleSubmenu('complianceCreation')" class="menu-item has-submenu" :class="{'expanded': openMenus.complianceCreation}">
           <i class="fas fa-plus-square icon"></i>
           <span>Compliance Creation</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
         </div>
         <div v-if="openMenus.complianceCreation" class="submenu">
           <div class="menu-item" @click="navigate('/compliance/create')">
             <i class="fas fa-file-alt icon"></i>
             <span>Create Compliance</span>
           </div>
-          <div class="menu-item" @click="navigate('/compliance/tailoring')">
-            <i class="fas fa-cut icon"></i>
-            <span>Tailoring & Templating</span>
-          </div>
           <div class="menu-item" @click="navigate('/compliance/versioning')">
             <i class="fas fa-code-branch icon"></i>
-            <span>Versioning</span>
+            <span>Tailoring & Templating</span>
           </div>
         </div>
 
         <!-- 3. Performance Analysis -->
-        <div @click="toggleSubmenu('performanceAnalysis')" class="menu-item has-submenu">
+        <div @click.stop="toggleSubmenu('compliancesPerformanceAnalysis')" class="menu-item has-submenu" :class="{'expanded': openMenus.compliancesPerformanceAnalysis}">
           <i class="fas fa-chart-line icon"></i>
           <span>Performance Analysis</span>
+          <i class="fas fa-chevron-right submenu-arrow"></i>
         </div>
-        <div v-if="openMenus.performanceAnalysis" class="submenu">
+        <div v-if="openMenus.compliancesPerformanceAnalysis" class="submenu">
           <div class="menu-item" @click="navigate('/compliance/kpi-dashboard')">
-            <i class="fas fa-tachometer-alt icon"></i>
+            <i class="fas fa-chart-bar icon"></i>
             <span>KPIs Dashboard</span>
           </div>
           <div class="menu-item" @click="navigate('/compliance/user-dashboard')">
-            <i class="fas fa-user-chart icon"></i>
+            <i class="fas fa-tachometer-alt icon"></i>
             <span>User Dashboard</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Risk Section -->
-      <div @click="toggleSubmenu('risk')" class="menu-item">
-        <i class="fas fa-exclamation-triangle icon"></i>
-        <span v-if="!isCollapsed">Risk</span>
-      </div>
-      <div v-if="!isCollapsed && openMenus.risk" class="submenu">
-        <div class="menu-item" @click="navigate('/risk/dashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>Dashboard</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/create')">
-          <i class="fas fa-plus icon"></i>
-          <span>Create Risk</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/instances')">
-          <i class="fas fa-th-list icon"></i>
-          <span>Instances</span>
-        </div>
-        <div class="menu-item" @click="navigate('/risk/notifications')">
-          <i class="fas fa-bell icon"></i>
-          <span>Notifications</span>
-        </div>
-      </div>
-
-      <!-- Auditor Section -->
-      <div @click="toggleSubmenu('auditor')" class="menu-item">
-        <i class="fas fa-user-tie icon"></i>
-        <span v-if="!isCollapsed">Auditor</span>
-      </div>
-      <div v-if="!isCollapsed && openMenus.auditor" class="submenu">
-        <div class="menu-item" @click="navigate('/auditor/dashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>User Dashboard</span>
-        </div>
-        <div class="menu-item" @click="navigate('/auditor/assign')">
-          <i class="fas fa-check-square icon"></i>
-          <span>Assign Audit</span>
-        </div>
-        <div class="menu-item" @click="navigate('/auditor/reviewer')">
-          <i class="fas fa-user icon"></i>
-          <span>Reviewer</span>
-        </div>
-      </div>
-
-      <!-- Incident Section -->
-      <div @click="toggleSubmenu('incident')" class="menu-item">
-        <i class="fas fa-exclamation-circle icon"></i>
-        <span v-if="!isCollapsed">Incident</span>
-      </div>
-      <div v-if="!isCollapsed && openMenus.incident" class="submenu">
-        <div class="menu-item" @click="navigate('/incident/dashboard')">
-          <i class="fas fa-th-large icon"></i>
-          <span>Dashboard</span>
-        </div>
-        <div class="menu-item" @click="navigate('/incident/create')">
-          <i class="fas fa-plus icon"></i>
-          <span>Create Incident</span>
         </div>
       </div>
     </div>
@@ -157,7 +159,6 @@
 </template>
 
 <script>
-
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '../../assets/grc_logo1.png'
@@ -170,13 +171,17 @@ export default {
     const isCollapsed = ref(false)
     const openMenus = ref({
       policy: false,
-      compliance: false,
-      compliancesList: false,
-      complianceCreation: false,
+      policyCreation: false,
+      policiesList: false,
       performanceAnalysis: false,
+      compliance: false,
       risk: false,
       auditor: false,
-      incident: false
+      incident: false,
+      compliances: false,
+      compliancesView: false,
+      complianceCreation: false,
+      compliancesPerformanceAnalysis: false
     })
 
     const toggleCollapse = () => {
@@ -191,17 +196,22 @@ export default {
       router.push(path)
     }
 
+    const handleDashboardClick = () => {
+      toggleSubmenu('dashboard')
+      navigate('/policy/dashboard')
+    }
+
     return {
       isCollapsed,
       openMenus,
       logo,
       toggleCollapse,
       toggleSubmenu,
-      navigate
+      navigate,
+      handleDashboardClick
     }
   }
 }
-
 </script>
 
 <style scoped>

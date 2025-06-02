@@ -8,16 +8,23 @@ class GRCProfile(models.Model):
     # You can extend User with a OneToOneField if needed later
     pass
 
-class User(models.Model):
+class Users(models.Model):
     UserId = models.AutoField(primary_key=True)
-    UserName = models.CharField(max_length=255, null=False)
-    Password = models.CharField(max_length=255, null=False)
+    UserName = models.CharField(max_length=255)
+    Password = models.CharField(max_length=255)
+    # Optional fields that were commented out
+    # MobileNo = models.CharField(max_length=15, null=True, blank=True)
+    # Email = models.CharField(max_length=255, null=True, blank=True)
+    # Department = models.CharField(max_length=255, null=True, blank=True)
+    # Designation = models.CharField(max_length=255, null=True, blank=True)
+    # role = models.CharField(max_length=45, null=True, blank=True)
+    # branch = models.CharField(max_length=45, null=True, blank=True)
     CreatedAt = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     UpdatedAt = models.DateTimeField(auto_now=True, null=True, blank=True)
-
+ 
     class Meta:
         db_table = 'users'
-
+        
     def __str__(self):
         return self.UserName
 
@@ -36,6 +43,7 @@ class Framework(models.Model):
     EndDate = models.DateField(null=True, blank=True)
     Status = models.CharField(max_length=45, null=True, blank=True)
     ActiveInactive = models.CharField(max_length=45, null=True, blank=True)
+    Reviewer = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         db_table = 'frameworks'
@@ -57,7 +65,7 @@ class FrameworkVersion(models.Model):
     
 class Policy(models.Model):
     PolicyId = models.AutoField(primary_key=True)
-    Framework = models.ForeignKey(Framework, on_delete=models.CASCADE, db_column='FrameworkId', related_name='policies')
+    FrameworkId = models.ForeignKey(Framework, on_delete=models.CASCADE, db_column='FrameworkId', related_name='policies')
     CurrentVersion = models.FloatField(null=False)
     Status = models.CharField(max_length=50, null=True, blank=True)
     PolicyDescription = models.TextField(null=True, blank=True)
@@ -74,6 +82,10 @@ class Policy(models.Model):
     Identifier = models.CharField(max_length=45, null=True, blank=True)
     PermanentTemporary = models.CharField(max_length=45, null=True, blank=True)
     ActiveInactive = models.CharField(max_length=45, null=True, blank=True)
+    Reviewer = models.CharField(max_length=255, null=True, blank=True)
+    CoverageRate = models.FloatField(null=True, blank=True)
+    AcknowledgementCount = models.IntegerField(default=0, null=True, blank=True)
+    AcknowledgedUserIds = models.JSONField(null=True, blank=True)
 
     class Meta:
         db_table = 'policies'
@@ -201,3 +213,47 @@ class RiskInstance(models.Model):
     
     class Meta:
         db_table = 'risk_instance'
+
+class FrameworkApproval(models.Model):
+    ApprovalId = models.AutoField(primary_key=True)
+    FrameworkId = models.ForeignKey('Framework', on_delete=models.CASCADE, db_column='FrameworkId', null=True)
+    # Identifier field is optional, uncomment if needed
+    # Identifier = models.CharField(max_length=45, null=True, blank=True)
+    ExtractedData = models.JSONField(null=True, blank=True)
+    UserId = models.IntegerField()
+    ReviewerId = models.IntegerField(null=True, blank=True)
+    Version = models.CharField(max_length=50, null=True, blank=True)
+    ApprovedNot = models.BooleanField(null=True)
+    ApprovedDate = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"FrameworkApproval {self.FrameworkId_id} (Version {self.Version})"
+
+    class Meta:
+        db_table = 'frameworkapproval'
+
+class ExportTask(models.Model):
+    id = models.AutoField(primary_key=True)
+    export_data = models.JSONField(null=True, blank=True)
+    file_type = models.CharField(max_length=10)
+    user_id = models.CharField(max_length=100)
+    s3_url = models.CharField(max_length=255, null=True, blank=True)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed')
+        ],
+        default='pending'
+    )
+    error = models.TextField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'exported_files'

@@ -1,70 +1,88 @@
 <template>
-  <div class="performance-page">
-    <h2>Performance Dashboard</h2>
-    
-    <!-- Search Bar -->
-    <div class="search-bar">
-      <div class="search-container">
-        <i class="fas fa-search search-icon"></i>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Search Policies..." 
-        />
+  <div class="performance-page-wrapper">
+    <div class="performance-page">
+      <h2 class="top-bar-heading">Policy 
+        Performance</h2>
+      
+      <div class="search-framework-row">
+        <div class="modern-search-bar-wrapper">
+          <div class="modern-search-bar">
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search Policy"
+              class="modern-search-input"
+            />
+            <button class="modern-search-btn" tabindex="-1">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+        <div class="framework-dropdown-center">
+          <select v-model="selectedFramework" @change="handleFrameworkChange">
+            <option value="all">Select Framework</option>
+            <option value="nist">NIST</option>
+            <option value="iso">ISO 27001</option>
+            <option value="pci">PCI DSS</option>
+            <option value="gdpr">GDPR</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <!-- Policy Cards Grid -->
-    <div class="policy-cards-grid">
-      <div 
-        v-for="(policy, index) in filteredPolicies" 
-        :key="index"
-        class="policy-card"
-      >
-        <div class="policy-card-header">
-          <div class="policy-card-icon">
-            {{ policy.category.charAt(0) }}
+      <!-- Policy Cards Grid -->
+      <div class="policy-cards-grid">
+        <div 
+          v-for="(policy, index) in filteredPolicies" 
+          :key="index"
+          class="policy-card"
+        >
+          <div class="policy-card-header">
+            <div class="policy-card-icon">
+              {{ policy.category.charAt(0) }}
+            </div>
+            <div class="policy-card-title">{{ policy.name }}</div>
+            <div class="policy-card-upload">
+              <i class="fas fa-cloud-arrow-up"></i>
+            </div>
           </div>
-          <div class="policy-card-title">{{ policy.name }}</div>
-          <div class="policy-card-upload">
-            <i class="fas fa-upload"></i>
+          <div class="policy-card-progressbar">
+            <div class="progress-bar-main">
+              <div class="progress-bar-fill" :style="{ width: policy.progress }"></div>
+            </div>
+            <span class="policy-card-progress-label">{{ policy.progress }} Latest results</span>
           </div>
-        </div>
-        <div class="policy-card-progressbar">
-          <div class="progress-bar-main">
-            <div class="progress-bar-fill" :style="{ width: policy.progress }"></div>
+          <div class="policy-card-analytics">
+            <span>Analytics</span>
+            <span class="policy-card-analytics-arrow">▼</span>
           </div>
-          <span class="policy-card-progress-label">{{ policy.progress }} Latest results</span>
-        </div>
-        <div class="policy-card-analytics">
-          <span>Analytics</span>
-          <span class="policy-card-analytics-arrow">▼</span>
-        </div>
-        <div class="policy-card-list">
-          <div class="policy-card-list-header">
-            <span>Performance</span>
-          </div>
-          <div 
-            v-for="(item, idx) in policy.subpolicies" 
-            :key="idx"
-            class="policy-card-list-row"
-          >
-            <span class="policy-card-list-label">{{ item.name }}</span>
-            <div class="policy-card-list-progress">
-              <div class="progress-bar-sub">
-                <div 
-                  class="progress-bar-fill-sub" 
-                  :style="{ width: `${item.percent}%` }"
-                ></div>
+          <div class="policy-card-list">
+            <div class="policy-card-list-header">
+              <span>Performance</span>
+            </div>
+            <div 
+              v-for="(item, idx) in policy.subpolicies" 
+              :key="idx"
+              class="policy-card-list-row"
+            >
+              <span class="policy-card-list-label">{{ item.name }}</span>
+              <div class="policy-card-list-progress">
+                <template v-if="item.status === 'Completed'">
+                  <div class="progress-bar-sub">
+                    <div 
+                      class="progress-bar-fill-sub" 
+                      :style="{ width: `${item.percent}%` }"
+                    ></div>
+                  </div>
+                </template>
+                <span 
+                  :class="[
+                    'policy-card-list-status',
+                    item.status === 'Completed' ? 'completed-modern' : 'inprogress-modern'
+                  ]"
+                >
+                  {{ item.status }}
+                </span>
               </div>
-              <span 
-                :class="[
-                  'policy-card-list-status',
-                  item.status === 'Completed' ? 'completed' : 'inprogress'
-                ]"
-              >
-                {{ item.status }}
-              </span>
             </div>
           </div>
         </div>
@@ -80,6 +98,7 @@ export default {
   name: 'PerformancePage',
   setup() {
     const searchQuery = ref('')
+    const selectedFramework = ref('all')
 
     // Sample data for policies
     const policies = [
@@ -88,6 +107,7 @@ export default {
         name: 'Financial Policy',
         category: 'Financial',
         progress: '40%',
+        framework: 'nist',
         subpolicies: [
           { name: 'Budget Management', status: 'Completed', percent: 95 },
           { name: 'Expense Tracking', status: 'Completed', percent: 88 },
@@ -101,6 +121,7 @@ export default {
         name: 'Service Policy',
         category: 'Service',
         progress: '50%',
+        framework: 'iso',
         subpolicies: [
           { name: 'Customer Support', status: 'Completed', percent: 92 },
           { name: 'Service Delivery', status: 'In Progress', percent: 75 }
@@ -111,6 +132,7 @@ export default {
         name: 'Loan Policy',
         category: 'Loan',
         progress: '80%',
+        framework: 'pci',
         subpolicies: [
           { name: 'Loan Processing', status: 'Completed', percent: 90 },
           { name: 'Credit Assessment', status: 'Completed', percent: 85 },
@@ -121,250 +143,62 @@ export default {
       }
     ]
 
-    // Filter policies based on search query
+    // Filter policies based on search query and selected framework
     const filteredPolicies = computed(() => {
-      return policies.filter(policy => 
-        policy.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-    })
+      return policies.filter(policy => {
+        const matchesSearch = policy.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+        const matchesFramework = selectedFramework.value === 'all' || policy.framework === selectedFramework.value;
+        return matchesSearch && matchesFramework;
+      });
+    });
+    
+    const handleFrameworkChange = () => {
+      // Framework change handler
+    }
 
     return {
       searchQuery,
-      filteredPolicies
+      selectedFramework,
+      filteredPolicies,
+      handleFrameworkChange
     }
   }
 }
 </script>
 
 <style scoped>
-/* Styling for the main performance page */
-.performance-page {
-  padding: 20px;
-  margin-left: 180px;
-  background: #f7f9fa;
-  min-height: 100vh;
-}
+@import './PerformancePage.css';
 
-.performance-page h2 {
-  color: #2d3748;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  font-weight: 600;
-}
-
-.search-bar {
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.search-container {
-  display: flex;
-  align-items: center;
-  border: 1px solid #e2e8f0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.search-container:focus-within {
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.search-container input {
-  border: none;
-  outline: none;
-  padding: 4px 8px;
-  font-size: 14px;
-  width: 250px;
-  color: #4a5568;
-}
-
-.search-icon {
-  color: #a0aec0;
-  margin-right: 8px;
-}
-
-/* Policy Cards Grid */
-.policy-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 10px;
-}
-
-/* Policy Card Styles */
-.policy-card {
-  background: #f5f6fa;
-  border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 260px;
-  max-width: 420px;
-  font-size: 0.97rem;
-  border: 3px solid #a084e8;
-}
-
-.policy-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.policy-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #f5f6fa;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: #7c3aed;
-  border: 2px solid #a084e8;
-}
-
-.policy-card-title {
-  font-size: 1.05rem;
+/* Top bar heading styles */
+.top-bar-heading {
+  margin: 0;
+  font-size: 1.8rem;
   font-weight: 700;
-  color: #7c3aed;
-  flex: 1;
+  color: #26324b;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 32px;
+  transition: all 0.3s ease;
 }
 
-.policy-card-upload {
-  background: #4f6cff;
-  color: #fff;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.12);
+.top-bar-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #6c2cff, #4f46e5);
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
-.policy-card-progressbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+.top-bar-heading:hover::after {
+  width: 100%;
 }
 
-.progress-bar-main {
-  background: #e5e7eb;
-  width: 90px;
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-right: 4px;
-}
-
-.progress-bar-fill {
-  background: linear-gradient(90deg, #b6f7b0, #4f6cff);
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.4s;
-}
-
-.policy-card-progress-label {
-  font-size: 0.95rem;
-  color: #222;
-  font-weight: 500;
-}
-
-.policy-card-analytics {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.95rem;
-  color: #222;
-  font-weight: 500;
-  margin-bottom: 4px;
-  cursor: pointer;
-}
-
-.policy-card-analytics-arrow {
-  font-size: 1rem;
-  margin-left: 2px;
-}
-
-.policy-card-list {
-  background: #f5f6fa;
-  border-radius: 8px;
-  padding: 8px 6px 6px 6px;
-  margin-top: 4px;
-  font-size: 0.95rem;
-}
-
-.policy-card-list-header {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #222;
-  margin-bottom: 4px;
-}
-
-.policy-card-list-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.policy-card-list-label {
-  font-size: 0.95rem;
-  color: #222;
-  font-weight: 500;
-  flex: 1;
-}
-
-.policy-card-list-progress {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 80px;
-}
-
-.progress-bar-sub {
-  background: #e5e7eb;
-  width: 40px;
-  height: 6px;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-right: 2px;
-}
-
-.progress-bar-fill-sub {
-  background: linear-gradient(90deg, #b6f7b0, #4f6cff);
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s;
-}
-
-.policy-card-list-status {
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 6px;
-  padding: 1px 6px;
-  margin-left: 2px;
-}
-
-.policy-card-list-status.completed {
-  background: #b6f7b0;
-  color: #222;
-}
-
-.policy-card-list-status.inprogress {
-  background: #ffb3b3;
-  color: #b91c1c;
+.performance-page-wrapper {
+  padding-left: 20px; /* Additional left padding via wrapper */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 </style> 
