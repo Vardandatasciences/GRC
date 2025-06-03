@@ -52,7 +52,15 @@ from .routes.frameworks import (
     update_framework_approval,
     submit_framework_review,
     get_latest_framework_approval,
-    resubmit_framework
+    resubmit_framework,
+    submit_framework_approval_review,
+    resubmit_framework_approval,
+    get_framework_for_approval,
+    approve_framework_policy,
+    approve_framework_subpolicy,
+    reject_framework_subpolicy,
+    get_rejected_frameworks_with_hierarchy,
+    get_pending_framework_approvals_for_reviewer
 )
 
 urlpatterns = [
@@ -114,5 +122,13 @@ urlpatterns = [
     path('api/framework-approvals/<int:approval_id>/update/', update_framework_approval, name='update-framework-approval'),
     path('api/frameworks/<int:framework_id>/submit-review/', submit_framework_review, name='submit-framework-review'),
     path('api/framework-approvals/latest/<int:framework_id>/', get_latest_framework_approval, name='get-latest-framework-approval'),
-    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework')
+    path('api/frameworks/<int:framework_id>/resubmit/', resubmit_framework, name='resubmit-framework'),
+    path('api/frameworks/<int:framework_id>/submit-approval/', submit_framework_approval_review, name='submit-framework-approval-review'),
+    path('api/framework-approvals/<int:approval_id>/resubmit/', resubmit_framework_approval, name='resubmit-framework-approval'),
+    path('api/frameworks/<int:framework_id>/get-for-approval/', get_framework_for_approval, name='get-framework-for-approval'),
+    path('api/frameworks/<int:framework_id>/approve-policy/<int:policy_id>/', approve_framework_policy, name='approve-framework-policy'),
+    path('api/frameworks/<int:framework_id>/policies/<int:policy_id>/approve-subpolicy/<int:subpolicy_id>/', approve_framework_subpolicy, name='approve-framework-subpolicy'),
+    path('api/frameworks/<int:framework_id>/policies/<int:policy_id>/reject-subpolicy/<int:subpolicy_id>/', reject_framework_subpolicy, name='reject-framework-subpolicy'),
+    path('api/rejected-frameworks-with-hierarchy/', get_rejected_frameworks_with_hierarchy, name='get-rejected-frameworks-with-hierarchy'),
+    path('api/pending-framework-approvals/', get_pending_framework_approvals_for_reviewer, name='get-pending-framework-approvals')
 ]

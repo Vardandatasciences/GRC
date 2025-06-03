@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Framework, Policy, SubPolicy, PolicyApproval
+from .models import Framework, Policy, SubPolicy, PolicyApproval, ExportTask
 from datetime import date
 from django.contrib.auth.models import User
 
@@ -129,3 +129,8 @@ class PolicyApprovalSerializer(serializers.ModelSerializer):
             'ApprovalId', 'ExtractedData', 'UserId', 
             'ReviewerId', 'Version', 'ApprovedNot', 'ApprovedDate', 'PolicyId'
         ]
+
+class ExportTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportTask
+        fields = '__all__'  

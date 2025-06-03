@@ -134,8 +134,9 @@
               <label>Upload Document</label>
               <div class="input-with-icon">
                 <i class="fas fa-file-upload"></i>
-                <span>Choose File</span>
-                <button class="browse-btn">Browse</button>
+                <span>{{ newFramework.DocURL ? newFramework.DocURL.name : 'Choose File' }}</span>
+                <button class="browse-btn" type="button" @click="() => $refs.frameworkFileInput.click()">Browse</button>
+                <input type="file" ref="frameworkFileInput" style="display:none" @change="onFrameworkFileChange" />
               </div>
             </div>
           </div>
@@ -333,7 +334,11 @@
               </div>
             </div>
 
-            <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+            <button class="upload-btn" type="button" @click="() => $refs['policyFileInput' + idx][0].click()">
+              <i class="fas fa-plus"></i> Upload Document
+            </button>
+            <span v-if="policy.DocURL" class="selected-file-name">{{ policy.DocURL.name }}</span>
+            <input type="file" :ref="'policyFileInput' + idx" style="display:none" @change="e => onPolicyFileChange(e, idx)" />
             <button class="add-sub-policy-btn" @click="handleAddSubPolicy(idx)">
               <i class="fas fa-plus"></i> Add Sub Policy
             </button>
@@ -400,7 +405,11 @@
                 </div>
               </div>
  
-              <button class="upload-btn"><i class="fas fa-plus"></i> Upload Document</button>
+              <button class="upload-btn" type="button" @click="() => $refs[`subpolicyFileInput${idx}_${subIdx}`][0].click()">
+                <i class="fas fa-plus"></i> Upload Document
+              </button>
+              <span v-if="sub.DocURL" class="selected-file-name">{{ sub.DocURL.name }}</span>
+              <input type="file" :ref="`subpolicyFileInput${idx}_${subIdx}`" style="display:none" @change="e => onSubPolicyFileChange(e, idx, subIdx)" />
             </div>
           </div>
         </div>
@@ -586,7 +595,7 @@ export default {
         Control: '',
         Description: '',
         CreatedByName: '',
-        PermanentTemporary: 'Permanent'
+        PermanentTemporary: ''
       })
     }
  
@@ -654,7 +663,7 @@ export default {
           policy.Status = policy.Status || 'Under Review'
           policy.ActiveInactive = policy.ActiveInactive || 'Inactive'
           policy.CreatedByName = creatorUser.UserName
-          policy.Reviewer = reviewerUser ? reviewerUser.UserId : null
+          policy.Reviewer = reviewerUser ? reviewerUser.UserName : null
 
           // Validate subpolicies
           for (const sub of policy.subpolicies) {
@@ -665,7 +674,6 @@ export default {
             }
             // Set default values for subpolicies
             sub.Status = sub.Status || 'Under Review'
-            sub.PermanentTemporary = sub.PermanentTemporary || 'Permanent'
             sub.CreatedByName = creatorUser.UserName
           }
         }
@@ -675,18 +683,18 @@ export default {
           const payload = {
             ...frameworkFormData.value,
             CreatedByName: creatorUser.UserName,
-            Reviewer: reviewerUser ? reviewerUser.UserId : null,
+            Reviewer: reviewerUser ? reviewerUser.UserName : null,
             policies: policiesForm.value.map(policy => ({
               ...policy,
               CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
               CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
+              Reviewer: reviewerUser ? reviewerUser.UserName : null,
               subpolicies: policy.subpolicies.map(sub => ({
                 ...sub,
                 CreatedByName: creatorUser.UserName,
                 CreatedByDate: new Date().toISOString().split('T')[0],
                 Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
+                PermanentTemporary: ''
               }))
             }))
           }
@@ -704,13 +712,13 @@ export default {
               ...policy,
               CoverageRate: policy.CoverageRate !== '' && policy.CoverageRate !== null && policy.CoverageRate !== undefined ? Number(policy.CoverageRate) : null,
               CreatedByName: creatorUser.UserName,
-              Reviewer: reviewerUser ? reviewerUser.UserId : null,
+              Reviewer: reviewerUser ? reviewerUser.UserName : null,
               subpolicies: policy.subpolicies.map(sub => ({
                 ...sub,
                 CreatedByName: creatorUser.UserName,
                 CreatedByDate: new Date().toISOString().split('T')[0],
                 Status: 'Under Review',
-                PermanentTemporary: 'Permanent'
+                PermanentTemporary: ''
               }))
             };
             try {
@@ -757,6 +765,21 @@ export default {
       policiesForm.value = []
     }
 
+    // File input handlers
+    const frameworkFileInput = ref(null)
+    const onFrameworkFileChange = (e) => {
+      const file = e.target.files[0]
+      if (file) newFramework.value.DocURL = file
+    }
+    const onPolicyFileChange = (e, idx) => {
+      const file = e.target.files[0]
+      if (file) policiesForm.value[idx].DocURL = file
+    }
+    const onSubPolicyFileChange = (e, idx, subIdx) => {
+      const file = e.target.files[0]
+      if (file) policiesForm.value[idx].subpolicies[subIdx].DocURL = file
+    }
+
     // Fetch frameworks and users on mount
     onMounted(() => {
       fetchFrameworks()
@@ -787,6 +810,10 @@ export default {
       getSelectedFrameworkName,
       handleChangeFramework,
       frameworkFormData,
+      frameworkFileInput,
+      onFrameworkFileChange,
+      onPolicyFileChange,
+      onSubPolicyFileChange,
     }
   }
 }

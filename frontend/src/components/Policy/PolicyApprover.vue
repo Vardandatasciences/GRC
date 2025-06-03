@@ -24,6 +24,8 @@
         <div class="summary-icon"><i class="fas fa-check-circle"></i></div>
         <div class="summary-content">
           <div class="summary-label">Approved</div>
+
+          
           <div class="summary-value">{{ approvedApprovalsCount }}</div>
           
         </div>
@@ -45,248 +47,274 @@
     <div class="approvals-list">
       <h3>My Approval Tasks</h3>
       <ul>
-        <li v-for="policy in sortedPolicies" 
-            :key="policy.ApprovalId" 
-            :class="{'new-policy': isNewPolicy(policy)}">
-          <strong class="clickable" @click="openApprovalDetails(policy)">
-            {{ getPolicyId(policy) }}
-          </strong>
-          <span class="item-type-badge" :class="{
-            'policy-badge': !policy.ExtractedData.type || policy.ExtractedData.type === 'policy',
-            'subpolicy-badge': policy.ExtractedData.type === 'subpolicy'
-          }">
-            {{ policy.ExtractedData.type === 'subpolicy' ? 'Subpolicy' : 'Policy' }}
-          </span>
-          <span class="date-info">
-            {{ formatDate(policy.ExtractedData?.CreatedByDate || policy.created_at) }}
-          </span>
-          <span v-if="isNewPolicy(policy)" class="new-badge">NEW</span>
-          <span class="policy-scope">{{ policy.ExtractedData.Scope || 'No Scope' }}</span>
-          <span class="assigned-by">
-            <img class="assigned-avatar" :src="policy.ExtractedData.CreatedByAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'" alt="avatar" />
-            {{ policy.ExtractedData.CreatedByName || 'System' }}
-          </span>
-          <span v-if="policy.ApprovedNot === null" class="approval-status pending">(Pending)</span>
-          <span v-else-if="policy.ApprovedNot === true" class="approval-status approved">(Approved)</span>
-          <span v-else class="approval-status rejected">(Rejected)</span>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Policy/Compliance Details Modal/Section -->
-    <div v-if="showDetails && selectedApproval" class="policy-details-modal">
-      <div class="policy-details-content">
-        <h3>
-          <span class="detail-type-indicator">
-            {{ isComplianceApproval ? 'Compliance' : 'Policy' }}
-          </span> 
-          Details: {{ getPolicyId(selectedApproval) }}
-          <span class="version-pill">Version: {{ selectedApproval.version || 'u1' }}</span>
-          <span v-if="selectedApproval.showingApprovedOnly" class="approved-only-badge">
-            Showing Approved Only
-          </span>
-        </h3>
-        
-        <!-- Add version history section -->
-        <div class="version-history" v-if="selectedApproval.ExtractedData">
-          <div class="version-info">
-            <div class="version-label">Current Version:</div>
-            <div class="version-value">{{ selectedApproval.version || 'u1' }}</div>
-          </div>
-          <div v-if="selectedApproval.ExtractedData.subpolicies && selectedApproval.ExtractedData.subpolicies.length > 0" 
-               class="subpolicies-versions">
-            <h4>Subpolicies Versions:</h4>
-            <ul class="version-list">
-              <li v-for="sub in selectedApproval.ExtractedData.subpolicies" :key="sub.SubPolicyId">
-                <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
-                <span class="version-tag">v{{ sub.version || 'u1' }}</span>
-                <span v-if="sub.resubmitted" class="resubmitted-tag">Resubmitted</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-        
-        <button class="close-btn" @click="closeApprovalDetails">Close</button>
-        
-        <!-- Policy/Compliance Approval Section -->
-        <div class="policy-approval-section">
-          <h4>{{ isComplianceApproval ? 'Compliance' : 'Policy' }} Approval</h4>
-          
-          <!-- Add policy status indicator -->
-          <div class="policy-status-indicator">
-            <span class="status-label">Status:</span>
-            <span class="status-value" :class="{
-              'status-approved': selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved',
-              'status-rejected': selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected',
-              'status-pending': selectedApproval.ApprovedNot === null && selectedApproval.ExtractedData?.Status !== 'Approved' && selectedApproval.ExtractedData?.Status !== 'Rejected'
+        <template v-if="!showDetails || !selectedApproval">
+          <li v-for="policy in sortedPolicies" 
+              :key="policy.ApprovalId" 
+              :class="{'new-policy': isNewPolicy(policy)}">
+            <strong class="clickable" @click="openApprovalDetails(policy)">
+              {{ getPolicyId(policy) }}
+            </strong>
+            <span class="item-type-badge" :class="{
+              'policy-badge': !policy.ExtractedData.type || policy.ExtractedData.type === 'policy',
+              'subpolicy-badge': policy.ExtractedData.type === 'subpolicy'
             }">
-              {{ selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved' ? 'Approved' : 
-                 selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected' ? 'Rejected' : 
-                 'Under Review' }}
+              {{ policy.ExtractedData.type === 'subpolicy' ? 'Subpolicy' : 'Policy' }}
             </span>
-          </div>
-          
-          <div class="policy-actions">
-            <button class="submit-btn" @click="submitReview()" data-action="submit-policy-review">
-              <i class="fas fa-paper-plane"></i> Submit Review
-            </button>
-          </div>
-          
-          <!-- Add this section to show policy approval status - hide when already showing in the indicator -->
-          <div v-if="approvalStatus && 
-                    !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved') && 
-                    !(selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected')" 
-               class="policy-approval-status">
-            <div class="status-container">
-              <div class="status-label">Status:</div>
-              <div class="status-value" :class="{
-                'approved': approvalStatus.approved === true,
-                'rejected': approvalStatus.approved === false,
-                'pending': approvalStatus.approved === null
-              }">
-                {{ approvalStatus.approved === true ? 'Approved' : 
-                   approvalStatus.approved === false ? 'Rejected' : 'Pending' }}
-              </div>
-            </div>
-            
-            <!-- Show approved date if approved -->
-            <div v-if="approvalStatus.approved === true && selectedApproval.ApprovedDate" class="policy-approved-date">
-              <div class="date-label">Approved Date:</div>
-              <div class="date-value">{{ formatDate(selectedApproval.ApprovedDate) }}</div>
-            </div>
-            
-            <!-- Show remarks if rejected -->
-            <div v-if="approvalStatus.approved === false && 
-                      approvalStatus.remarks" class="policy-rejection-remarks">
-              <div class="remarks-label">Rejection Reason:</div>
-              <div class="remarks-value">{{ approvalStatus.remarks }}</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Display details based on type -->
-        <div v-if="selectedApproval.ExtractedData">
-          <!-- For compliance approvals -->
-          <div v-if="isComplianceApproval" class="compliance-details">
-            <div class="compliance-detail-row">
-              <strong>Description:</strong> <span>{{ selectedApproval.ExtractedData.ComplianceItemDescription }}</span>
-            </div>
-            <div class="compliance-detail-row">
-              <strong>Criticality:</strong> <span>{{ selectedApproval.ExtractedData.Criticality }}</span>
-            </div>
-            <div class="compliance-detail-row">
-              <strong>Impact:</strong> <span>{{ selectedApproval.ExtractedData.Impact }}</span>
-            </div>
-            <div class="compliance-detail-row">
-              <strong>Probability:</strong> <span>{{ selectedApproval.ExtractedData.Probability }}</span>
-            </div>
-            <div class="compliance-detail-row">
-              <strong>Mitigation:</strong> <span>{{ selectedApproval.ExtractedData.mitigation }}</span>
-            </div>
-            <div class="policy-actions">
-              <button class="approve-btn" @click="approveCompliance()">Approve</button>
-              <button class="reject-btn" @click="rejectCompliance()">Reject</button>
-            </div>
-          </div>
-          
-          <!-- For policy approvals (existing code) -->
-          <div v-else v-for="(value, key) in selectedApproval.ExtractedData" :key="key" class="policy-detail-row">
-            <template v-if="key !== 'subpolicies' && key !== 'policy_approval'">
-              <strong>{{ key }}:</strong> <span>{{ value }}</span>
-            </template>
-            
-            <!-- Subpolicies Section -->
-            <template v-if="key === 'subpolicies' && Array.isArray(value)">
-              <h4>Subpolicies</h4>
-              <ul v-if="value && value.length">
-                <li v-for="sub in value" :key="sub.Identifier" class="subpolicy-status">
-                  <div>
-                    <span class="subpolicy-id">{{ sub.Identifier }}</span> :
-                    <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
-                    <span class="item-type-badge subpolicy-badge">Subpolicy</span>
-                    <span
-                      class="badge"
-                      :class="{
-                        approved: sub.approval?.approved === true || (selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
-                        rejected: sub.approval?.approved === false && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
-                        pending: sub.approval?.approved === null && !sub.resubmitted && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
-                        resubmitted: sub.approval?.approved === null && sub.resubmitted && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved')
-                      }"
-                    >
-                      {{
-                        (sub.approval?.approved === true || (selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'))
-                          ? 'Approved'
-                          : sub.approval?.approved === false
-                          ? 'Rejected'
-                          : sub.resubmitted
-                          ? 'Resubmitted'
-                          : 'Pending'
-                      }}
+            <span class="date-info">
+              {{ formatDate(policy.ExtractedData?.CreatedByDate || policy.created_at) }}
+            </span>
+            <span v-if="isNewPolicy(policy)" class="new-badge">NEW</span>
+            <span class="policy-scope">{{ policy.ExtractedData.Scope || 'No Scope' }}</span>
+            <span class="assigned-by">
+              <img class="assigned-avatar" :src="policy.ExtractedData.CreatedByAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'" alt="avatar" />
+              {{ policy.ExtractedData.CreatedByName || 'System' }}
+            </span>
+            <span v-if="policy.ApprovedNot === null" class="approval-status pending">(Pending)</span>
+            <span v-else-if="policy.ApprovedNot === true" class="approval-status approved">(Approved)</span>
+            <span v-else class="approval-status rejected">(Rejected)</span>
+          </li>
+        </template>
+        <template v-else>
+          <li :key="selectedApproval.ApprovalId" :class="{'new-policy': isNewPolicy(selectedApproval)}">
+            <strong class="clickable" @click="closeApprovalDetails()">
+              {{ getPolicyId(selectedApproval) }}
+            </strong>
+            <span class="item-type-badge" :class="{
+              'policy-badge': !selectedApproval.ExtractedData.type || selectedApproval.ExtractedData.type === 'policy',
+              'subpolicy-badge': selectedApproval.ExtractedData.type === 'subpolicy'
+            }">
+              {{ selectedApproval.ExtractedData.type === 'subpolicy' ? 'Subpolicy' : 'Policy' }}
+            </span>
+            <span class="date-info">
+              {{ formatDate(selectedApproval.ExtractedData?.CreatedByDate || selectedApproval.created_at) }}
+            </span>
+            <span v-if="isNewPolicy(selectedApproval)" class="new-badge">NEW</span>
+            <span class="policy-scope">{{ selectedApproval.ExtractedData.Scope || 'No Scope' }}</span>
+            <span class="assigned-by">
+              <img class="assigned-avatar" :src="selectedApproval.ExtractedData.CreatedByAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'" alt="avatar" />
+              {{ selectedApproval.ExtractedData.CreatedByName || 'System' }}
+            </span>
+            <span v-if="selectedApproval.ApprovedNot === null" class="approval-status pending">(Pending)</span>
+            <span v-else-if="selectedApproval.ApprovedNot === true" class="approval-status approved">(Approved)</span>
+            <span v-else class="approval-status rejected">(Rejected)</span>
+            <!-- Inline details below the selected card -->
+            <div v-if="showDetails" class="policy-details-inline">
+              <div class="policy-details-content">
+                <h3>
+                  <span class="detail-type-indicator">
+                    {{ isComplianceApproval ? 'Compliance' : 'Policy' }}
+                  </span> 
+                  Details: {{ getPolicyId(selectedApproval) }}
+                  <span class="version-pill">Version: {{ selectedApproval.version || 'u1' }}</span>
+                  <span v-if="selectedApproval.showingApprovedOnly" class="approved-only-badge">
+                    Showing Approved Only
+                  </span>
+                </h3>
+                
+                <!-- Add version history section -->
+                <div class="version-history" v-if="selectedApproval.ExtractedData">
+                  <div class="version-info">
+                    <div class="version-label">Current Version:</div>
+                    <div class="version-value">{{ selectedApproval.version || 'u1' }}</div>
+                  </div>
+                  <div v-if="selectedApproval.ExtractedData.subpolicies && selectedApproval.ExtractedData.subpolicies.length > 0" 
+                       class="subpolicies-versions">
+                    <h4>Subpolicies Versions:</h4>
+                    <ul class="version-list">
+                      <li v-for="sub in selectedApproval.ExtractedData.subpolicies" :key="sub.SubPolicyId">
+                        <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
+                        <span class="version-tag">v{{ sub.version || 'u1' }}</span>
+                        <span v-if="sub.resubmitted" class="resubmitted-tag">Resubmitted</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <button class="close-btn" @click="closeApprovalDetails">Close</button>
+                
+                <!-- Policy/Compliance Approval Section -->
+                <div class="policy-approval-section">
+                  <h4>{{ isComplianceApproval ? 'Compliance' : 'Policy' }} Approval</h4>
+                  
+                  <!-- Add policy status indicator -->
+                  <div class="policy-status-indicator">
+                    <span class="status-label">Status:</span>
+                    <span class="status-value" :class="{
+                      'status-approved': selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved',
+                      'status-rejected': selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected',
+                      'status-pending': selectedApproval.ApprovedNot === null && selectedApproval.ExtractedData?.Status !== 'Approved' && selectedApproval.ExtractedData?.Status !== 'Rejected'
+                    }">
+                      {{ selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved' ? 'Approved' : 
+                         selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected' ? 'Rejected' : 
+                         'Under Review' }}
                     </span>
                   </div>
-                  <div><strong>Description:</strong> {{ sub.Description }}</div>
-                  <div><strong>Control:</strong> {{ sub.Control }}</div>
-                  <div v-if="sub.approval?.approved === false">
-                    <strong>Reason:</strong> {{ sub.approval?.remarks }}
+                  
+                  <div class="policy-actions">
+                    <button class="submit-btn" @click="submitReview()" data-action="submit-policy-review">
+                      <i class="fas fa-paper-plane"></i> Submit Review
+                    </button>
                   </div>
-                  <!-- Add these buttons inside the subpolicies view, under the approval buttons -->
-                  <div class="subpolicy-actions">
-                    <template v-if="isReviewer">
-                      <!-- Show approve/reject buttons for reviewer -->
-                      <button 
-                        v-if="sub.Status === 'Under Review' || !sub.Status"
-                        @click="approveSubpolicy(sub)" 
-                        class="approve-button"
-                      >
-                        Approve
-                      </button>
-                      <button 
-                        v-if="sub.Status === 'Under Review' || !sub.Status"
-                        @click="rejectSubpolicy(sub)" 
-                        class="reject-button"
-                      >
-                        Reject
-                      </button>
+                  
+                  <!-- Add this section to show policy approval status - hide when already showing in the indicator -->
+                  <div v-if="approvalStatus && 
+                            !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved') && 
+                            !(selectedApproval.ApprovedNot === false || selectedApproval.ExtractedData?.Status === 'Rejected')" 
+                       class="policy-approval-status">
+                    <div class="status-container">
+                      <div class="status-label">Status:</div>
+                      <div class="status-value" :class="{
+                        'approved': approvalStatus.approved === true,
+                        'rejected': approvalStatus.approved === false,
+                        'pending': approvalStatus.approved === null
+                      }">
+                        {{ approvalStatus.approved === true ? 'Approved' : 
+                           approvalStatus.approved === false ? 'Rejected' : 'Pending' }}
+                      </div>
+                    </div>
+                    
+                    <!-- Show approved date if approved -->
+                    <div v-if="approvalStatus.approved === true && selectedApproval.ApprovedDate" class="policy-approved-date">
+                      <div class="date-label">Approved Date:</div>
+                      <div class="date-value">{{ formatDate(selectedApproval.ApprovedDate) }}</div>
+                    </div>
+                    
+                    <!-- Show remarks if rejected -->
+                    <div v-if="approvalStatus.approved === false && 
+                              approvalStatus.remarks" class="policy-rejection-remarks">
+                      <div class="remarks-label">Rejection Reason:</div>
+                      <div class="remarks-value">{{ approvalStatus.remarks }}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Display details based on type -->
+                <div v-if="selectedApproval.ExtractedData">
+                  <!-- For compliance approvals -->
+                  <div v-if="isComplianceApproval" class="compliance-details">
+                    <div class="compliance-detail-row">
+                      <strong>Description:</strong> <span>{{ selectedApproval.ExtractedData.ComplianceItemDescription }}</span>
+                    </div>
+                    <div class="compliance-detail-row">
+                      <strong>Criticality:</strong> <span>{{ selectedApproval.ExtractedData.Criticality }}</span>
+                    </div>
+                    <div class="compliance-detail-row">
+                      <strong>Impact:</strong> <span>{{ selectedApproval.ExtractedData.Impact }}</span>
+                    </div>
+                    <div class="compliance-detail-row">
+                      <strong>Probability:</strong> <span>{{ selectedApproval.ExtractedData.Probability }}</span>
+                    </div>
+                    <div class="compliance-detail-row">
+                      <strong>Mitigation:</strong> <span>{{ selectedApproval.ExtractedData.mitigation }}</span>
+                    </div>
+                    <div class="policy-actions">
+                      <button class="approve-btn" @click="approveCompliance()">Approve</button>
+                      <button class="reject-btn" @click="rejectCompliance()">Reject</button>
+                    </div>
+                  </div>
+                  
+                  <!-- For policy approvals (existing code) -->
+                  <div v-else v-for="(value, key) in selectedApproval.ExtractedData" :key="key" class="policy-detail-row">
+                    <template v-if="key !== 'subpolicies' && key !== 'policy_approval'">
+                      <strong>{{ key }}:</strong> <span>{{ value }}</span>
                     </template>
                     
-                    <!-- For users (not reviewers), add edit button for rejected subpolicies -->
-                    <template v-else>
-                      <button 
-                        v-if="sub.Status === 'Rejected'"
-                        @click="openEditSubpolicyModal(sub)" 
-                        class="edit-button"
-                      >
-                        Edit & Resubmit
-                      </button>
+                    <!-- Subpolicies Section -->
+                    <template v-if="key === 'subpolicies' && Array.isArray(value)">
+                      <h4>Subpolicies</h4>
+                      <ul v-if="value && value.length">
+                        <li v-for="sub in value" :key="sub.Identifier" class="subpolicy-status">
+                          <div>
+                            <span class="subpolicy-id">{{ sub.Identifier }}</span> :
+                            <span class="subpolicy-name">{{ sub.SubPolicyName }}</span>
+                            <span class="item-type-badge subpolicy-badge">Subpolicy</span>
+                            <span
+                              class="badge"
+                              :class="{
+                                approved: sub.approval?.approved === true || (selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
+                                rejected: sub.approval?.approved === false && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
+                                pending: sub.approval?.approved === null && !sub.resubmitted && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'),
+                                resubmitted: sub.approval?.approved === null && sub.resubmitted && !(selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved')
+                              }"
+                            >
+                              {{
+                                (sub.approval?.approved === true || (selectedApproval.ApprovedNot === true || selectedApproval.ExtractedData?.Status === 'Approved'))
+                                  ? 'Approved'
+                                  : sub.approval?.approved === false
+                                  ? 'Rejected'
+                                  : sub.resubmitted
+                                  ? 'Resubmitted'
+                                  : 'Pending'
+                              }}
+                            </span>
+                          </div>
+                          <div><strong>Description:</strong> {{ sub.Description }}</div>
+                          <div><strong>Control:</strong> {{ sub.Control }}</div>
+                          <div v-if="sub.approval?.approved === false">
+                            <strong>Reason:</strong> {{ sub.approval?.remarks }}
+                          </div>
+                          <!-- Add these buttons inside the subpolicies view, under the approval buttons -->
+                          <div class="subpolicy-actions">
+                            <template v-if="isReviewer">
+                              <!-- Show approve/reject buttons for reviewer -->
+                              <button 
+                                v-if="sub.Status === 'Under Review' || !sub.Status"
+                                @click="approveSubpolicy(sub)" 
+                                class="approve-button"
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                v-if="sub.Status === 'Under Review' || !sub.Status"
+                                @click="rejectSubpolicy(sub)" 
+                                class="reject-button"
+                              >
+                                Reject
+                              </button>
+                            </template>
+                            
+                            <!-- For users (not reviewers), add edit button for rejected subpolicies -->
+                            <template v-else>
+                              <button 
+                                v-if="sub.Status === 'Rejected'"
+                                @click="openEditSubpolicyModal(sub)" 
+                                class="edit-button"
+                              >
+                                Edit & Resubmit
+                              </button>
+                            </template>
+                          </div>
+                        </li>
+                      </ul>
                     </template>
                   </div>
-                </li>
-              </ul>
-            </template>
-          </div>
-        </div>
+                </div>
 
-        <!-- Add this inside the policy-details-content div -->
-        <div v-if="selectedApproval && selectedApproval.PolicyId" class="policy-detail-row">
-          <strong>Policy ID:</strong> <span>{{ getPolicyId(selectedApproval) }}</span>
-        </div>
-      </div>
-      
-      <!-- Rejection Modal -->
-      <div v-if="showRejectModal" class="reject-modal">
-        <div class="reject-modal-content">
-          <h4>Rejection Reason</h4>
-          <p>Please provide a reason for rejecting {{ rejectingType === 'policy' ? 'the policy' : 'subpolicy ' + rejectingSubpolicy?.Identifier }}</p>
-          <textarea 
-            v-model="rejectionComment" 
-            class="rejection-comment" 
-            placeholder="Enter your comments here..."></textarea>
-          <div class="reject-modal-actions">
-            <button class="cancel-btn" @click="cancelRejection">Cancel</button>
-            <button class="confirm-btn" @click="confirmRejection">Confirm Rejection</button>
-          </div>
-        </div>
-      </div>
+                <!-- Add this inside the policy-details-content div -->
+                <div v-if="selectedApproval && selectedApproval.PolicyId" class="policy-detail-row">
+                  <strong>Policy ID:</strong> <span>{{ getPolicyId(selectedApproval) }}</span>
+                </div>
+              </div>
+              
+              <!-- Rejection Modal -->
+              <div v-if="showRejectModal" class="reject-modal">
+                <div class="reject-modal-content">
+                  <h4>Rejection Reason</h4>
+                  <p>Please provide a reason for rejecting {{ rejectingType === 'policy' ? 'the policy' : 'subpolicy ' + rejectingSubpolicy?.Identifier }}</p>
+                  <textarea 
+                    v-model="rejectionComment" 
+                    class="rejection-comment" 
+                    placeholder="Enter your comments here..."></textarea>
+                  <div class="reject-modal-actions">
+                    <button class="cancel-btn" @click="cancelRejection">Cancel</button>
+                    <button class="confirm-btn" @click="confirmRejection">Confirm Rejection</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        </template>
+      </ul>
     </div>
 
     <!-- GRC Tasks Card -->
@@ -614,17 +642,6 @@
       </div>
     </div>
 
-    <!-- Role toggle for testing -->
-    <div class="role-toggle">
-      <label>
-        <input type="checkbox" v-model="isReviewer">
-        <span>{{ isReviewer ? 'Reviewer Mode' : 'User Mode' }}</span>
-      </label>
-      <div v-if="!isReviewer" class="debug-info">
-        Found {{ rejectedSubpolicies.length }} rejected subpolicies
-      </div>
-    </div>
-
     <!-- Tabs for different sections -->
     <div class="tabs">
       <button 
@@ -674,22 +691,17 @@
             </div>
             <div class="rejected-details">
               <p><strong>Policy:</strong> {{ item.PolicyName }}</p>
-              <p><strong>Identifier:</strong> {{ item.Identifier }}</p>
-              <p><strong>Description:</strong> {{ item.Description }}</p>
-              <p v-if="item.approval && item.approval.remarks">
-                <strong>Rejection Reason:</strong> {{ item.approval.remarks }}
-              </p>
+              <p><strong>Rejection Reason:</strong> {{ getRejectionReason(item) }}</p>
             </div>
             <div class="rejected-actions">
-              <button @click="openEditSubpolicyModal(item)" class="edit-button">
-                Edit & Resubmit
-              </button>
+              <button @click="editSubpolicy(item)" class="action-btn">Edit</button>
+              <button @click="resubmitRejectedSubpolicy(item)" class="action-btn primary">Resubmit</button>
             </div>
           </li>
         </ul>
       </div>
-      
-      <div v-else>
+
+      <div v-if="!isReviewer">
         <h2>Rejected Policies</h2>
         <div v-if="rejectedPolicies.length === 0" class="no-items">
           No rejected policies found.
@@ -697,21 +709,19 @@
         <ul v-else class="rejected-list">
           <li v-for="policy in rejectedPolicies" :key="policy.PolicyId" class="rejected-item">
             <div class="rejected-header">
-              <h3>{{ policy.ExtractedData.PolicyName }}</h3>
+              <h3>{{ getDisplayName(policy) }}</h3>
               <span class="status rejected">Rejected</span>
+              <span v-if="policy.Version" class="version-badge">Version: {{ policy.Version }}</span>
             </div>
             <div class="rejected-details">
-              <p><strong>Identifier:</strong> {{ policy.ExtractedData.Identifier || 'N/A' }}</p>
-              <p><strong>Scope:</strong> {{ policy.ExtractedData.Scope || 'No Scope' }}</p>
-              <p><strong>Description:</strong> {{ policy.ExtractedData.PolicyDescription || 'No description' }}</p>
+              <p><strong>Identifier:</strong> {{ getIdentifier(policy) }}</p>
+              <p><strong>Scope:</strong> {{ getScope(policy) }}</p>
+              <p><strong>Description:</strong> {{ getDescription(policy) }}</p>
+              <p><strong>Rejection Reason:</strong> {{ getRejectionReasonForPolicy(policy) }}</p>
             </div>
             <div class="rejected-actions">
-              <button @click="openEditModal = true; editingPolicy = policy" class="edit-button">
-                Edit & Resubmit
-              </button>
-              <button @click="openSubpoliciesModal(policy)" class="view-button">
-                View Subpolicies
-              </button>
+              <button @click="editPolicy(policy)" class="action-btn">Edit</button>
+              <button @click="resubmitPolicy(policy)" class="action-btn primary">Resubmit</button>
             </div>
           </li>
         </ul>
@@ -1087,37 +1097,142 @@ export default {
     refreshApprovals() {
       this.fetchPolicies();
     },
-    // Update fetchRejectedPolicies to use policy table
+    // Update fetchRejectedPolicies to prioritize the policy approval table
     fetchRejectedPolicies() {
       console.log('Fetching rejected policies...');
-      axios.get('http://localhost:8000/api/policies/?status=Rejected')
-        .then(response => {
-          console.log('Rejected policies response:', response.data);
-          if (Array.isArray(response.data) && response.data.length > 0) {
-            this.rejectedPolicies = response.data.map(policy => ({
-              PolicyId: policy.PolicyId,
-              ExtractedData: {
-                type: 'policy',
-                PolicyName: policy.PolicyName,
-                CreatedByName: policy.CreatedByName,
-                CreatedByDate: policy.CreatedByDate,
-                Scope: policy.Scope,
-                Status: policy.Status,
-                Objective: policy.Objective,
-                subpolicies: policy.subpolicies || []
-              },
-              ApprovedNot: false,
-              main_policy_rejected: true
-            }));
-            console.log('Processed rejected policies:', this.rejectedPolicies.length);
+      
+      // First, check the PolicyApproval table for rejected policy approvals
+      axios.get(`http://localhost:8000/api/policy-approvals/rejected/${this.userId}/`)
+        .then(approvalResponse => {
+          console.log('Rejected policy approvals response:', approvalResponse.data);
+          
+          let rejectedFromApprovals = [];
+          
+          if (Array.isArray(approvalResponse.data) && approvalResponse.data.length > 0) {
+            console.log(`Found ${approvalResponse.data.length} rejected policy approvals in policy approval table`);
+            
+            // Process rejected policy approvals
+            rejectedFromApprovals = approvalResponse.data.map(approval => {
+              // Extract the policy ID - handle both object and scalar formats
+              const policyId = approval.PolicyId && typeof approval.PolicyId === 'object' ? 
+                approval.PolicyId.PolicyId : approval.PolicyId;
+              
+              // Format approval data
+              const extractedData = approval.ExtractedData || {};
+              
+              return {
+                PolicyId: approval.PolicyId,
+                ApprovalId: approval.ApprovalId,
+                ExtractedData: {
+                  ...extractedData,
+                  type: extractedData.type || 'policy',
+                  PolicyName: extractedData.PolicyName || 'Unnamed Policy',
+                  Status: 'Rejected'
+                },
+                ApprovedNot: false,
+                Version: approval.Version,
+                main_policy_rejected: true,
+                policyId: policyId // Store the scalar ID for easier reference
+              };
+            });
+            
+            console.log('Processed rejected policies from approvals:', rejectedFromApprovals.length);
+            this.rejectedPolicies = rejectedFromApprovals;
           } else {
-            console.log('No rejected policies found from API');
-            // We'll check for policies with rejected subpolicies instead
+            console.log('No rejected policy approvals found in approval table');
+            this.rejectedPolicies = [];
+          }
+          
+          // Then, if needed, check the Policy table as a secondary source
+          return axios.get('http://localhost:8000/api/policies/?status=Rejected');
+        })
+        .then(response => {
+          console.log('Rejected policies response from policy table:', response.data);
+          
+          if (Array.isArray(response.data) && response.data.length > 0) {
+            console.log(`Found ${response.data.length} rejected policies in policy table`);
+            
+            // Get existing policy IDs to avoid duplicates
+            const existingPolicyIds = this.rejectedPolicies.map(p => {
+              return typeof p.policyId !== 'undefined' ? p.policyId : 
+                (typeof p.PolicyId === 'object' ? p.PolicyId.PolicyId : p.PolicyId);
+            });
+            
+            // Process rejected policies from policy table, filtering out duplicates
+            const rejectedFromPolicyTable = response.data
+              .filter(policy => !existingPolicyIds.includes(policy.PolicyId))
+              .map(policy => ({
+                PolicyId: policy.PolicyId,
+                ExtractedData: {
+                  type: 'policy',
+                  PolicyName: policy.PolicyName,
+                  CreatedByName: policy.CreatedByName,
+                  CreatedByDate: policy.CreatedByDate,
+                  Scope: policy.Scope,
+                  Status: policy.Status,
+                  Objective: policy.Objective,
+                  PolicyDescription: policy.PolicyDescription,
+                  Identifier: policy.Identifier,
+                  subpolicies: policy.subpolicies || []
+                },
+                ApprovedNot: false,
+                main_policy_rejected: true,
+                policyId: policy.PolicyId
+              }));
+            
+            console.log('Additional rejected policies from policy table:', rejectedFromPolicyTable.length);
+            
+            // Combine both sources if needed
+            if (rejectedFromPolicyTable.length > 0) {
+              this.rejectedPolicies = [...this.rejectedPolicies, ...rejectedFromPolicyTable];
+              console.log('Total rejected policies after combining sources:', this.rejectedPolicies.length);
+            }
+          } else {
+            console.log('No additional rejected policies found in policy table');
+          }
+          
+          // If we still don't have any rejected policies, check for policies with rejected subpolicies
+          if (this.rejectedPolicies.length === 0) {
+            console.log('No rejected policies found from any source, checking for policies with rejected subpolicies');
             this.fetchPoliciesWithRejectedSubpolicies();
           }
         })
         .catch(error => {
           console.error('Error fetching rejected policies:', error);
+          
+          // Fallback to policy table if policy approval table query fails
+          axios.get('http://localhost:8000/api/policies/?status=Rejected')
+            .then(response => {
+              console.log('Fallback: Rejected policies response from policy table:', response.data);
+              
+              if (Array.isArray(response.data) && response.data.length > 0) {
+                this.rejectedPolicies = response.data.map(policy => ({
+                  PolicyId: policy.PolicyId,
+                  ExtractedData: {
+                    type: 'policy',
+                    PolicyName: policy.PolicyName,
+                    CreatedByName: policy.CreatedByName,
+                    CreatedByDate: policy.CreatedByDate,
+                    Scope: policy.Scope,
+                    Status: policy.Status,
+                    Objective: policy.Objective,
+                    PolicyDescription: policy.PolicyDescription,
+                    Identifier: policy.Identifier,
+                    subpolicies: policy.subpolicies || []
+                  },
+                  ApprovedNot: false,
+                  main_policy_rejected: true
+                }));
+                console.log('Fallback: Processed rejected policies from policy table:', this.rejectedPolicies.length);
+              } else {
+                console.log('No rejected policies found from policy table either, checking for policies with rejected subpolicies');
+                this.fetchPoliciesWithRejectedSubpolicies();
+              }
+            })
+            .catch(e => {
+              console.error('Error fetching rejected policies from both sources:', e);
+              this.fetchPoliciesWithRejectedSubpolicies();
+            });
         });
     },
     // Add a method to fetch policies that have rejected subpolicies
@@ -1251,24 +1366,74 @@ export default {
     },
     // Update resubmitPolicy to change status back to "Under Review"
     resubmitPolicy(policy) {
-      const policyId = typeof policy.PolicyId === 'object' 
-        ? policy.PolicyId.PolicyId 
-        : policy.PolicyId;
+      console.log('Resubmitting policy:', policy);
+      
+      // Determine the policy ID based on policy object structure
+      let policyId;
+      if (typeof policy.PolicyId === 'object') {
+        policyId = policy.PolicyId.PolicyId;
+      } else if (policy.PolicyId) {
+        policyId = policy.PolicyId;
+      } else if (policy.ApprovalId) {
+        // If we're resubmitting an approval
+        const approvalEndpoint = `http://localhost:8000/api/policy-approvals/resubmit/${policy.ApprovalId}/`;
         
-      axios.put(`http://localhost:8000/api/policies/${policyId}/`, {
+        // Make a deep copy of the data to avoid modifying the original
+        const resubmitData = {
+          ExtractedData: JSON.parse(JSON.stringify(policy.ExtractedData))
+        };
+        
+        // Reset any approval status in the data
+        if (resubmitData.ExtractedData && resubmitData.ExtractedData.policy_approval) {
+          resubmitData.ExtractedData.policy_approval.approved = null;
+          resubmitData.ExtractedData.policy_approval.remarks = '';
+        }
+        
+        console.log('Resubmitting policy approval with data:', resubmitData);
+        
+        axios.put(approvalEndpoint, resubmitData)
+          .then(response => {
+            console.log('Policy approval resubmitted successfully:', response.data);
+            alert('Policy resubmitted for review!');
+            this.showEditModal = false;
+            this.fetchRejectedPolicies();
+            this.fetchPolicies(); // Also refresh the main policies list
+          })
+          .catch(error => {
+            console.error('Error resubmitting policy approval:', error);
+            alert('Error resubmitting policy approval: ' + (error.response?.data?.error || error.message));
+          });
+        
+        return;
+      } else {
+        console.error('Unable to determine policy ID for resubmission');
+        alert('Error: Cannot determine policy ID for resubmission');
+        return;
+      }
+        
+      // Update policy data in the Policy table
+      const updateData = {
         Status: 'Under Review',
-        Scope: policy.ExtractedData.Scope,
-        Objective: policy.ExtractedData.Objective
-      })
-      .then(() => {
-        alert('Policy resubmitted for review!');
-        this.showEditModal = false;
-        this.fetchRejectedPolicies();
-      })
-      .catch(error => {
-        alert('Error resubmitting policy');
-        console.error(error);
-      });
+        Scope: policy.ExtractedData?.Scope || '',
+        Objective: policy.ExtractedData?.Objective || ''
+      };
+      
+      console.log(`Updating policy ${policyId} with data:`, updateData);
+      
+      axios.put(`http://localhost:8000/api/policies/${policyId}/`, updateData)
+        .then(response => {
+          console.log('Policy resubmitted successfully:', response.data);
+          alert('Policy resubmitted for review!');
+          this.showEditModal = false;
+          
+          // Refresh data
+          this.fetchRejectedPolicies();
+          this.fetchPolicies();
+        })
+        .catch(error => {
+          console.error('Error resubmitting policy:', error);
+          alert('Error resubmitting policy: ' + (error.response?.data?.error || error.message));
+        });
     },
     // Update approveSubpolicy to handle subpolicy approval
     approveSubpolicy(subpolicy) {
@@ -1294,6 +1459,10 @@ export default {
       .then(response => {
         console.log('Subpolicy approval created successfully:', response.data);
         
+        // Update the local subpolicy status immediately to reflect the change
+        subpolicy.Status = 'Approved';
+        subpolicy.approval.approved = true;
+        
         // Check if parent policy status was updated (all subpolicies approved)
         if (response.data.PolicyUpdated) {
           console.log(`Policy status updated to: ${response.data.PolicyStatus}`);
@@ -1304,6 +1473,7 @@ export default {
           // Also update the UI to show policy is now approved
           if (this.selectedApproval && this.selectedApproval.ExtractedData) {
             this.selectedApproval.ExtractedData.Status = response.data.PolicyStatus;
+            this.selectedApproval.ApprovedNot = (response.data.PolicyStatus === 'Approved') ? 1 : 0;
           }
         }
         
@@ -1326,17 +1496,27 @@ export default {
       }
       
       const subpolicies = this.selectedApproval.ExtractedData.subpolicies;
-      const allApproved = subpolicies.every(sub => sub.approval?.approved === true);
+      const allApproved = subpolicies.every(sub => sub.Status === 'Approved' && sub.approval?.approved === true);
+      const anyRejected = subpolicies.some(sub => sub.Status === 'Rejected' && sub.approval?.approved === false);
       
-      if (allApproved) {
+      if (anyRejected) {
+        console.log('Some subpolicies are rejected! The policy should be rejected');
+        // Set policy approval to false
+        if (!this.selectedApproval.ExtractedData.policy_approval) {
+          this.selectedApproval.ExtractedData.policy_approval = {};
+        }
+        this.selectedApproval.ExtractedData.policy_approval.approved = false;
+        this.selectedApproval.ApprovedNot = 0; // Set to 0 when any subpolicy is rejected
+        this.selectedApproval.ExtractedData.Status = 'Rejected';
+      } else if (allApproved) {
         console.log('All subpolicies are approved! The policy should be automatically approved');
-        
         // Automatically set policy approval to true
         if (!this.selectedApproval.ExtractedData.policy_approval) {
           this.selectedApproval.ExtractedData.policy_approval = {};
         }
         this.selectedApproval.ExtractedData.policy_approval.approved = true;
-        this.selectedApproval.ApprovedNot = true;
+        this.selectedApproval.ApprovedNot = 1; // Set to 1 when all subpolicies are approved
+        this.selectedApproval.ExtractedData.Status = 'Approved';
         
         // Show notification to user
         alert('All subpolicies are approved! The policy has been automatically approved.');
@@ -1429,6 +1609,26 @@ export default {
           this.rejectingSubpolicy.Status = 'Rejected';
           this.rejectingSubpolicy.approval.approved = false;
           this.rejectingSubpolicy.approval.remarks = this.rejectionComment;
+          
+          // Update parent policy approval status if any subpolicy is rejected
+          if (approvalResponse.data.PolicyUpdated) {
+            console.log(`Policy status updated to: ${approvalResponse.data.PolicyStatus}`);
+            
+            // Update the UI to show the policy is now rejected
+            if (this.selectedApproval && this.selectedApproval.ExtractedData) {
+              this.selectedApproval.ExtractedData.Status = approvalResponse.data.PolicyStatus;
+              this.selectedApproval.ApprovedNot = 0; // Set to 0 when any subpolicy is rejected
+            }
+            
+            // If viewing from modal, also update that reference
+            if (this.selectedPolicyForSubpolicies && this.selectedPolicyForSubpolicies.ExtractedData) {
+              this.selectedPolicyForSubpolicies.ExtractedData.Status = approvalResponse.data.PolicyStatus;
+              this.selectedPolicyForSubpolicies.ApprovedNot = 0;
+            }
+            
+            // Refresh the policies list
+            this.fetchPolicies();
+          }
           
           // Close modal
           this.showRejectModal = false;
@@ -1913,6 +2113,10 @@ export default {
       .then(response => {
         console.log('Subpolicy approval created successfully:', response.data);
         
+        // Update the local subpolicy status immediately to reflect the change
+        subpolicy.Status = 'Approved';
+        subpolicy.approval.approved = true;
+        
         // Check if parent policy status was updated (all subpolicies approved)
         if (response.data.PolicyUpdated) {
           console.log(`Policy status updated to: ${response.data.PolicyStatus}`);
@@ -1924,6 +2128,7 @@ export default {
           if (this.selectedPolicyForSubpolicies && 
               this.selectedPolicyForSubpolicies.ExtractedData) {
             this.selectedPolicyForSubpolicies.ExtractedData.Status = response.data.PolicyStatus;
+            this.selectedPolicyForSubpolicies.ApprovedNot = (response.data.PolicyStatus === 'Approved') ? 1 : 0;
           }
         }
         
@@ -1946,17 +2151,27 @@ export default {
       }
       
       const subpolicies = this.selectedPolicyForSubpolicies.ExtractedData.subpolicies;
-      const allApproved = subpolicies.every(sub => sub.approval?.approved === true);
+      const allApproved = subpolicies.every(sub => sub.Status === 'Approved' && sub.approval?.approved === true);
+      const anyRejected = subpolicies.some(sub => sub.Status === 'Rejected' && sub.approval?.approved === false);
       
-      if (allApproved) {
+      if (anyRejected) {
+        console.log('Some subpolicies in the modal are rejected! The policy should be rejected');
+        // Set policy approval to false
+        if (!this.selectedPolicyForSubpolicies.ExtractedData.policy_approval) {
+          this.selectedPolicyForSubpolicies.ExtractedData.policy_approval = {};
+        }
+        this.selectedPolicyForSubpolicies.ExtractedData.policy_approval.approved = false;
+        this.selectedPolicyForSubpolicies.ApprovedNot = 0; // Set to 0 when any subpolicy is rejected
+        this.selectedPolicyForSubpolicies.ExtractedData.Status = 'Rejected';
+      } else if (allApproved) {
         console.log('All subpolicies in the modal are approved! The policy should be automatically approved');
-        
         // Automatically set policy approval to true
         if (!this.selectedPolicyForSubpolicies.ExtractedData.policy_approval) {
           this.selectedPolicyForSubpolicies.ExtractedData.policy_approval = {};
         }
         this.selectedPolicyForSubpolicies.ExtractedData.policy_approval.approved = true;
-        this.selectedPolicyForSubpolicies.ApprovedNot = true;
+        this.selectedPolicyForSubpolicies.ApprovedNot = 1; // Set to 1 when all subpolicies are approved
+        this.selectedPolicyForSubpolicies.ExtractedData.Status = 'Approved';
         
         // Show notification to user
         alert('All subpolicies are approved! The policy has been automatically approved.');
@@ -2129,6 +2344,98 @@ export default {
     // Add this helper method
     getSubpolicyRemarks(sub) {
       return sub && sub.approval && sub.approval.remarks ? sub.approval.remarks : 'No reason provided';
+    },
+    getRejectionReason(item) {
+      if (item.is_compliance) {
+        return item.ExtractedData.compliance_approval?.remarks || 'No rejection reason provided';
+      } else {
+        return item.ExtractedData.policy_approval?.remarks || 'No rejection reason provided';
+      }
+    },
+    editSubpolicy(item) {
+      this.editingSubpolicy = JSON.parse(JSON.stringify(item));
+      this.showEditSubpolicyModal = true;
+    },
+    editPolicy(policy) {
+      this.editingPolicy = JSON.parse(JSON.stringify(policy));
+      this.showEditModal = true;
+    },
+    // Resubmit a rejected subpolicy
+    resubmitRejectedSubpolicy(subpolicy) {
+      console.log('Resubmitting rejected subpolicy:', subpolicy);
+      
+      const subpolicyId = typeof subpolicy.SubPolicyId === 'object' ? 
+        subpolicy.SubPolicyId.SubPolicyId : subpolicy.SubPolicyId;
+      
+      if (!subpolicyId) {
+        console.error('Unable to determine subpolicy ID for resubmission');
+        alert('Error: Cannot determine subpolicy ID for resubmission');
+        return;
+      }
+      
+      // Make a deep copy of the data to avoid modifying the original
+      const resubmitData = {
+        ExtractedData: JSON.parse(JSON.stringify(subpolicy.ExtractedData || {})),
+        Status: 'Under Review'
+      };
+      
+      // Reset any approval status in the data
+      if (resubmitData.ExtractedData && resubmitData.ExtractedData.subpolicy_approval) {
+        resubmitData.ExtractedData.subpolicy_approval.approved = null;
+        resubmitData.ExtractedData.subpolicy_approval.remarks = '';
+      }
+      
+      console.log('Resubmitting subpolicy with data:', resubmitData);
+      
+      axios.put(`http://localhost:8000/api/subpolicies/${subpolicyId}/resubmit/`, resubmitData)
+        .then(response => {
+          console.log('Subpolicy resubmitted successfully:', response.data);
+          alert('Subpolicy resubmitted for review!');
+          
+          // Refresh the data
+          this.fetchRejectedPolicies();
+          this.fetchPolicies();
+        })
+        .catch(error => {
+          console.error('Error resubmitting subpolicy:', error);
+          alert('Error resubmitting subpolicy: ' + (error.response?.data?.error || error.message));
+        });
+    },
+    getDisplayName(policy) {
+      return policy.ExtractedData.PolicyName || 'Unnamed Policy';
+    },
+    getIdentifier(policy) {
+      return policy.ExtractedData.Identifier || policy.PolicyId || 'N/A';
+    },
+    getScope(policy) {
+      return policy.ExtractedData.Scope || 'No Scope';
+    },
+    getDescription(policy) {
+      return policy.ExtractedData.PolicyDescription || 'No description';
+    },
+    getRejectionReasonForPolicy(policy) {
+      // Try multiple possible locations for rejection reason
+      if (policy.ExtractedData?.policy_approval?.remarks) {
+        return policy.ExtractedData.policy_approval.remarks;
+      }
+      
+      // Some policy approvals have remarks at the top level in ExtractedData
+      if (policy.ExtractedData?.remarks) {
+        return policy.ExtractedData.remarks;
+      }
+      
+      // Some policy approvals have a rejection_reason field
+      if (policy.ExtractedData?.rejection_reason) {
+        return policy.ExtractedData.rejection_reason;
+      }
+      
+      // For policy approvals with ApprovalId but no structured reason
+      if (policy.ApprovalId) {
+        return 'Policy was rejected by reviewer';
+      }
+      
+      // Default message if no reason found
+      return 'No rejection reason provided';
     },
   },
   computed: {
@@ -2931,5 +3238,16 @@ export default {
   color: #991b1b;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.version-badge {
+  background-color: #3b82f6;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 600;
+  margin-left: 10px;
 }
 </style> 

@@ -145,4 +145,28 @@ class Users(models.Model):
         db_table = 'users'
    
    
- 
+class ExportTask(models.Model):
+    id = models.AutoField(primary_key=True)
+    export_data = models.JSONField(null=True, blank=True)
+    file_type = models.CharField(max_length=10)
+    user_id = models.CharField(max_length=100)
+    s3_url = models.CharField(max_length=255, null=True, blank=True)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed')
+        ],
+        default='pending'
+    )
+    error = models.TextField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'exported_files'

@@ -266,6 +266,13 @@
                         >
                           {{ sub.exclude ? 'Excluded' : 'Exclude' }}
                         </button>
+                        <button 
+                          type="button" 
+                          class="remove-btn" 
+                          @click="removeSubPolicy(policyIndex, subIdx)"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                     <div class="form-group" :class="{ 'excluded': sub.exclude }">
