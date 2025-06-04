@@ -11,12 +11,20 @@ import CreateCompliance from '../components/Compliance/CreateCompliance.vue'
 import CrudCompliance from '../components/Compliance/CrudCompliance.vue'
 import ComplianceVersioning from '../components/Compliance/ComplianceVersioning.vue'
 import CreateRisk from '../components/Risk/CreateRisk.vue'
-import RiskRegister from '../components/Risk/RiskRegister.vue'
+import RiskRegisterList from '../components/Risk/RiskRegisterList.vue'
+import RiskRegisterListDetails from '../components/Risk/RiskRegisterListDetails.vue'
 import RiskDashboard from '../components/Risk/RiskDashboard.vue'
 import RiskInstances from '../components/Risk/RiskInstances.vue'
-import ApprovalAndHandling from '../components/Risk/ApprovalAndHandling.vue'
+import CreateRiskInstance from '../components/Risk/CreateRiskInstance.vue'
+import RiskInstanceDetails from '@/components/Risk/RiskInstanceDetails.vue'
+// import ApprovalAndHandling from '../components/Risk/ApprovalAndHandling.vue'
 import Notifications from '../components/Risk/Notifications.vue'
+import ViewDetails from '../components/Risk/ViewDetails.vue'
 import UserTasks from '../components/Risk/UserTasks.vue'
+import MitigationWorkflow from '../components/Risk/MitigationWorkflow.vue'
+import MappedRisks from '../components/Risk/MappedRisks.vue'
+import TailoringRisk from '../components/Risk/TailoringRisk.vue'
+import ReviewerWorkflow from '../components/Risk/ReviewerWorkflow.vue'
 
 const routes = [
   {
@@ -83,22 +91,26 @@ const routes = [
     name: 'CreateRisk',
     component: CreateRisk
   },
-
-{
-
-  path: '/risk/riskregister',
-  name: 'RiskRegister',
-  component: RiskRegister
-},
-
-{
-  path: '/risk/ApprovalAndHandling',
-  name: 'ApprovalAndHandling',
-  component: ApprovalAndHandling
-
-},
-
-
+  {
+    path: '/risk/riskregister',
+    name: 'RiskRegister',
+    redirect: '/risk/riskregister-list'
+  },
+  {
+    path: '/risk/riskregister-list',
+    name: 'RiskRegisterList',
+    component: RiskRegisterList
+  },
+  {
+    path: '/risk/create-risk',
+    name: 'CreateRiskForm',
+    component: CreateRisk
+  },
+  // {
+  //   path: '/risk/ApprovalAndHandling',
+  //   name: 'ApprovalAndHandling',
+  //   component: ApprovalAndHandling
+  // },
   {
     path: '/risk/riskdashboard',
     name: 'RiskDashboard',
@@ -107,12 +119,39 @@ const routes = [
   {
     path: '/risk/riskinstances',
     name: 'RiskInstances',
+    redirect: '/risk/riskinstances-list'
+  },
+  {
+    path: '/risk/riskinstances-list',
+    name: 'RiskInstancesList',
     component: RiskInstances
+  },
+  {
+    path: '/risk/create-instance',
+    name: 'CreateRiskInstance',
+    component: CreateRiskInstance
+  },
+  {
+    path: '/risk/riskinstances/:id',
+    name: 'RiskInstanceDetails',
+    component: RiskInstanceDetails
   },
   {
     path: '/risk/notifications',
     name: 'RiskNotifications',
     component: Notifications
+  },
+  {
+    path: '/risk/incident-details/:id',
+    name: 'ViewDetails',
+    component: ViewDetails,
+    props: true
+  },
+  {
+    path: '/risk/mapped-risks/:incidentId?',
+    name: 'MappedRisks',
+    component: MappedRisks,
+    props: true
   },
   {
     path: '/risk/workflow',
@@ -123,7 +162,29 @@ const routes = [
     path: '/risk/user-tasks',
     name: 'UserTasks',
     component: UserTasks
-
+  },
+  {
+    path: '/risk/tailoring',
+    name: 'RiskTailoring',
+    component: TailoringRisk
+  },
+  {
+    path: '/risk/details/:id',
+    name: 'RiskRegisterListDetails',
+    component: RiskRegisterListDetails,
+    props: true
+  },
+  {
+    path: '/risk/mitigation-workflow/:riskId',
+    name: 'MitigationWorkflow',
+    component: MitigationWorkflow,
+    props: true
+  },
+  {
+    path: '/risk/reviewer-workflow/:riskId',
+    name: 'ReviewerWorkflow',
+    component: ReviewerWorkflow,
+    props: true
   }
 ]
 

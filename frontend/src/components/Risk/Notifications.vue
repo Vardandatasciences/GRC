@@ -1,88 +1,65 @@
 <template>
-  <div class="notifications-container">
-    <div class="notifications-header-row">
+  <div class="notifications-container" :class="{'show-mapped-risks': showMappedRisks}">
+    <!-- Only show notifications header when not showing mapped risks -->
+    <div class="notifications-header-row" v-if="!showMappedRisks">
       <h1 class="notifications-title">
         Notifications
         <i class="fas fa-bell notifications-bell"></i>
       </h1>
     </div>
-    <div class="notifications-filters-row">
-      <span class="recent-label filter-btn active">
-        <i class="fas fa-clock"></i> Recent Notifications
-      </span>
-      <div class="filter-dropdown-wrapper">
-        <button class="filter-btn active" @click="showDaysDropdown = !showDaysDropdown">
-          <i class="fas fa-calendar-alt"></i> Last {{ selectedDays }} days
-        </button>
-        <div v-if="showDaysDropdown" class="days-dropdown">
-          <div class="days-option" v-for="d in daysOptions" :key="d" @click="selectDays(d)">
-            Last {{ d }} days
-          </div>
-        </div>
-      </div>
-      <div class="filter-dropdown-wrapper">
-        <button class="filter-btn add-filter-btn" @click="showPriorityFilter = !showPriorityFilter">
-          <i class="fas fa-filter"></i> Add filter
-        </button>
-        <div v-if="showPriorityFilter" class="priority-dropdown">
-          <div class="priority-option" v-for="p in priorities" :key="p" @click="selectPriority(p)">
-            <span>{{ p }}</span>
-          </div>
-        </div>
-      </div>
-      <span v-if="selectedPriority" class="selected-priority">Priority: {{ selectedPriority }}</span>
-    </div>
     
     <!-- List of Notifications -->
-    <div class="notification-list" v-if="incidents.length > 0 && !showMappedRisks && !showRiskInstanceForm">
-      <div class="notification-card" v-for="incident in incidents" :key="incident.IncidentId">
+    <div class="notification-list" v-if="notifications.length > 0 && !showMappedRisks && !showRiskInstanceForm">
+      <div class="notification-card" v-for="(notification, index) in notifications" :key="index">
         <div class="notification-header">
-          <h3>{{ incident.IncidentTitle }}</h3>
-          <span class="notification-date"><i class="fas fa-calendar-alt"></i> {{ formatDate(incident.Date) }}</span>
+          <h3>{{ getRiskDescription(notification) }}</h3>
+          <span class="notification-date">
+            <i class="fas fa-calendar-alt"></i> 
+            {{ formatDate(notification.review_date || notification.timestamp || notification.createdAt) }}
+          </span>
         </div>
-        
-        <div class="notification-content">
-          <p class="description">{{ incident.Description }}</p>
-          <div class="notification-details">
-            <div class="detail-item">
-              <span class="label">Priority:</span>
-              <span class="value" :class="priorityClass(incident.PriorityLevel)">
-                {{ incident.PriorityLevel }}
-              </span>
+        <div class="notification-pill">{{ notification.category || notification.Category || notification.documents || notification.security || 'N/A' }}</div>
+        <div class="notification-details-grid">
+          <div class="details-box">
+            <div class="details-row">
+              <div class="details-label">PRIORITY:</div>
+              <div class="details-value">{{ notification.priority || notification.Priority || 'N/A' }}</div>
             </div>
-            <div class="detail-item">
-              <span class="label">Category:</span>
-              <span class="value">{{ incident.RiskCategory }}</span>
+            <div class="details-row">
+              <div class="details-label">CATEGORY:</div>
+              <div class="details-value">{{ notification.category || notification.Category || 'N/A' }}</div>
             </div>
-            <div class="detail-item">
-              <span class="label">Origin:</span>
-              <span class="value">{{ incident.Origin }}</span>
+            <div class="details-row">
+              <div class="details-label">ORIGIN:</div>
+              <div class="details-value">{{ notification.origin || notification.Origin || 'Audit Finding' }}</div>
             </div>
-            <div class="detail-item">
-              <span class="label">Compliance ID:</span>
-              <span class="value">{{ incident.ComplianceId }}</span>
+            <div class="details-row">
+              <div class="details-label">COMPLIANCE ID:</div>
+              <div class="details-value">{{ notification.complianceId || notification.ComplianceId || 'N/A' }}</div>
             </div>
           </div>
         </div>
-        
         <div class="notification-actions">
-          <button class="accept-btn" @click="showAcceptOptions(incident)">
-            Accept
+          <button class="view-details-btn" @click="viewRiskDetails(notification)">
+            <i class="fas fa-eye"></i> View Details
           </button>
-          <button class="reject-btn" @click="rejectIncident(incident)">
-            Reject
+          <button class="accept-btn" @click="acceptIncident(notification)">
+            <i class="fas fa-check"></i> Accept
+          </button>
+          <button class="reject-btn" @click="rejectIncident(notification)">
+            <i class="fas fa-times"></i> Reject
           </button>
         </div>
       </div>
     </div>
     
-    <!-- Mapped Risks View -->
+    <!-- Mapped Risks View as a separate full-page view -->
     <div v-if="showMappedRisks" class="mapped-risks-container">
       <div class="mapped-risks-header">
         <button class="back-btn" @click="returnToNotifications">
           &larr; Back to Notifications
         </button>
-        <h2>Mapped Risks for Incident: {{ selectedIncident.IncidentTitle }}</h2>
+        <h2>Risk Management for Incident: {{ selectedIncident.Title }}</h2>
       </div>
       
       <!-- Display risk form inline instead of as a popup -->
@@ -243,16 +220,21 @@
       
       <!-- Fixed the double directive issue -->
       <div v-else class="empty-risks">
-        <p v-if="loadingRisks">Loading mapped risks...</p>
-        <p v-else>No risks mapped to this incident</p>
-        
-        <div class="risk-buttons">
-          <button class="create-risk-btn own-risk" @click="showOwnRiskForm">
-            Create Own Risk
-          </button>
-          <button class="create-risk-btn ai-risk" @click="showNewRiskForm">
-            Create AI Suggestion Risk
-          </button>
+        <div class="risk-management-card">
+          <h3>Risk Management</h3>
+          <p v-if="loadingRisks">Loading mapped risks...</p>
+          <p v-else>No risks mapped to this incident</p>
+          
+          <div class="risk-buttons">
+            <button class="create-risk-btn own-risk" @click="showOwnRiskForm">
+              <i class="fas fa-plus-circle"></i>
+              Create Own Risk
+            </button>
+            <button class="create-risk-btn ai-risk" @click="showNewRiskForm">
+              <i class="fas fa-robot"></i>
+              Create AI Suggestion Risk
+            </button>
+          </div>
         </div>
       </div>
       
@@ -262,152 +244,16 @@
     </div>
     
     <!-- Risk Instance Form -->
-    <div v-if="showRiskInstanceForm" class="risk-instance-form-container">
-      <div class="form-header">
-        <button class="back-btn" @click="returnToMappedRisks">
-          &larr; Back to Mapped Risks
-        </button>
-        <h2>Create Risk Instance</h2>
-      </div>
-      
-      <form @submit.prevent="submitRiskInstance" class="risk-instance-form">
-        <div class="form-grid">
-          <!-- Pre-filled fields from selected risk -->
-          <div class="form-group">
-            <label>Risk ID</label>
-            <input type="text" v-model="riskInstanceForm.RiskId" readonly class="readonly-field" />
-          </div>
-          
-          <div class="form-group">
-            <label>Category</label>
-            <input type="text" v-model="riskInstanceForm.Category" readonly class="readonly-field" />
-          </div>
-          
-          <div class="form-group">
-            <label>Criticality *</label>
-            <select v-model="riskInstanceForm.Criticality" required>
-              <option value="">Select Criticality</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Description *</label>
-            <textarea v-model="riskInstanceForm.RiskDescription" required></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label>Possible Damage</label>
-            <textarea v-model="riskInstanceForm.PossibleDamage"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Appetite</label>
-            <select 
-              v-model="riskInstanceForm.Appetite" 
-              :disabled="rejectedIncident && showRiskInstanceForm"
-              :class="{'readonly-field': rejectedIncident && showRiskInstanceForm}">
-              <option value="">Select Appetite</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Likelihood *</label>
-            <input 
-              type="number" 
-              step="0.1" 
-              v-model="riskInstanceForm.RiskLikelihood" 
-              required 
-              placeholder="Enter value (e.g. 8.5)"
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Impact *</label>
-            <input 
-              type="number" 
-              step="0.1" 
-              v-model="riskInstanceForm.RiskImpact" 
-              required 
-              placeholder="Enter value (e.g. 6.0)"
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Exposure Rating</label>
-            <input 
-              type="number" 
-              step="0.1" 
-              v-model="riskInstanceForm.RiskExposureRating" 
-              placeholder="Enter value (e.g. 7.2)"
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Priority *</label>
-            <select v-model="riskInstanceForm.RiskPriority" required>
-              <option value="">Select Priority</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Response Type</label>
-            <select v-model="riskInstanceForm.RiskResponseType">
-              <option value="">Select Response Type</option>
-              <option value="Avoidance">Avoidance</option>
-              <option value="Mitigation">Mitigation</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Acceptance">Acceptance</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Response Description</label>
-            <textarea v-model="riskInstanceForm.RiskResponseDescription"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label>Risk Mitigation</label>
-            <textarea v-model="riskInstanceForm.RiskMitigation"></textarea>
-          </div>
-          
-          <!-- <div class="form-group">
-            <label>Risk Owner *</label>
-            <input type="text" v-model="riskInstanceForm.RiskOwner" required />
-          </div> -->
-          
-          <!-- <div class="form-group">
-            <label>Risk Status *</label>
-            <select v-model="riskInstanceForm.RiskStatus" required>
-              <option value="">Select Status</option>
-              <option value="Open">Open</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Closed">Closed</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-          </div> -->
-        </div>
-        
-        <div class="form-actions">
-          <button type="button" class="cancel-btn" @click="showRiskInstanceForm = false; showMappedRisks = true;">Cancel</button>
-          <button type="submit" class="submit-btn">Create Risk Instance</button>
-        </div>
-      </form>
-    </div>
+    <CreateRiskInstance
+      v-if="showRiskInstanceForm"
+      :risk-id="currentRisk ? currentRisk.RiskId : null"
+      :incident-id="selectedIncident ? selectedIncident.IncidentId : null"
+    />
     
     <!-- Accept Options Modal -->
     <div v-if="showAcceptModal" class="modal-overlay">
-      <div class="accept-options-modal modal-content stylish-accept-modal">
-        <div class="form-header stylish-header">
+      <div class="stylish-accept-modal">
+        <div class="stylish-header">
           <i class="fas fa-check-circle header-icon"></i>
           <h2>Select Action</h2>
           <button class="close-btn" @click="showAcceptModal = false">×</button>
@@ -415,20 +261,20 @@
         <div class="accept-options">
           <p>How would you like to proceed with this incident?</p>
           <div class="options-buttons">
-            <button class="option-btn map-btn stylish-btn" @click="proceedWithPredefinedRisk">
+            <button class="stylish-btn map-btn" @click="navigateToMappedRisks">
               <i class="fas fa-link"></i>
-              Map with Predefined Risk
+              Map Risk
             </button>
-            <button class="option-btn create-btn stylish-btn" @click="proceedWithNewRisk">
+            <button class="stylish-btn create-btn" @click="proceedWithNewRisk">
               <i class="fas fa-plus-circle"></i>
-              Create New Risk
+              Create Risk
             </button>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Add Reject Modal -->
+    <!-- Reject Modal -->
     <div v-if="showRejectModal" class="modal-overlay">
       <div class="stylish-accept-modal">
         <div class="stylish-header">
@@ -437,13 +283,13 @@
           <button class="close-btn" @click="showRejectModal = false">×</button>
         </div>
         <div class="success-content">
-          <p>This incident has been marked as rejected. Would you like to create a risk instance?</p>
+          <p>Would you like to create a risk instance?</p>
           <div class="options-buttons">
-            <button class="option-btn create-btn stylish-btn" @click="createRiskInstanceForRejected">
+            <button class="stylish-btn create-btn" @click="createRiskInstanceForRejected">
               <i class="fas fa-clipboard-list"></i>
-              Create Risk Instance
+              Create Instance
             </button>
-            <button class="option-btn map-btn stylish-btn" @click="showRejectModal = false">
+            <button class="stylish-btn map-btn" @click="closeRejectModal">
               <i class="fas fa-times"></i>
               Close
             </button>
@@ -452,13 +298,49 @@
       </div>
     </div>
     
-    <!-- Empty State -->
-    <div class="empty-state" v-if="incidents.length === 0 && !showMappedRisks && !showRiskInstanceForm">
-      <p v-if="loading">Loading notifications...</p>
-      <p v-else>No notifications found</p>
+    <!-- Risk Instance Created Success Modal -->
+    <div v-if="showRiskInstanceCreatedModal" class="modal-overlay">
+      <div class="stylish-accept-modal">
+        <div class="stylish-header">
+          <i class="fas fa-check-circle header-icon" style="color: #28a745;"></i>
+          <h2>Risk Instance Created</h2>
+          <button class="close-btn" @click="closeRiskInstanceCreatedModal">×</button>
+        </div>
+        <div class="success-content">
+          <p>Risk instance has been successfully created for the rejected incident.</p>
+          <div class="options-buttons">
+            <button class="stylish-btn map-btn" @click="closeRiskInstanceCreatedModal">
+              <i class="fas fa-check"></i>
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     
-    <!-- Add a new success modal -->
+    <!-- Empty State -->
+    <div class="empty-state" v-if="!loading && notifications.length === 0 && !showMappedRisks && !showRiskInstanceForm">
+      <div class="empty-state-icon">
+        <i class="fas fa-bell-slash"></i>
+      </div>
+      <h3 class="empty-state-title">No incidents found</h3>
+      <p class="empty-state-message">
+        There are no scheduled incidents at this time.
+      </p>
+      <p class="empty-state-hint">
+        You'll be notified when new incidents are scheduled.
+      </p>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="loading-state" v-if="loading && !showMappedRisks && !showRiskInstanceForm">
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+      </div>
+      <p>Loading notifications...</p>
+    </div>
+    
+    <!-- Success Modal -->
     <div v-if="showSuccessModal" class="modal-overlay">
       <div class="stylish-accept-modal">
         <div class="stylish-header">
@@ -469,11 +351,11 @@
         <div class="success-content">
           <p>Your risk has been created and added to the system.</p>
           <div class="options-buttons">
-            <button class="option-btn create-btn stylish-btn" @click="createInstanceFromNewRisk">
+            <button class="stylish-btn create-btn" @click="createInstanceFromNewRisk">
               <i class="fas fa-clipboard-list"></i>
-              Create Risk Instance
+              Create Instance
             </button>
-            <button class="option-btn map-btn stylish-btn" @click="showSuccessModal = false">
+            <button class="stylish-btn map-btn" @click="showSuccessModal = false">
               <i class="fas fa-check"></i>
               Done
             </button>
@@ -486,12 +368,18 @@
 
 <script>
 import axios from 'axios'
+import './Notifications.css'  // Make sure this is imported
+import CreateRiskInstance from './CreateRiskInstance.vue'
 
 export default {
   name: 'NotificationsPage',
+  components: {
+    CreateRiskInstance
+  },
   data() {
     return {
       incidents: [],
+      notifications: [],
       loading: true,
       showMappedRisks: false,
       showRiskInstanceForm: false,
@@ -514,7 +402,7 @@ export default {
         RiskResponseDescription: '',
         RiskMitigation: '',
         RiskOwner: '',
-        RiskStatus: 'Open',
+        RiskStatus: '',
         UserId: 1,  // Default user ID or you can make this dynamic
         Date: new Date().toISOString().split('T')[0]
       },
@@ -534,16 +422,15 @@ export default {
       },
       showAcceptModal: false,
       loadingRiskAnalysis: false,
-      showPriorityFilter: false,
-      selectedPriority: '',
-      priorities: ['High', 'Medium', 'Low', 'Critical'],
-      showDaysDropdown: false,
-      selectedDays: 7,
-      daysOptions: [7, 14, 30],
       showSuccessModal: false,
       newlyCreatedRisk: null, // To store the newly created risk for instance creation
       showRejectModal: false,
       rejectedIncident: null,
+      showRiskInstanceCreatedModal: false,
+      processedIncidents: new Set(), // Track processed incidents
+      incidentRiskInstances: {}, // Track which incidents have risk instances
+      rejectedIncidents: new Set(), // Track rejected incidents
+      userId: 1, // Default user ID - you may need to get this from authentication
     }
   },
   computed: {
@@ -555,28 +442,60 @@ export default {
     }
   },
   mounted() {
+    // Fetch incidents once - we'll use them as notifications
     this.fetchIncidents()
+    
+    // Also fetch risk instances for reference
+    this.fetchRiskInstances()
   },
   methods: {
     fetchIncidents() {
+      // Set loading state
+      this.loading = true;
       axios.get('http://localhost:8000/api/incidents/')
         .then(response => {
-          this.incidents = response.data
-          this.loading = false
+          console.log('Incidents data received:', response.data);
+          // Store all incidents
+          this.incidents = response.data;
+          // Only filter out incidents that are actually marked as rejected or processed in the backend
+          this.notifications = response.data
+            .filter(incident => incident.Status && incident.Status.toLowerCase() === 'scheduled')
+            .map(incident => ({
+              ...incident,
+              RiskInstanceId: incident.IncidentId, // Map incident ID to risk instance ID for compatibility
+              review_date: incident.Date || incident.CreatedAt, // Use incident date for display
+            }));
+          this.loading = false;
         })
         .catch(error => {
-          console.error('Error fetching incidents:', error)
-          this.loading = false
-        })
+          console.error('Error fetching incidents:', error);
+          this.incidents = [];
+          this.notifications = [];
+          this.loading = false;
+        });
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      })
+      
+      // Try to parse the date string in different formats
+      let date;
+      try {
+        date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return 'Invalid Date';
+        }
+        
+        return date.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      } catch (e) {
+        console.error('Error formatting date:', e);
+        return dateString || 'N/A';
+      }
     },
     priorityClass(priority) {
       if (!priority) return ''
@@ -590,8 +509,11 @@ export default {
       return 'priority-low'
     },
     acceptIncident(incident) {
+      // Set the selected incident
       this.selectedIncident = incident;
-      this.proceedWithPredefinedRisk();
+      
+      // Show the options modal
+      this.showAcceptModal = true;
     },
     fetchMappedRisks(complianceId) {
       // Fetch all risks and filter by ComplianceId
@@ -618,42 +540,49 @@ export default {
       }
     },
     showCreateRiskInstanceForm() {
-      // Allow creating only one instance at a time for simplicity
       if (this.selectedRisks.length === 0) {
         alert('Please select at least one risk.')
         return
       }
-      
-      // For now, we'll just handle the first selected risk
       this.currentRisk = this.mappedRisks.find(risk => risk.RiskId === this.selectedRisks[0])
-      
-      // Pre-fill the form with values from the selected risk
-      this.riskInstanceForm = {
-        ...this.riskInstanceForm,
-        RiskId: this.currentRisk.RiskId,
-        Category: this.currentRisk.Category,
-        Criticality: this.currentRisk.Criticality,
-        PossibleDamage: this.currentRisk.PossibleDamage,
-        RiskDescription: this.currentRisk.RiskDescription,
-        RiskLikelihood: this.currentRisk.RiskLikelihood,
-        RiskImpact: this.currentRisk.RiskImpact,
-        RiskPriority: this.currentRisk.RiskPriority,
-        RiskMitigation: this.currentRisk.RiskMitigation,
-        Date: new Date().toISOString().split('T')[0]
+      if (!this.currentRisk || !this.selectedIncident) {
+        alert('Risk or Incident not selected! Please try again.')
+        return
       }
-      
+      // Debug log
+      console.log('Passing to CreateRiskInstance:', {
+        riskId: this.currentRisk.RiskId,
+        incidentId: this.selectedIncident.IncidentId
+      })
       this.showRiskInstanceForm = true
       this.showMappedRisks = false
     },
-    submitRiskInstance() {
-      // Create a deep copy of the form data
+    async submitRiskInstance() {
+      // Debug logs for troubleshooting
+      console.log('riskInstanceForm before submit:', this.riskInstanceForm);
+      console.log('selectedIncident:', this.selectedIncident);
+      console.log('currentRisk:', this.currentRisk);
       const requestData = JSON.parse(JSON.stringify(this.riskInstanceForm));
-      
-      // Set required fields
       requestData.RiskOwner = 'System Owner';
-      requestData.RiskStatus = 'Open';
-      requestData.IncidentId = this.selectedIncident.IncidentId;
-      
+      requestData.RiskStatus = '';
+      // Always set both IDs before submitting
+      requestData.IncidentId = this.riskInstanceForm.IncidentId || (this.selectedIncident && this.selectedIncident.IncidentId) || null;
+      requestData.RiskId = this.riskInstanceForm.RiskId || (this.currentRisk && this.currentRisk.RiskId) || null;
+      // Set RiskStatus to 'Rejected' if this is a reject flow
+      if (this.rejectedIncident && this.selectedIncident && this.selectedIncident.IncidentId === this.rejectedIncident.IncidentId) {
+        requestData.RiskStatus = 'Rejected';
+      }
+      // Ensure Appetite is a number
+      if (requestData.Appetite && typeof requestData.Appetite !== 'number') {
+        requestData.Appetite = parseFloat(requestData.Appetite) || null;
+      }
+      // Debug log
+      console.log('Submitting with IncidentId:', requestData.IncidentId, 'RiskId:', requestData.RiskId);
+      // Only require IncidentId, not RiskId
+      if (!requestData.IncidentId) {
+        alert('IncidentId is missing! Please try again.');
+        return;
+      }
       // Process RiskMitigation field dynamically
       if (requestData.RiskMitigation) {
         if (typeof requestData.RiskMitigation === 'string') {
@@ -662,48 +591,45 @@ export default {
             .split('.')
             .map(sentence => sentence.trim())
             .filter(sentence => sentence.length > 0);
-          
           // Create numbered object format
           let mitigationObj = {};
           sentences.forEach((sentence, index) => {
             mitigationObj[(index + 1).toString()] = sentence;
           });
-          
           // If no valid sentences were found, create a simple entry
           if (Object.keys(mitigationObj).length === 0) {
             mitigationObj = {"1": requestData.RiskMitigation};
           }
-          
           requestData.RiskMitigation = mitigationObj;
         }
       } else {
         // Set to empty object if not present
         requestData.RiskMitigation = {};
       }
-      
       console.log('Submitting risk instance with data:', requestData);
-      
-      // Send the request using axios for better error handling
-      axios.post('http://localhost:8000/api/risk-instances/', requestData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => {
+      try {
+        // Create the risk instance first
+        const response = await axios.post('http://localhost:8000/api/risk-instances/', requestData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         console.log('Risk instance created:', response.data);
-        alert('Risk instance created successfully!');
-        
-        // Return to the mapped risks view
+        // If this was a reject flow, update the incident status to Rejected
+        if (this.rejectedIncident && this.selectedIncident && this.selectedIncident.IncidentId === this.rejectedIncident.IncidentId) {
+          await this.updateIncidentStatusWithPayload(this.selectedIncident.IncidentId, 'Rejected');
+        } else {
+          await this.updateIncidentStatusWithPayload(this.selectedIncident.IncidentId, 'Processed');
+        }
+        // Hide the risk instance form
         this.showRiskInstanceForm = false;
-        this.showMappedRisks = true;
-        
+        // Show success modal
+        this.showRiskInstanceCreatedModal = true;
         // Reset the form
         this.resetRiskInstanceForm();
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error creating risk instance:', error);
         let errorMessage = 'Unknown error';
-        
         if (error.response) {
           if (typeof error.response.data === 'object') {
             errorMessage = JSON.stringify(error.response.data);
@@ -715,9 +641,8 @@ export default {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
         alert(`Error creating risk instance: ${errorMessage}`);
-      });
+      }
     },
     resetRiskInstanceForm() {
       this.riskInstanceForm = {
@@ -735,17 +660,14 @@ export default {
         RiskResponseDescription: '',
         RiskMitigation: '',
         RiskOwner: '',
-        RiskStatus: 'Open',
+        RiskStatus: '',
         UserId: 1,
         Date: new Date().toISOString().split('T')[0]
       }
     },
-    rejectIncident(incident) {
+    async rejectIncident(incident) {
       this.rejectedIncident = incident;
       this.showRejectModal = true;
-      
-      // Log the rejection (you can add an API call here if needed)
-      console.log(`Rejected incident ${incident.IncidentId}`);
     },
     proceedWithPredefinedRisk() {
       this.showAcceptModal = false;
@@ -779,7 +701,7 @@ export default {
       
       // Prepare the data for analysis
       const incidentData = {
-        title: this.selectedIncident.IncidentTitle,
+        title: this.selectedIncident.Title,
         description: this.selectedIncident.Description
       };
       
@@ -895,14 +817,6 @@ export default {
       // For now, just use alert, but you could use a nicer modal
       alert(`${title}\n\n${formattedMessage}`);
     },
-    selectPriority(priority) {
-      this.selectedPriority = priority;
-      this.showPriorityFilter = false;
-    },
-    selectDays(days) {
-      this.selectedDays = days;
-      this.showDaysDropdown = false;
-    },
     showOwnRiskForm() {
       // Pre-fill only the ComplianceId from the incident
       this.riskForm.ComplianceId = this.selectedIncident.ComplianceId;
@@ -927,7 +841,7 @@ export default {
       
       // Prepare the data for analysis
       const incidentData = {
-        title: this.selectedIncident.IncidentTitle,
+        title: this.selectedIncident.Title,
         description: this.selectedIncident.Description
       };
       
@@ -1043,23 +957,18 @@ export default {
       this.showRiskInstanceForm = true;
       this.showMappedRisks = false;
     },
-    createRiskInstanceForRejected() {
+    async createRiskInstanceForRejected() {
       // Close the reject modal
       this.showRejectModal = false;
-      
       // Set the current incident for risk instance creation
       this.selectedIncident = this.rejectedIncident;
-      
       // Initialize a blank risk instance form
       this.resetRiskInstanceForm();
-      
       // Set incident-related fields
       this.riskInstanceForm.IncidentId = this.rejectedIncident.IncidentId;
       this.riskInstanceForm.Category = this.rejectedIncident.RiskCategory || '';
       this.riskInstanceForm.RiskDescription = this.rejectedIncident.Description || '';
       this.riskInstanceForm.Date = new Date().toISOString().split('T')[0];
-      this.riskInstanceForm.Appetite = 'No';  // Set default to No for rejected incidents
-      
       // Show the risk instance form
       this.showRiskInstanceForm = true;
     },
@@ -1069,720 +978,236 @@ export default {
     returnToMappedRisks() {
       this.showRiskInstanceForm = false;
     },
+    showIncidentDetailsModal(incident) {
+      // Instead of showing a modal, navigate to the details page
+      this.$router.push({
+        name: 'ViewDetails',
+        params: { id: incident.IncidentId }
+      });
+    },
+    formatDateTime(dateTimeString) {
+      if (!dateTimeString) return 'N/A';
+      const date = new Date(dateTimeString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+    statusClass(status) {
+      if (!status) return '';
+      const statusLower = status.toLowerCase();
+      if (statusLower === 'scheduled') return 'status-scheduled';
+      if (statusLower === 'active') return 'status-active';
+      if (statusLower === 'resolved') return 'status-resolved';
+      if (statusLower === 'rejected') return 'status-rejected';
+      return 'status-default';
+    },
+    isIncidentProcessed(incident) {
+      // Check both the in-memory set and if risk instances exist for this incident
+      // Also consider rejected incidents with risk instances as processed
+      return this.processedIncidents.has(incident.IncidentId) || 
+             (this.incidentRiskInstances[incident.IncidentId] && 
+              this.incidentRiskInstances[incident.IncidentId].length > 0) ||
+             (incident.Status && (incident.Status.toLowerCase() === 'processed' || 
+              incident.Status.toLowerCase() === 'rejected')) ||
+             (this.rejectedIncidents.has(incident.IncidentId) && 
+              this.incidentRiskInstances[incident.IncidentId] && 
+              this.incidentRiskInstances[incident.IncidentId].length > 0);
+    },
+    async updateIncidentStatus(incidentId, status) {
+      return await this.updateIncidentStatusWithPayload(incidentId, status);
+    },
+    async updateIncidentStatusWithPayload(incidentId, status) {
+      try {
+        // First, get the current incident data
+        const currentIncidentResponse = await axios.get(`http://localhost:8000/api/incidents/${incidentId}/`);
+        const currentIncident = currentIncidentResponse.data;
+        
+        // Update the status while preserving other fields
+        const updatedIncident = {
+          ...currentIncident,
+          Status: status
+        };
+        
+        // Send the full update
+        const response = await axios.put(`http://localhost:8000/api/incidents/${incidentId}/`, updatedIncident, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log(`Incident ${incidentId} status updated to ${status}`, response.data);
+        
+        // Update the local incident object to reflect the new status
+        const incident = this.incidents.find(inc => inc.IncidentId === incidentId);
+        if (incident) {
+          incident.Status = status;
+        }
+        
+        return response.data;
+      } catch (error) {
+        console.error('Error updating incident status:', error);
+        
+        // Fallback: try the simple update method
+        try {
+          const fallbackResponse = await axios.patch(`http://localhost:8000/api/incidents/${incidentId}/`, {
+            Status: status
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log(`Fallback: Incident ${incidentId} status updated to ${status}`);
+          
+          // Update the local incident object
+          const incident = this.incidents.find(inc => inc.IncidentId === incidentId);
+          if (incident) {
+            incident.Status = status;
+          }
+          
+          return fallbackResponse.data;
+        } catch (fallbackError) {
+          console.error('Fallback update also failed:', fallbackError);
+          throw fallbackError;
+        }
+      }
+    },
+    closeRejectModal() {
+      this.showRejectModal = false;
+      this.rejectedIncident = null;
+    },
+    closeRiskInstanceCreatedModal() {
+      this.showRiskInstanceCreatedModal = false;
+      this.rejectedIncident = null;
+    },
+    navigateToMappedRisks() {
+      this.showAcceptModal = false;
+      
+      // Navigate to MappedRisks component with incident data
+      this.$router.push({
+        name: 'MappedRisks',
+        params: {
+          incidentId: this.selectedIncident.IncidentId,
+          incident: this.selectedIncident
+        }
+      });
+    },
+    // New helper methods for notifications
+    getRiskDescription(notification) {
+      // For incidents, use the Title or Description
+      if (notification.Title) {
+        return notification.Title;
+      }
+      
+      if (notification.Description) {
+        return notification.Description;
+      }
+      
+      // Try fallback to old notification format
+      if (notification.RiskDescription) {
+        return notification.RiskDescription;
+      }
+      
+      // Default fallback
+      return 'Incident Notification';
+    },
+    
+    getNotificationMessage(notification) {
+      // For incidents, provide a status message based on incident status
+      if (notification.Status) {
+        const status = notification.Status.toLowerCase();
+        if (status === 'scheduled') {
+          return "An incident has been scheduled and requires your attention.";
+        } else if (status === 'processed') {
+          return "This incident has been processed.";
+        } else if (status === 'rejected') {
+          return "This incident has been rejected.";
+        } else if (status === 'active') {
+          return "This incident is currently active.";
+        }
+      }
+      
+      // Default message
+      return "You have a new incident that requires your attention.";
+    },
+    
+    getApprovalStatus(notification) {
+      // For incidents, map status to a simpler display status
+      if (notification.Status) {
+        const status = notification.Status.toLowerCase();
+        if (status === 'scheduled') {
+          return "Pending";
+        } else if (status === 'processed') {
+          return "Processed";
+        } else if (status === 'rejected') {
+          return "Rejected";
+        } else if (status === 'active') {
+          return "Active";
+        }
+        
+        // Return capitalized status if not one of the known statuses
+        return notification.Status.charAt(0).toUpperCase() + notification.Status.slice(1);
+      }
+      
+      return "Pending";
+    },
+    
+    getStatusClass(notification) {
+      // For incidents, map status to a color class
+      if (notification.Status) {
+        const status = notification.Status.toLowerCase();
+        if (status === 'scheduled') {
+          return "priority-medium"; // Yellow
+        } else if (status === 'processed') {
+          return "priority-low"; // Green
+        } else if (status === 'rejected') {
+          return "priority-high"; // Red
+        } else if (status === 'active') {
+          return "priority-medium"; // Yellow
+        }
+      }
+      
+      return "priority-medium"; // Default yellow
+    },
+    
+    viewRiskDetails(notification) {
+      // For incidents, navigate to the incident detail page
+      const incidentId = notification.IncidentId || notification.id;
+      
+      if (!incidentId) {
+        // If we don't have a valid ID, show an alert
+        alert('Unable to view incident details: No valid incident ID found');
+        return;
+      }
+      
+      // Navigate to the ViewDetails route which is specifically for incident details
+      this.$router.push({
+        name: 'ViewDetails',
+        params: { id: incidentId }
+      });
+    },
+    fetchRiskInstances() {
+      axios.get('http://localhost:8000/api/risk-instances/')
+        .then(response => {
+          // Create a mapping of incident IDs to risk instances
+          response.data.forEach(riskInstance => {
+            if (riskInstance.IncidentId) {
+              if (!this.incidentRiskInstances[riskInstance.IncidentId]) {
+                this.incidentRiskInstances[riskInstance.IncidentId] = [];
+              }
+              this.incidentRiskInstances[riskInstance.IncidentId].push(riskInstance);
+            }
+          });
+          console.log('Risk instances mapping:', this.incidentRiskInstances);
+        })
+        .catch(error => {
+          console.error('Error fetching risk instances:', error);
+        })
+    },
   }
 }
 </script>
-
-<style scoped>
-.notifications-container {
-  padding: 5px;
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-left: 200px;
-}
-
-.notifications-header-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 0;
-}
-
-.notifications-title {
-  font-size: 32px;
-  margin-bottom: 0;
-  color: #2c3e50;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.notifications-bell {
-  font-size: 1.5rem;
-  margin-left: 8px;
-  color: #222;
-}
-
-.notifications-filters-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin: 18px 0 18px 0;
-}
-
-.recent-label {
-  font-size: 1.1rem;
-  color: #222;
-  font-weight: 500;
-  margin-right: 12px;
-  background: #e6f0ff;
-  border-radius: 20px;
-  padding: 8px 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-btn {
-  background: #f5f7fa;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 18px;
-  font-size: 1rem;
-  color: #222;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.18s;
-  box-shadow: none;
-}
-
-.filter-btn.active, .filter-btn:hover {
-  background: #e6f0ff;
-  color: #0056b3;
-}
-
-.filter-dropdown-wrapper {
-  position: relative;
-}
-
-.priority-dropdown {
-  position: absolute;
-  top: 38px;
-  left: 0;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  min-width: 140px;
-  z-index: 10;
-  padding: 6px 0;
-}
-
-.priority-option {
-  padding: 8px 18px;
-  cursor: pointer;
-  font-size: 1rem;
-  color: #222;
-  transition: background 0.15s;
-}
-
-.priority-option:hover {
-  background: #e6f0ff;
-  color: #0056b3;
-}
-
-.selected-priority {
-  background: #e6f0ff;
-  color: #0056b3;
-  border-radius: 16px;
-  padding: 6px 14px;
-  font-size: 1rem;
-  margin-left: 8px;
-}
-
-.notification-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px 20px;
-  max-height: 70vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 8px;
-}
-
-.notification-card {
-  background: #f7faff;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0, 60, 180, 0.06);
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-  min-width: 0;
-  border: 2px solid rgba(0,0,0,0.10);
-}
-
-.notification-card:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 8px 24px rgba(0, 60, 180, 0.10);
-}
-
-.notification-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 22px 28px 12px 28px;
-  background-color: #eaf1fb;
-  border-bottom: 1px solid #e0e7ef;
-}
-
-.notification-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #22314a;
-  font-weight: 700;
-}
-
-.notification-date {
-  font-size: 1rem;
-  color: #7a8ca7;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.notification-content {
-  padding: 20px 28px 0 28px;
-}
-
-.description {
-  margin-top: 0;
-  margin-bottom: 18px;
-  color: #2c3e50;
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
-.notification-details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  background-color: #f0f4fa;
-  padding: 8px 18px;
-  border-radius: 16px;
-  border: 1px solid #e0e7ef;
-  font-size: 1rem;
-}
-
-.label {
-  font-weight: 600;
-  color: #22314a;
-  margin-right: 8px;
-  font-size: 1rem;
-}
-
-.value {
-  color: #22314a;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.priority-high {
-  color: #e53935;
-  font-weight: 700;
-}
-
-.priority-medium {
-  color: #fb8c00;
-  font-weight: 700;
-}
-
-.priority-low {
-  color: #43a047;
-  font-weight: 700;
-}
-
-.notification-actions {
-  display: flex;
-  gap: 16px;
-  padding: 18px 28px 22px 28px;
-  background-color: #eaf1fb;
-  border-top: 1px solid #e0e7ef;
-  justify-content: flex-end;
-}
-
-.accept-btn {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 28px;
-  border-radius: 8px;
-  font-weight: 700;
-  border: 2px solid #e0e7ef;
-  transition: all 0.2s;
-}
-
-.accept-btn:hover {
-  background-color: #218838;
-  transform: translateY(-1px) scale(1.03);
-}
-
-.reject-btn {
-  background-color: #dc3545;
-  color: white;
-  padding: 10px 28px;
-  border-radius: 8px;
-  font-weight: 700;
-  border: 2px solid #e0e7ef;
-  transition: all 0.2s;
-}
-
-.reject-btn:hover {
-  background-color: #c82333;
-  transform: translateY(-1px) scale(1.03);
-}
-
-.back-btn {
-  background-color: #222;
-  color: #fff;
-  border-radius: 6px;
-  padding: 8px 18px;
-  font-weight: 600;
-  margin-bottom: 18px;
-  border: none;
-  box-shadow: 2px 2px 0 #8882;
-  transition: background 0.18s;
-}
-
-.back-btn:hover {
-  background-color: #444;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  background: white;
-  border-radius: 8px;
-  color: #6c757d;
-}
-
-/* Mapped Risks Styles */
-.mapped-risks-container {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,60,180,0.06);
-  padding: 32px 24px 24px 24px;
-  margin-top: 24px;
-}
-
-.mapped-risks-header {
-  margin-bottom: 20px;
-}
-
-.mapped-risks-header h2 {
-  font-size: 1.35rem;
-  color: #22314a;
-  font-weight: 700;
-  margin-bottom: 18px;
-}
-
-.risk-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,60,180,0.04);
-}
-
-.risk-table th {
-  background: #f8fafd;
-  font-weight: 700;
-  color: #22314a;
-  padding: 16px 10px;
-  border-bottom: 2px solid #e0e7ef;
-  text-align: left;
-  font-size: 1.08rem;
-}
-
-.risk-table td {
-  padding: 14px 10px;
-  border-bottom: 1px solid #e0e7ef;
-  color: #22314a;
-  font-size: 1.05rem;
-}
-
-.risk-table tr:last-child td {
-  border-bottom: none;
-}
-
-.checkbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.risk-action-bar {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.create-instance-btn {
-  background-color: #4285f4;
-  color: white;
-  font-size: 16px;
-  padding: 10px 20px;
-}
-
-.create-instance-btn:hover {
-  background-color: #3367d6;
-}
-
-.empty-risks {
-  text-align: center;
-  padding: 40px;
-  color: #6c757d;
-}
-
-/* Risk Instance Form Styles */
-.risk-instance-form-container {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.form-header {
-  margin-bottom: 24px;
-}
-
-.form-header h2 {
-  font-size: 20px;
-  color: #2c3e50;
-  margin-top: 16px;
-}
-
-.risk-instance-form {
-  width: 100%;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: #495057;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.readonly-field {
-  background-color: #f8f9fa;
-  cursor: not-allowed;
-}
-
-.form-actions {
-  margin-top: 25px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-}
-
-.cancel-btn {
-  background-color: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-.submit-btn {
-  background-color: #4285f4;
-  color: white;
-  padding: 10px 20px;
-}
-
-.submit-btn:hover {
-  background-color: #3367d6;
-}
-
-/* Add new styles */
-.create-risk-btn {
-  background-color: #4285f4;
-  color: white;
-  font-size: 16px;
-  padding: 10px 20px;
-  margin-top: 20px;
-  border-radius: 4px;
-}
-
-.create-risk-btn:hover {
-  background-color: #3367d6;
-}
-
-.risk-form-container {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Modal overlay styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-}
-
-.modal-content {
-  width: 90%;
-  max-width: 1000px;
-  max-height: 90vh;
-  overflow-y: auto;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
-}
-
-.close-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #6c757d;
-}
-
-/* Accept Options Modal Styles */
-.accept-options-modal {
-  padding: 30px;
-  max-width: 500px;
-}
-
-.accept-options {
-  text-align: center;
-}
-
-.accept-options p {
-  margin-bottom: 20px;
-  font-size: 16px;
-}
-
-.options-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.option-btn {
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  min-width: 180px;
-}
-
-.map-btn {
-  background-color: #4285f4;
-  color: white;
-}
-
-.map-btn:hover {
-  background-color: #3367d6;
-}
-
-.create-btn {
-  background-color: #28a745;
-  color: white;
-}
-
-.create-btn:hover {
-  background-color: #218838;
-}
-
-.loading-analysis {
-  text-align: center;
-  padding: 40px;
-  color: #4285f4;
-  font-weight: 600;
-}
-
-.days-dropdown {
-  position: absolute;
-  top: 38px;
-  left: 0;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  min-width: 140px;
-  z-index: 10;
-  padding: 6px 0;
-}
-
-.days-option {
-  padding: 8px 18px;
-  cursor: pointer;
-  font-size: 1rem;
-  color: #222;
-  transition: background 0.15s;
-}
-
-.days-option:hover {
-  background: #e6f0ff;
-  color: #0056b3;
-}
-
-.add-filter-btn {
-  background: #e6f0ff;
-  color: #0056b3;
-}
-
-.add-filter-btn:hover, .add-filter-btn.active {
-  background: #e6f0ff;
-  color: #0056b3;
-}
-
-.stylish-accept-modal {
-  background: #f7faff;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0,60,180,0.10);
-  border: 2px solid #e0e7ef;
-  padding: 36px 36px 32px 36px;
-  max-width: 440px;
-}
-.stylish-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 18px;
-  position: relative;
-}
-.header-icon {
-  color: #4285f4;
-  font-size: 2rem;
-}
-.stylish-header h2 {
-  font-size: 1.35rem;
-  color: #22314a;
-  font-weight: 700;
-  margin: 0;
-}
-.stylish-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-width: 200px;
-  max-width: 220px;
-  width: 100%;
-  font-size: 1.08rem;
-  font-weight: 700;
-  padding: 14px 0;
-  box-shadow: 0 2px 8px rgba(66,133,244,0.07);
-  border-radius: 8px;
-  border: 2px solid #e0e7ef;
-  transition: all 0.18s;
-}
-.stylish-btn i {
-  font-size: 1.2em;
-}
-.options-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-top: 32px;
-}
-
-.risk-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.own-risk {
-  background-color: #6c757d;
-}
-
-.own-risk:hover {
-  background-color: #5a6268;
-}
-
-.ai-risk {
-  background-color: #4285f4;
-}
-
-.ai-risk:hover {
-  background-color: #3367d6;
-}
-
-/* Add these styles for the inline form */
-.add-risk-form {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.add-risk-form h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #2c3e50;
-  font-size: 1.2rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group.wide {
-  grid-column: span 3;
-}
-
-.success-icon {
-  color: #28a745;
-}
-
-.success-content {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.success-content p {
-  margin-bottom: 20px;
-  font-size: 16px;
-  color: #22314a;
-}
-</style>

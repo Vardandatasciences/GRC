@@ -17,8 +17,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from grc.views import risk_instances_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('grc.urls')),  # Make sure this line exists
+    path('api/', include('grc.urls')),  # Use only the API URL prefix for all routes
+    path('risk-instances/', risk_instances_view, name='risk-instances-direct'),  # Add direct route for risk-instances
+    path('api/risk-instances/', risk_instances_view, name='api-risk-instances-direct'),  # Also add API route
 ]

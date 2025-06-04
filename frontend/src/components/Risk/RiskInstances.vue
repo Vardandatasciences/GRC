@@ -1,110 +1,78 @@
 <template>
-  <div class="risk-container">
-    <div class="risk-content">
-      <div class="risk-header">
-        <div class="risk-title">
-          <i class="fas fa-exclamation-triangle risk-icon"></i> Risk Instances
-        </div>
-        <button class="add-instance-btn">
-          <i class="fas fa-plus"></i> Add Instance
-        </button>
+  <div class="risk-instance-container">
+    <div class="header-row">
+      <h2 class="risk-title"><i class="fas fa-exclamation-triangle risk-icon"></i> Risk Instances Table</h2>
+    </div>
+    
+    <div class="filters-row">
+      <div class="filter-group">
+        <select v-model="selectedCriticality" class="filter-select">
+          <option value="">All Criticality</option>
+          <option v-for="c in uniqueCriticality" :key="c">{{ c }}</option>
+        </select>
+        <select v-model="selectedStatus" class="filter-select">
+          <option value="">All Status</option>
+          <option v-for="s in uniqueStatus" :key="s">{{ s }}</option>
+        </select>
+        <select v-model="selectedCategory" class="filter-select">
+          <option value="">All Category</option>
+          <option v-for="cat in uniqueCategory" :key="cat">{{ cat }}</option>
+        </select>
+        <select v-model="selectedPriority" class="filter-select">
+          <option value="">All Priority</option>
+          <option v-for="p in uniquePriority" :key="p">{{ p }}</option>
+        </select>
       </div>
-      
-      <!-- Cards View -->
-      <div class="risk-cards-container">
-        <div v-for="(instance, index) in instances" :key="instance.RiskInstanceId" class="risk-instance-card">
-          <div class="risk-card-header">
-            <div class="risk-id">Risk #{{ index + 1 }}</div>
-            <div class="risk-status" :class="getStatusClass(instance.RiskStatus)">
-              {{ instance.RiskStatus }}
-            </div>
-          </div>
-          
-          <div class="risk-card-title">{{ instance.RiskDescription }}</div>
-          
-          <div class="risk-card-details">
-            <div class="detail-row">
-              <div class="detail-item">
-                <div class="detail-label">Category:</div>
-                <div class="detail-value">{{ instance.Category }}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Criticality:</div>
-                <div class="detail-value">{{ instance.Criticality }}</div>
-              </div>
-            </div>
-            
-            <div class="detail-row">
-              <div class="detail-item">
-                <div class="detail-label">Priority:</div>
-                <div class="detail-value">{{ instance.RiskPriority }}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Owner:</div>
-                <div class="detail-value">{{ instance.RiskOwner }}</div>
-              </div>
-            </div>
-            
-            <div class="detail-row">
-              <div class="detail-item">
-                <div class="detail-label">Likelihood:</div>
-                <div class="detail-value">{{ instance.RiskLikelihood }}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Impact:</div>
-                <div class="detail-value">{{ instance.RiskImpact }}</div>
-              </div>
-            </div>
-            
-            <div class="detail-row">
-              <div class="detail-item">
-                <div class="detail-label">Exposure Rating:</div>
-                <div class="detail-value">{{ instance.RiskExposureRating }}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Response Type:</div>
-                <div class="detail-value">{{ instance.RiskResponseType }}</div>
-              </div>
-            </div>
-            
-            <!-- Add due date information -->
-            <div class="detail-row">
-              <div class="detail-item">
-                <div class="detail-label">Due Date:</div>
-                <div class="detail-value">
-                  <template v-if="instance.MitigationDueDate">
-                    {{ formatDate(instance.MitigationDueDate) }}
-                    <span class="due-status" :class="getDueStatusClass(instance.MitigationDueDate)">
-                      {{ getDueStatusText(instance.MitigationDueDate) }}
-                    </span>
-                  </template>
-                  <template v-else>Not set</template>
-                </div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Status:</div>
-                <div class="detail-value">{{ instance.MitigationStatus || 'Not Started' }}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="risk-card-footer">
-            <button class="view-details-btn">View Details</button>
-          </div>
-        </div>
-      </div>
+    </div>
+    
+    <div class="risk-list-table-container">
+      <table v-if="filteredInstances.length" class="risk-list-table">
+        <thead>
+          <tr>
+            <th class="risk-id">RiskID</th>
+            <th>Origin</th>
+            <th>Category</th>
+            <th>Criticality</th>
+            <th>Risk Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="instance in filteredInstances" :key="instance.RiskInstanceId">
+            <td class="risk-id" style="background: none !important; border-radius: 0 !important;">{{ instance.RiskId }}</td>
+            <td><span class="origin-badge">MANUAL</span></td>
+            <td><span class="category-badge">{{ instance.Category }}</span></td>
+            <td>
+              <span :class="'priority-' + instance.Criticality.toLowerCase()">
+                {{ instance.Criticality }}
+              </span>
+            </td>
+            <td>
+              <router-link :to="{ name: 'RiskInstanceDetails', params: { id: instance.RiskInstanceId }}" class="risk-title-link">
+                {{ instance.RiskDescription }}
+              </router-link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="no-incident-data">No risk instances found for selected filters.</div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import '../Risk/RiskInstances.css'
 
 export default {
   name: 'RiskInstances',
   data() {
     return {
       instances: [],
+      selectedCriticality: '',
+      selectedStatus: '',
+      selectedCategory: '',
+      selectedPriority: '',
+      showAddForm: false,
       newInstance: {
         RiskId: null,
         Criticality: '',
@@ -126,33 +94,55 @@ export default {
       }
     }
   },
+  computed: {
+    uniqueCriticality() {
+      return [...new Set(this.instances.map(i => i.Criticality).filter(Boolean))]
+    },
+    uniqueStatus() {
+      return [...new Set(this.instances.map(i => i.RiskStatus).filter(Boolean))]
+    },
+    uniqueCategory() {
+      return [...new Set(this.instances.map(i => i.Category).filter(Boolean))]
+    },
+    uniquePriority() {
+      return [...new Set(this.instances.map(i => i.RiskPriority).filter(Boolean))]
+    },
+    filteredInstances() {
+      return this.instances.filter(i =>
+        (!this.selectedCriticality || i.Criticality === this.selectedCriticality) &&
+        (!this.selectedStatus || i.RiskStatus === this.selectedStatus) &&
+        (!this.selectedCategory || i.Category === this.selectedCategory) &&
+        (!this.selectedPriority || i.RiskPriority === this.selectedPriority)
+      )
+    }
+  },
   mounted() {
     this.fetchInstances()
   },
   methods: {
     fetchInstances() {
-      axios.get('http://localhost:8000/api/risk-instances/')
+      // Using the direct endpoint as shown in Postman
+      axios.get('http://localhost:8000/risk-instances')
         .then(response => {
           this.instances = response.data
+          console.log('Fetched risk instances:', response.data.length)
         })
         .catch(error => {
           console.error('Error fetching risk instances:', error)
+          // Try alternative endpoint if the first one fails
+          this.tryAlternativeEndpoint()
         })
     },
-    getStatusClass(status) {
-      if (!status) return '';
-      
-      if (status.includes('Revision')) {
-        return 'status-revision';
-      } else if (status === 'Approved') {
-        return 'status-approved';
-      } else if (status === 'In Progress') {
-        return 'status-in-progress';
-      } else if (status === 'Open') {
-        return 'status-open';
-      }
-      
-      return '';
+    tryAlternativeEndpoint() {
+      console.log('Trying alternative endpoint...')
+      axios.get('http://localhost:8000/api/risk-instances')
+        .then(response => {
+          this.instances = response.data
+          console.log('Fetched risk instances from alternative endpoint:', response.data.length)
+        })
+        .catch(error => {
+          console.error('Error with alternative endpoint:', error)
+        })
     },
     submitInstance() {
       // Convert numeric string values to actual numbers
@@ -166,9 +156,12 @@ export default {
         UserId: parseInt(this.newInstance.UserId) || null
       }
       
-      axios.post('http://localhost:8000/api/risk-instances/', formData)
+      axios.post('http://localhost:8000/risk-instances/', formData)
         .then(response => {
+          // Add the new instance to the table
           this.instances.push(response.data)
+          
+          // Reset the form
           this.newInstance = {
             RiskId: null,
             Criticality: '',
@@ -188,236 +181,20 @@ export default {
             UserId: 1,
             Date: new Date().toISOString().split('T')[0]
           }
+          
+          // Hide the form
+          this.showAddForm = false
+          
+          // Show success message
           alert('Risk instance added successfully!')
         })
         .catch(error => {
           console.error('Error adding risk instance:', error.response?.data || error.message)
           alert('Error adding risk instance. Please check your data and try again.')
         })
-    },
-    formatDate(dateString) {
-      if (!dateString) return 'Not set';
-      
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    },
-    getDueStatusClass(dateString) {
-      if (!dateString) return '';
-      
-      const dueDate = new Date(dateString);
-      const today = new Date();
-      
-      // Reset the time part for accurate day comparison
-      dueDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
-      
-      if (daysLeft < 0) return 'overdue';
-      if (daysLeft <= 3) return 'urgent';
-      if (daysLeft <= 7) return 'warning';
-      return 'on-track';
-    },
-    getDueStatusText(dateString) {
-      if (!dateString) return '';
-      
-      const dueDate = new Date(dateString);
-      const today = new Date();
-      
-      // Reset the time part for accurate day comparison
-      dueDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const daysLeft = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
-      
-      if (daysLeft < 0) return `(Delayed by ${Math.abs(daysLeft)} days)`;
-      if (daysLeft === 0) return '(Due today)';
-      if (daysLeft === 1) return '(Due tomorrow)';
-      return `(${daysLeft} days left)`;
     }
   }
 }
 </script>
 
-<style>
-.risk-container {
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: 100vh;
-}
-
-.risk-content {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.risk-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-.risk-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  display: flex;
-  align-items: center;
-}
-
-.risk-icon {
-  color: #f0ad4e;
-  font-size: 24px;
-  margin-right: 10px;
-}
-
-.add-instance-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.add-instance-btn i {
-  margin-right: 6px;
-}
-
-.risk-cards-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(530px, 1fr));
-  gap: 20px;
-}
-
-.risk-instance-card {
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  border: 1px solid #e9ecef;
-}
-
-.risk-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  border-bottom: 1px solid #e9ecef;
-  background: #f8f9fa;
-}
-
-.risk-id {
-  font-weight: 600;
-  color: #495057;
-}
-
-.risk-status {
-  padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-revision {
-  background: #ffebee;
-  color: #d32f2f;
-}
-
-.status-approved {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-in-progress {
-  background: #fff8e1;
-  color: #f57c00;
-}
-
-.status-open {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.risk-card-title {
-  padding: 15px 15px 5px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #212529;
-  min-height: 60px;
-}
-
-.risk-card-details {
-  padding: 0 15px 15px;
-}
-
-.detail-row {
-  display: flex;
-  margin-bottom: 5px;
-}
-
-.detail-item {
-  flex: 1;
-  display: flex;
-  margin-bottom: 5px;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #6c757d;
-  width: 110px;
-  font-size: 13px;
-}
-
-.detail-value {
-  color: #212529;
-  font-size: 13px;
-}
-
-.risk-card-footer {
-  padding: 10px 15px;
-  border-top: 1px solid #e9ecef;
-  text-align: right;
-}
-
-.view-details-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.view-details-btn:hover {
-  background: #0069d9;
-}
-
-.due-status {
-  margin-left: 5px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.due-status.overdue {
-  color: #f5222d;
-}
-
-.due-status.urgent {
-  color: #fa8c16;
-}
-
-.due-status.warning {
-  color: #faad14;
-}
-
-.due-status.on-track {
-  color: #52c41a;
-}
-</style>
 

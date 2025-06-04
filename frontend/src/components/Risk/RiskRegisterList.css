@@ -1,0 +1,415 @@
+/* Modern UI Variables for Risk Register Table */
+:root {
+  --risk-primary: #7B6FDD;
+  --risk-primary-light: #8F84E8;
+  --risk-primary-dark: #6A5ED4;
+  --risk-secondary: #f72585;
+  --risk-success: #4cc9f0;
+  --risk-warning: #f8961e;
+  --risk-danger: #e63946;
+  --risk-light: #f8f9fa;
+  --risk-dark: #212529;
+  --risk-gray-100: #f8f9fa;
+  --risk-gray-200: #e9ecef;
+  --risk-gray-300: #dee2e6;
+  --risk-gray-400: #ced4da;
+  --risk-gray-500: #adb5bd;
+  --risk-gray-600: #6c757d;
+  --risk-gray-700: #495057;
+  --risk-gray-800: #343a40;
+  --risk-gray-900: #212529;
+  --risk-border-radius: 8px;
+  --risk-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --risk-transition: all 0.3s ease;
+}
+
+/* Container for the risk register - remove scrolling to use app-level scrolling */
+.risk-register-container {
+  padding: 16px 16px 16px 210px;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--risk-gray-800);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Header Styles */
+.risk-register-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.risk-register-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: black;
+  margin: 0;
+  padding-bottom: 8px;
+  position: relative;
+}
+
+.risk-register-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 60px;
+  background-color: #7B6FDD;
+  border-radius: 2px;
+}
+
+.risk-register-icon {
+  margin-right: 8px;
+  color: #7B6FDD;
+}
+
+/* Filter Controls Styles */
+.risk-register-filters-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--risk-gray-200);
+  background-color: transparent;
+  margin-bottom: 12px;
+  justify-content: space-between;
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Search container */
+.search-container {
+  position: relative;
+  width: 400px;
+}
+
+.risk-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  padding-left: 30px;
+  border: 1px solid var(--risk-gray-300);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--risk-gray-500);
+  font-size: 1rem;
+}
+
+/* Sort filter styling */
+.sort-select {
+  padding: 6px 10px;
+  border: 1px solid var(--risk-gray-300);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  width: 130px;
+}
+
+/* Table Styles - Remove any scrolling on table container */
+.risk-list-table-container {
+  width: 100%;
+  background-color: transparent;
+  margin-bottom: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.risk-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.risk-list-table th,
+.risk-list-table td {
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin: 0;
+  width: auto;
+}
+
+.risk-list-table th.risk-id,
+.risk-list-table td.risk-id {
+  text-align: center;
+}
+
+.risk-list-table th {
+  background-color: #7B6FDD;
+  color: white;
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.risk-list-table th.risk-id {
+  text-align: center;
+}
+
+.risk-list-table th:first-child,
+.risk-list-table td:first-child {
+  text-align: center;
+}
+
+/* Align table headers with their respective content */
+.risk-list-table th:nth-child(2),
+.risk-list-table td:nth-child(2) {
+  text-align: center;
+}
+
+.risk-list-table th:nth-child(3),
+.risk-list-table td:nth-child(3) {
+  text-align: center;
+}
+
+.risk-list-table th:nth-child(4),
+.risk-list-table td:nth-child(4) {
+  text-align: center;
+}
+
+.risk-list-table th:first-child {
+  border-top-left-radius: 0;
+}
+
+.risk-list-table th:last-child {
+  border-top-right-radius: 0;
+}
+
+.risk-list-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* Risk ID styling - adjusted for tighter layout */
+.risk-id {
+  color: #7B6FDD;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+}
+
+/* Title link styling */
+.risk-title-link {
+  color: #5851c7;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.risk-title-link:hover {
+  color: #433ba9;
+  text-decoration: underline;
+}
+
+/* Category Badge styling to match image */
+.category-badge {
+  background-color: #f0f2ff;
+  color: black;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+  display: inline-block;
+  font-size: 0.75rem;
+  text-align: center;
+  border: none;
+}
+
+/* Critical badge styling */
+.risk-list-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Priority styling - adjusted to match image */
+.priority-high,
+.priority-medium,
+.priority-low,
+.priority-critical {
+  padding: 4px 12px !important;
+  border-radius: 16px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  display: inline-block !important;
+  text-align: center !important;
+  min-width: 60px !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.priority-critical {
+  color: #990000 !important; /* Dark red for Critical */
+}
+
+.priority-high {
+  color: #e57373 !important; /* Light red for High */
+}
+
+.priority-medium {
+  color: #f9a825 !important; /* Yellow for Medium */
+}
+
+.priority-low {
+  color: #1976d2 !important; /* Blue for Low */
+}
+
+/* Empty state styling */
+.no-incident-data {
+  text-align: center;
+  padding: 40px;
+  color: var(--risk-gray-600);
+  font-style: italic;
+}
+
+/* Pagination controls - improved styling to match image */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin-top: 12px;
+  position: relative;
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  background-color: white;
+  border: 1px solid var(--risk-gray-300);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--risk-gray-700);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.pagination-btn:disabled {
+  color: var(--risk-gray-400);
+  cursor: not-allowed;
+}
+
+.pagination-icon {
+  font-size: 0.8rem;
+}
+
+.pagination-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.page-number {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--risk-gray-300);
+  background-color: white;
+  color: var(--risk-gray-700);
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin: 0 2px;
+  padding: 0 6px;
+}
+
+.page-number:hover:not(.active-page) {
+  background-color: #f0f0f0;
+}
+
+.active-page {
+  background-color: var(--risk-primary);
+  color: white;
+  border-color: var(--risk-primary);
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--risk-gray-700);
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .risk-register-container {
+    padding: 16px 16px 16px 210px;
+  }
+}
+
+@media (max-width: 768px) {
+  .risk-register-container {
+    padding: 16px;
+  }
+  
+  .filter-group {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .search-container {
+    width: 100%;
+  }
+  
+  .risk-list-table th, 
+  .risk-list-table td {
+    padding: 8px;
+  }
+  
+  .pagination-controls {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+}
+
+/* Ensure the risk description has enough space */
+.risk-list-table td:nth-child(5) {
+  max-width: 400px;
+  word-wrap: break-word;
+}
+
+/* Adjust row hover effect */
+.risk-list-table tbody tr:hover {
+  background-color: inherit;
+}
+
+.origin-badge {
+  background-color: #eef1ff;
+  color: #7B6FDD;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+  text-align: center;
+}

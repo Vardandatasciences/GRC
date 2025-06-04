@@ -122,6 +122,7 @@ class RiskInstance(models.Model):
 
     class Meta:
         db_table = 'risk_instance'  # Ensure Django uses the correct table name in the database
+        managed = False  # Since we're connecting to an existing table
 
     def __str__(self):
         return f"Risk Instance {self.RiskInstanceId}"
@@ -147,7 +148,7 @@ class RiskApproval(models.Model):
     Date = models.DateTimeField(null=True, auto_now_add=True)
     
     class Meta:
-        db_table = 'grc_test.risk_approval'
+        db_table = 'grc.risk_approval'
         managed = False  # Since we're connecting to an existing table
 
 

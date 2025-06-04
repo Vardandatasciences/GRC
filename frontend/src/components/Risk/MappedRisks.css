@@ -1,0 +1,659 @@
+.mapped-risks-container {
+  padding: 1.5rem;
+  /* Keep the consistent margin from sidebar */
+  margin-left: 188px !important;
+  width: calc(100% - 188px) !important;
+  min-height: calc(100vh - 3rem);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.mapped-risks-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+  padding-left: 1cm !important;
+  width: 100%;
+  max-width: calc(100% - 1cm) !important;
+}
+
+.mapped-risks-back-btn {
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 14px;
+  font-weight: 600;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.mapped-risks-back-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.1));
+  transform: translateX(-100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mapped-risks-back-btn:hover {
+  background: rgba(79, 70, 229, 0.15);
+  transform: translateX(-4px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.15);
+}
+
+.mapped-risks-back-btn:hover::before {
+  transform: translateX(0);
+}
+
+.mapped-risks-header h2 {
+  font-size: 1.4rem !important;
+  color: #1e293b;
+  font-weight: 700;
+  margin: 0;
+  word-break: break-word;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Remove background from these containers */
+.mapped-risks-list {
+  background: transparent !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  margin: 0;
+  margin-left: 1cm !important;
+  overflow: visible;
+  border: none !important;
+  width: calc(100% - 2cm) !important;
+  max-width: 100%;
+  align-self: flex-start; /* Left align */
+}
+
+/* Update table styles to work on transparent background */
+.mapped-risks-table {
+  width: 100% !important;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  margin-top: 10px !important;
+}
+
+.mapped-risks-table th,
+.mapped-risks-table td {
+  padding: 0.3rem !important;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  font-size: 0.7rem !important;
+}
+
+.mapped-risks-table tbody tr {
+  height: 36px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mapped-risks-table tbody tr:hover {
+  background: rgba(79, 70, 229, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Column Widths */
+.mapped-risks-table th:first-child,
+.mapped-risks-table td:first-child {
+  width: 40px;
+  text-align: center;
+}
+
+.mapped-risks-table th:nth-child(2),
+.mapped-risks-table td:nth-child(2) {
+  width: 40px;
+}
+
+.mapped-risks-table th:nth-child(3),
+.mapped-risks-table td:nth-child(3) {
+  width: 90px;
+}
+
+.mapped-risks-table th:nth-child(4),
+.mapped-risks-table td:nth-child(4) {
+  width: 90px;
+}
+
+.mapped-risks-table th:nth-child(6),
+.mapped-risks-table td:nth-child(6),
+.mapped-risks-table th:nth-child(7),
+.mapped-risks-table td:nth-child(7) {
+  width: 100px;
+  text-align: center;
+}
+
+.mapped-risks-table th:nth-child(8),
+.mapped-risks-table td:nth-child(8) {
+  width: 80px;
+}
+
+/* Description column takes remaining space */
+.mapped-risks-table th:nth-child(5),
+.mapped-risks-table td:nth-child(5) {
+  width: 35%;
+  max-width: 35%;
+}
+
+.mapped-risks-description-cell {
+  position: relative;
+  cursor: default;
+}
+
+.mapped-risks-description-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-height: 2.4em;
+  line-height: 1.2 !important;
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.2rem !important;
+}
+
+.mapped-risks-description-tooltip {
+  display: none;
+}
+
+/* Table Headers */
+.mapped-risks-table th {
+  background: #6B5ECD !important;
+  color: white !important;
+  padding: 0.4rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: none;
+}
+
+.mapped-risks-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.mapped-risks-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+/* Adjust table cell padding to match the header padding */
+.mapped-risks-table td {
+  padding: 0.8rem;
+}
+
+/* Table Rows */
+.mapped-risks-table tr:hover td {
+  background: #f9fafb;
+}
+
+/* Status Badges */
+.mapped-risks-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.3rem !important;
+  border-radius: 8px;
+  font-size: 0.65rem !important;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  width: auto;
+  min-width: 50px !important;
+  max-width: 75px !important;
+}
+
+.mapped-risks-status-badge.critical {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #b91c1c;
+}
+
+.mapped-risks-status-badge.high {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #b45309;
+}
+
+.mapped-risks-status-badge.medium {
+  background: linear-gradient(135deg, #ffedd5, #fed7aa);
+  color: #9a3412;
+}
+
+.mapped-risks-status-badge.low {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #15803d;
+}
+
+/* Checkbox */
+.mapped-risks-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
+  display: block;
+}
+
+.mapped-risks-checkbox::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  padding: 2px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mapped-risks-checkbox:hover {
+  transform: scale(1.05);
+}
+
+.mapped-risks-checkbox:hover::before {
+  opacity: 1;
+}
+
+.mapped-risks-checkbox:checked {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border-color: transparent;
+  transform: scale(1.05);
+}
+
+.mapped-risks-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  animation: checkmark 0.2s ease-in-out forwards;
+}
+
+@keyframes checkmark {
+  0% {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+/* Pagination */
+/* Make pagination controls background transparent */
+.mapped-risks-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.5rem !important;
+  background: transparent !important;
+  border-top: none;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100% !important;
+  border: none !important;
+  margin-left: 0 !important;
+  margin-top: 0.3rem !important;
+}
+
+.mapped-risks-rows-per-page,
+.mapped-risks-pagination-info {
+  font-size: 0.75rem !important;
+}
+
+.mapped-risks-rows-select {
+  padding: 0.2rem 0.4rem !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.75rem !important;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mapped-risks-rows-select:hover {
+  border-color: #4f46e5;
+}
+
+.mapped-risks-pagination-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.mapped-risks-pagination-button {
+  padding: 0.2rem 0.4rem !important;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 28px !important;
+  height: 28px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.75rem !important;
+}
+
+.mapped-risks-pagination-button:hover:not(:disabled) {
+  background: #f5f3ff;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.mapped-risks-pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mapped-risks-action-bar {
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  background: transparent !important;
+  border-top: none;
+  border: none !important;
+}
+
+.mapped-risks-create-instance-btn {
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  letter-spacing: 0.025em;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  height: auto;
+  line-height: 1;
+}
+
+.mapped-risks-create-instance-btn:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.25);
+}
+
+.mapped-risks-empty {
+  text-align: left;
+  padding: 4rem 2rem;
+  padding-left: 1cm !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+.mapped-risks-empty p {
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.mapped-risks-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.mapped-risks-create-btn {
+  padding: 0.875rem 1.75rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  letter-spacing: 0.025em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.own-risk {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+
+.own-risk:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.2);
+}
+
+.ai-risk {
+  background: linear-gradient(135deg, #10b981, #34d399);
+}
+
+.ai-risk:hover {
+  background: linear-gradient(135deg, #059669, #10b981);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.2);
+}
+
+.mapped-risks-loading-state {
+  text-align: left;
+  padding: 4rem 2rem;
+  padding-left: 1cm !important;
+  color: #64748b;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+/* Modal styles */
+.mapped-risks-modal-overlay, .mapped-risks-modal-content, .mapped-risks-modal-header, .mapped-risks-modal-body {
+  display: none;
+}
+
+/* Make LIKELIHOOD header text fit better */
+.mapped-risks-table th:nth-child(6) {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .mapped-risks-container {
+    margin-left: 38px; /* Keep only the 1cm gap when sidebar collapses/changes */
+    width: calc(100% - 38px);
+    padding: 1.5rem;
+  }
+  
+  .mapped-risks-list, 
+  .mapped-risks-empty {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .mapped-risks-container {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+  
+  .mapped-risks-table {
+    table-layout: auto;
+    font-size: 0.7rem;
+  }
+  
+  .mapped-risks-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .mapped-risks-back-btn {
+    font-size: 0.85rem;
+    padding: 0.7rem 1.2rem;
+  }
+  
+  .mapped-risks-pagination-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Add these styles at the end of the file to override previous styles */
+
+/* Force left alignment and positioning */
+.mapped-risks-container {
+  margin-left: 188px !important;
+  width: calc(100% - 188px) !important;
+  align-items: flex-start !important;
+  padding: 0 !important;
+}
+
+/* Force header positioning */
+.mapped-risks-header {
+  margin-left: 1cm !important;
+  padding-left: 0 !important;
+  max-width: calc(100% - 1cm) !important;
+}
+
+/* Force list positioning */
+.mapped-risks-list {
+  margin-left: 1cm !important;
+  width: calc(100% - 2cm) !important;
+}
+
+/* Force table to be full width of its container */
+.mapped-risks-table {
+  width: 100% !important;
+}
+
+/* Ensure empty state and loading state are also aligned */
+.mapped-risks-empty, 
+.mapped-risks-loading-state {
+  margin-left: 1cm !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+
+/* Ensure pagination controls are aligned */
+.mapped-risks-pagination-controls {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* Make rows even more compact */
+.mapped-risks-table tbody tr {
+  height: 36px !important;
+}
+
+/* Make headers more compact */
+.mapped-risks-table th {
+  padding: 0.4rem !important;
+  font-size: 0.72rem !important;
+}
+
+/* Make table headers shorter */
+.mapped-risks-table thead tr {
+  height: 34px !important;
+}
+
+/* Adjust description cell to fit in two lines */
+.mapped-risks-description-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-height: 2.4em;
+  line-height: 1.2 !important;
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.2rem !important;
+}
+
+/* Reduce spacing between rows */
+.mapped-risks-table tbody tr td {
+  border-bottom-width: 1px !important;
+}
+
+/* Adjust status badges to be more compact */
+.mapped-risks-status-badge {
+  padding: 0.1rem 0.3rem !important;
+  font-size: 0.65rem !important;
+  min-width: 50px !important;
+  max-width: 75px !important;
+}
+
+/* Further reduce padding on pagination */
+.mapped-risks-pagination-controls {
+  padding: 0.3rem 0.5rem !important;
+  margin-top: 0.3rem !important;
+}
+
+/* Make pagination elements smaller */
+.mapped-risks-rows-per-page,
+.mapped-risks-pagination-info {
+  font-size: 0.75rem !important;
+}
+
+.mapped-risks-rows-select {
+  padding: 0.2rem 0.4rem !important;
+  font-size: 0.75rem !important;
+}
+
+.mapped-risks-pagination-button {
+  padding: 0.2rem 0.4rem !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  font-size: 0.75rem !important;
+} 

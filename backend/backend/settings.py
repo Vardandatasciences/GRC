@@ -88,7 +88,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'grc_test',  # Database name
+        'NAME': 'grc',  # Database name
         'USER': 'root',  # Your MySQL username
         'PASSWORD': 'root',  # Your MySQL password
         'HOST': 'localhost',  # Database host (use 'localhost' if running locally)
@@ -126,7 +126,7 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

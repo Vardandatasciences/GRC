@@ -1,0 +1,527 @@
+/* Modern UI Variables for Risk Form */
+:root {
+  --form-primary: #6a5acd;
+  --form-primary-light: #8677dd;
+  --form-primary-dark: #483d8b;
+  --form-secondary: #5a4ccd;
+  --form-success: #4cc9f0;
+  --form-warning: #f8961e;
+  --form-danger: #e63946;
+  --form-light: #f8f9fa;
+  --form-dark: #212529;
+  --form-gray-100: #f8f9fa;
+  --form-gray-200: #e9ecef;
+  --form-gray-300: #dee2e6;
+  --form-gray-400: #ced4da;
+  --form-gray-500: #adb5bd;
+  --form-gray-600: #6c757d;
+  --form-gray-700: #495057;
+  --form-gray-800: #343a40;
+  --form-gray-900: #212529;
+  --form-border-radius: 8px;
+  --form-box-shadow: 0 4px 6px rgba(106, 90, 205, 0.1), 0 1px 3px rgba(106, 90, 205, 0.08);
+  --form-transition: all 0.3s ease;
+}
+
+/* Global Styles */
+.create-risk-instance-container {
+  padding: 16px 16px 16px 220px;
+  background: none;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--form-gray-800);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove blue user icons */
+.create-risk-instance-container i.fas.fa-user-alt,
+.create-risk-instance-container i.fas.fa-user,
+.create-risk-instance-form i.fas.fa-user-alt,
+.create-risk-instance-form i.fas.fa-user {
+  display: none !important;
+}
+
+/* Hide any blue user icon elements that might be added by external styling */
+.create-risk-instance-form > .form-group::before,
+.create-risk-instance-form .form-group label::before {
+  display: none !important;
+}
+
+/* Header Styles */
+.create-risk-instance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.create-risk-instance-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: black;
+  margin: 0;
+  padding-bottom: 8px;
+  position: relative;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+}
+
+.create-risk-instance-header h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 80px;
+  background-color: #6a5acd;
+  border-radius: 2px;
+}
+
+/* Form Container Styles */
+.create-risk-instance-card {
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Form Layout */
+.create-risk-instance-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 16px;
+  flex: 1;
+  padding: 0 0 20px 0;
+}
+
+/* Hide any elements that appear before form labels or groups */
+.create-risk-instance-form > *::before {
+  display: none !important;
+}
+
+/* Remove any blue icon elements outside of our control */
+.create-risk-instance-container svg.icon-blue,
+.create-risk-instance-container i.icon-blue,
+.create-risk-instance-container img.user-icon,
+.create-risk-instance-container .user-icon {
+  display: none !important;
+}
+
+.create-risk-instance-form > .form-group.field-full {
+  grid-column: 1 / 5;
+}
+
+.create-risk-instance-form > .form-group.field-half {
+  grid-column: span 2;
+}
+
+.create-risk-instance-form > .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.create-risk-instance-form .form-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--form-gray-700);
+  margin-bottom: 3px;
+}
+
+.create-risk-instance-form .form-group label i {
+  color: var(--form-primary);
+  font-size: 0.8rem;
+  width: 14px;
+  text-align: center;
+}
+
+/* Input styling with left borders */
+.create-risk-instance-form input,
+.create-risk-instance-form select,
+.create-risk-instance-form textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--form-gray-300);
+  border-left: 3px solid var(--form-primary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: none;
+  transition: var(--form-transition);
+  background-color: var(--form-gray-100);
+  width: 100%;
+  box-sizing: border-box;
+  height: 36px;
+}
+
+.create-risk-instance-form input[type="number"] {
+  border-left: 3px solid var(--form-primary);
+}
+
+.create-risk-instance-form input[disabled] {
+  background-color: rgba(67, 97, 238, 0.05);
+  color: var(--form-primary);
+  font-weight: 500;
+  border-color: transparent;
+}
+
+.create-risk-instance-form textarea {
+  min-height: 80px;
+  height: 80px;
+  border-left: 3px solid var(--form-primary);
+}
+
+.create-risk-instance-form input:focus,
+.create-risk-instance-form select:focus,
+.create-risk-instance-form textarea:focus {
+  outline: none;
+  border-color: var(--form-primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+  background-color: white;
+  border-left-color: currentColor;
+  border-left-width: 3px;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: row !important;
+  justify-content: flex-end;
+  gap: 15px;
+  grid-column: 1 / 5;
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.btn-submit {
+  background: var(--form-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--form-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 38px;
+}
+
+.btn-submit:hover {
+  background: var(--form-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+}
+
+.btn-cancel {
+  background: white;
+  color: var(--form-gray-700);
+  border: 1px solid var(--form-gray-300);
+  border-radius: 6px;
+  padding: 6px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--form-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 38px;
+}
+
+.btn-cancel:hover {
+  background: var(--form-gray-200);
+  color: var(--form-gray-900);
+}
+
+/* Status Indicators for Priority Form */
+.priority-critical {
+  background-color: rgba(230, 57, 70, 0.1);
+  color: #e63946;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+
+.priority-high {
+  background-color: rgba(248, 150, 30, 0.1);
+  color: #f8961e;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+
+.priority-medium {
+  background-color: rgba(76, 201, 240, 0.1);
+  color: #4cc9f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+
+.priority-low {
+  background-color: rgba(76, 201, 240, 0.1);
+  color: #4cc9f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+
+/* Success Message */
+.form-success-message {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: var(--form-primary);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(106, 90, 205, 0.15);
+  z-index: 5000;
+  animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+  font-weight: 500;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Enhanced modern dropdown styling */
+.create-risk-instance-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a5acd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  padding-right: 28px;
+  background-color: white;
+  border: 1px solid rgba(106, 90, 205, 0.15);
+  border-left: 3px solid var(--form-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  color: #495057;
+  font-size: 0.85rem;
+}
+
+.create-risk-instance-form select:hover {
+  border-color: var(--form-primary);
+  border-left: 3px solid var(--form-primary);
+}
+
+.create-risk-instance-form select:focus {
+  border-color: var(--form-primary);
+  border-left: 3px solid var(--form-primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+  outline: none;
+}
+
+/* Update specific select styling */
+.create-risk-instance-form select#criticality,
+.create-risk-instance-form select#riskPriority {
+  border-left: 3px solid var(--form-danger);
+}
+
+.create-risk-instance-form select#category {
+  border-left: 3px solid var(--form-primary-light);
+}
+
+.create-risk-instance-form select#appetite {
+  border-left: 3px solid var(--form-success);
+}
+
+.create-risk-instance-form select#riskResponseType {
+  border-left: 3px solid var(--form-warning);
+}
+
+.create-risk-instance-form select#riskStatus {
+  border-left: 3px solid var(--form-secondary);
+}
+
+/* Priority select styling */
+.create-risk-instance-form .priority-select {
+  border-left: 3px solid var(--form-primary);
+}
+
+.create-risk-instance-form .priority-select option[value="Critical"] {
+  color: #e63946;
+  background-color: rgba(230, 57, 70, 0.05);
+}
+
+.create-risk-instance-form .priority-select option[value="High"] {
+  color: #e63946;
+  background-color: rgba(230, 57, 70, 0.05);
+}
+
+.create-risk-instance-form .priority-select option[value="Medium"] {
+  color: #f8961e;
+  background-color: rgba(248, 150, 30, 0.05);
+}
+
+.create-risk-instance-form .priority-select option[value="Low"] {
+  color: #4cc9f0;
+  background-color: rgba(76, 201, 240, 0.05);
+}
+
+/* Category select styling */
+.create-risk-instance-form .category-select {
+  border-left: 3px solid var(--form-primary-light);
+}
+
+.create-risk-instance-form .category-select option[value="IT Security"] {
+  color: #e63946;
+}
+
+.create-risk-instance-form .category-select option[value="IT Security, Compliance"] {
+  color: #e63946;
+}
+
+.create-risk-instance-form .category-select option[value="Compliance"] {
+  color: #f8961e;
+}
+
+.create-risk-instance-form .category-select option[value="Operational"] {
+  color: #4cc9f0;
+}
+
+.create-risk-instance-form .category-select option[value="Financial"] {
+  color: #43aa8b;
+}
+
+.create-risk-instance-form .category-select option[value="Strategic"] {
+  color: #3a0ca3;
+}
+
+/* Fix for smaller screens */
+@media (max-width: 1200px) {
+  .create-risk-instance-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .create-risk-instance-form > .form-group.field-full {
+    grid-column: 1 / 3;
+  }
+  
+  .create-risk-instance-form > .form-group.field-half {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .create-risk-instance-container {
+    padding: 12px;
+  }
+  
+  .create-risk-instance-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .create-risk-instance-form > .form-group.field-full,
+  .create-risk-instance-form > .form-group.field-half {
+    grid-column: 1;
+  }
+}
+
+/* Adjust border-radius for left border to avoid sharp corners */
+.create-risk-instance-form input,
+.create-risk-instance-form select,
+.create-risk-instance-form textarea {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Input field specific styling */
+.create-risk-instance-form input#riskId {
+  border-left: 3px solid #6A5ACD; /* Purple */
+}
+
+.create-risk-instance-form input#riskLikelihood {
+  border-left: 3px solid #4361EE; /* Blue */
+}
+
+.create-risk-instance-form input#riskImpact {
+  border-left: 3px solid #F72585; /* Pink */
+}
+
+.create-risk-instance-form input#riskExposureRating {
+  border-left: 3px solid #4CC9F0; /* Light blue */
+}
+
+.create-risk-instance-form input#riskOwner {
+  border-left: 3px solid #4361EE; /* Blue */
+}
+
+.create-risk-instance-form input#userId {
+  border-left: 3px solid #3A0CA3; /* Dark purple */
+}
+
+/* Textarea specific styling */
+.create-risk-instance-form textarea#riskDescription {
+  border-left: 3px solid #4361EE; /* Blue */
+}
+
+.create-risk-instance-form textarea#possibleDamage {
+  border-left: 3px solid #F72585; /* Pink */
+}
+
+.create-risk-instance-form textarea#riskResponseDescription {
+  border-left: 3px solid #4CC9F0; /* Light blue */
+}
+
+.create-risk-instance-form textarea#riskMitigation {
+  border-left: 3px solid #7209B7; /* Purple */
+}
+
+/* Make the select borders more visible */
+.create-risk-instance-form select {
+  border-width: 1px;
+  border-left-width: 3px;
+}
+
+/* Placeholder styling */
+.create-risk-instance-form input::placeholder,
+.create-risk-instance-form textarea::placeholder {
+  color: var(--form-gray-500);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Remove debug panel and Test API button styles */
+/* .debug-panel, .debug-panel h3, .debug-results, .debug-results li, .debug-results li.success, .debug-results li.error, .debug-tip, .debug-tip code, .btn-debug, .btn-debug:hover { display: none !important; } */
+
+/* No further changes needed for the rest of the form */ 

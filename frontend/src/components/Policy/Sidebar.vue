@@ -62,14 +62,39 @@
           <i class="fas fa-th-large icon"></i>
           <span>Dashboard</span>
         </div>
-        <div class="menu-item" @click="navigate('/risk/riskregister')">
-          <i class="fas fa-plus icon"></i>
+        
+        <!-- Risk Register with nested submenu -->
+        <div @click="toggleSubmenu('riskRegister')" class="menu-item">
+          <i class="fas fa-clipboard-list icon"></i>
           <span>Risk Register</span>
         </div>
-        <div class="menu-item" @click="navigate('/risk/riskinstances')">
-          <i class="fas fa-th-list icon"></i>
-          <span>Instances</span>
+        <div v-if="openMenus.riskRegister" class="submenu nested-submenu">
+          <div class="menu-item" @click="navigate('/risk/riskregister-list')">
+            <i class="fas fa-list icon"></i>
+            <span>Risk Register List</span>
+          </div>
+          <div class="menu-item" @click="navigate('/risk/create-risk')">
+            <i class="fas fa-plus icon"></i>
+            <span>Create Risk</span>
+          </div>
         </div>
+        
+        <!-- Risk Instances with nested submenu -->
+        <div @click="toggleSubmenu('riskInstances')" class="menu-item">
+          <i class="fas fa-th-list icon"></i>
+          <span>Risk Instances</span>
+        </div>
+        <div v-if="openMenus.riskInstances" class="submenu nested-submenu">
+          <div class="menu-item" @click="navigate('/risk/riskinstances-list')">
+            <i class="fas fa-list icon"></i>
+            <span>Risk Instances List</span>
+          </div>
+          <div class="menu-item" @click="navigate('/risk/create-instance')">
+            <i class="fas fa-plus icon"></i>
+            <span>Create Instance</span>
+          </div>
+        </div>
+        
         <div class="menu-item" @click="navigate('/risk/notifications')">
           <i class="fas fa-bell icon"></i>
           <span>Notifications</span>
@@ -81,6 +106,10 @@
         <div class="menu-item" @click="navigate('/risk/user-tasks')">
           <i class="fas fa-user-check icon"></i>
           <span>User Tasks</span>
+        </div>
+        <div class="menu-item" @click="navigate('/risk/tailoring')">
+          <i class="fas fa-edit icon"></i>
+          <span>Tailoring Existing Risk</span>
         </div>
       </div>
 
@@ -144,6 +173,8 @@ export default {
       policy: false,
       compliance: false,
       risk: false,
+      riskRegister: false,
+      riskInstances: false,
       auditor: false,
       incident: false
     })

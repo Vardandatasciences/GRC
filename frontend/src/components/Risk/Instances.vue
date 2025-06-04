@@ -1,27 +1,27 @@
 <template>
-  <div class="risk-container">
-    <div class="risk-card">
-      <h2 class="risk-title"><i class="fas fa-exclamation-triangle risk-icon"></i> Risk Instances Table</h2>
-      <div class="filters-row">
-        <select v-model="selectedCriticality" class="filter-select">
+  <div class="instances-container">
+    <div class="instances-card">
+      <h2 class="instances-title"><i class="fas fa-exclamation-triangle instances-icon"></i> Risk Instances Table</h2>
+      <div class="instances-filters-row">
+        <select v-model="selectedCriticality" class="instances-filter-select">
           <option value="">All Criticality</option>
           <option v-for="c in uniqueCriticality" :key="c">{{ c }}</option>
         </select>
-        <select v-model="selectedStatus" class="filter-select">
+        <select v-model="selectedStatus" class="instances-filter-select">
           <option value="">All Status</option>
           <option v-for="s in uniqueStatus" :key="s">{{ s }}</option>
         </select>
-        <select v-model="selectedCategory" class="filter-select">
+        <select v-model="selectedCategory" class="instances-filter-select">
           <option value="">All Category</option>
           <option v-for="cat in uniqueCategory" :key="cat">{{ cat }}</option>
         </select>
-        <select v-model="selectedPriority" class="filter-select">
+        <select v-model="selectedPriority" class="instances-filter-select">
           <option value="">All Priority</option>
           <option v-for="p in uniquePriority" :key="p">{{ p }}</option>
         </select>
       </div>
-      <div class="table-wrapper">
-        <table v-if="filteredInstances.length" class="risk-table">
+      <div class="instances-table-wrapper">
+        <table v-if="filteredInstances.length" class="instances-table">
           <thead>
             <tr>
               <th>RiskInstanceId</th>
@@ -67,7 +67,7 @@
             </tr>
           </tbody>
         </table>
-        <div v-else class="loading">No risk instances found for selected filters.</div>
+        <div v-else class="instances-loading">No risk instances found for selected filters.</div>
       </div>
     </div>
   </div>

@@ -8,29 +8,410 @@
   --text-color: #2c3e50;
   --text-secondary: #606266;
   --border-color: #eaecef;
-  --bg-color: #f8f9fa;
-  --card-bg: #ffffff;
+  --bg-color: transparent;
+  --card-bg: transparent;
   --header-color: #2c3e50;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow: none;
   --radius: 4px;
+  --sidebar-color: #6052c4;
+  --sidebar-light: #9689de;
+  --sidebar-lighter: #f8f7fe;
+  --sidebar-text: #4a3f8f;
+}
+
+/* Table Layout Styles */
+.table-container {
+  margin-top: 5px;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+  overflow-x: auto;
+  border: none;
+  width: 100%;
+  padding: 0;
+}
+
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: transparent;
+  table-layout: auto;
+}
+
+.risk-table thead th {
+  background-color: #8a6be6;
+  color: #fff;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 12px;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.risk-table thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.risk-table thead th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.risk-table thead th:hover {
+  background-color: #7c60d1;
+}
+
+.risk-table th, .risk-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+  text-align: left;
+  font-size: 13px;
+}
+
+.risk-table tbody tr {
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.risk-table tbody tr:hover {
+  background: rgba(240, 240, 255, 0.4);
+}
+
+.risk-table tbody tr:nth-child(even) {
+  background: rgba(240, 240, 250, 0.2);
+}
+
+.risk-table td {
+  font-size: 15px;
+  color: #2c3e50;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.risk-table td.risk-description {
+  max-width: 350px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.risk-table th, .risk-table td {
+  /* Remove fixed widths for flexibility */
+  min-width: 80px;
+}
+
+.risk-table th:nth-child(5), .risk-table td:nth-child(5) {
+  min-width: 250px;
+}
+
+.risk-table .actions-column {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Status and Criticality */
+.criticality-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 18px;
+  border: 2px solid;
+  background: transparent;
+  letter-spacing: 0.2px;
+  text-align: center;
+  min-width: 60px;
+  margin: 0;
+}
+.criticality-critical {
+  color: #a8071a;
+  background: transparent;
+  border-color: #a8071a;
+}
+.criticality-high {
+  color: #cf1322;
+  background: transparent;
+  border-color: #ff4d4f;
+}
+.criticality-medium {
+  color: #d48806;
+  background: transparent;
+  border-color: #faad14;
+}
+.criticality-low {
+  color: #1677ff;
+  background: transparent;
+  border-color: #1677ff;
+}
+
+/* Remove old criticality styles */
+.criticality-critical:not(.criticality-badge),
+.criticality-high:not(.criticality-badge),
+.criticality-medium:not(.criticality-badge),
+.criticality-low:not(.criticality-badge) {
+  background: none !important;
+  border: none !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+  padding: 0 !important;
+}
+
+.status-approved {
+  color: #52c41a;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-approved::before {
+  content: '•';
+  margin-right: 5px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.status-revision-required {
+  color: #f5222d;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-revision-required::before {
+  content: '•';
+  margin-right: 5px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.status-under-review {
+  color: #faad14;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-under-review::before {
+  content: '•';
+  margin-right: 5px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.status-work-in-progress {
+  color: #1890ff;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-work-in-progress::before {
+  content: '•';
+  margin-right: 5px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.mitigation-status {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  color: #606266;
+  background-color: transparent;
+  border-radius: 10px;
+  padding: 2px 8px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Buttons */
+.risk-table .start-btn,
+.risk-table .view-btn,
+.risk-table .review-btn {
+  padding: 6px 15px;
+  font-size: 13px;
+  margin-right: 5px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.risk-table .start-btn { 
+  background: #7c6ae6; 
+  color: #fff; 
+}
+
+.risk-table .start-btn:hover { 
+  background: #5a4bb7; 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.risk-table .view-btn { 
+  background: #6a4fcf; 
+  color: #fff; 
+}
+
+.risk-table .view-btn:hover { 
+  background: #4b2e9e; 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.risk-table .review-btn { 
+  background: #faad14; 
+  color: #fff; 
+}
+
+.risk-table .review-btn:hover { 
+  background: #d48806; 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.risk-table .disabled-btn { opacity: 0.5; cursor: not-allowed; }
+
+/* Remove card and shadow styles for flat look */
+.risk-card, .risk-card.completed-card, .risk-card.revision-card, .risk-card.reviewer-card {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove any blue dot or tick mark indicators */
+.risk-card::before, .risk-card::after, .status-icon, .fa-check-circle, .risk-card .fa-check-circle {
+  display: none !important;
+}
+
+/* General font and spacing */
+body, .workflow-container, .risk-table {
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+/* Remove extra padding from workflow container */
+.workflow-container {
+  padding: 5px 20px 0 20px;
+  margin-left: 0;
+  background: transparent;
+  min-height: 100vh;
+  box-shadow: none;
+}
+
+/* Remove card backgrounds from user filter and tabs */
+.user-filter, .tabs {
+  background: none;
+  box-shadow: none;
+  border: none;
+}
+
+.tabs {
+  display: flex;
+  margin: 30px 0 20px 0;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 2px solid #e0e0e0;
+  overflow: visible;
+  position: relative;
+}
+.tab {
+  padding: 12px 24px;
+  font-size: 16px;
+  color: #7c6ae6;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-right: 10px;
+}
+.tab:hover {
+  color: #4a3f8f;
+  background-color: rgba(96, 82, 196, 0.05);
+}
+
+.tab.active {
+  color: #4a3f8f;
+  border-bottom: 3px solid #7c6ae6;
+  background: none;
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #7c6ae6;
+  border-radius: 3px 3px 0 0;
+}
+
+/* No-data, loading, error messages */
+.no-data, .loading, .error-message {
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  color: #7c6ae6;
+  border-radius: 0;
+  padding: 18px 8px;
+  margin: 16px auto;
+  font-size: 13px;
+  text-align: center;
+  box-shadow: none;
+  max-width: 600px;
+}
+
+/* Responsive: allow horizontal scroll on small screens */
+@media (max-width: 900px) {
+  .table-container {
+    overflow-x: auto;
+  }
+  .risk-table th, .risk-table td {
+    min-width: 90px;
+    font-size: 12px;
+    padding: 6px 6px;
+  }
 }
 
 /* Layout and General Styles */
-.workflow-container {
-    padding: 20px;
-  margin-left: 196px;
-  background-color: var(--bg-color);
-  min-height: 100vh;
-  color: var(--text-color);
+h1, .workflow-container > h1 {
+  margin-top: 10px;
+  margin-bottom: 1.5rem;
+  color: #000000;
+  font-size: 26px;
+  font-weight: bold;
+  padding-bottom: 0.25rem;
+  border-bottom: none;
+  position: relative;
 }
 
-h1 {
-  margin-bottom: 25px;
-  color: var(--header-color);
-  font-size: 24px;
-  font-weight: 600;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--border-color);
+h1::after, .workflow-container > h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 4px;
+  background: var(--sidebar-color);
 }
 
 h3 {
@@ -40,163 +421,292 @@ h3 {
   margin-bottom: 16px;
 }
 
-/* User Filter Section */
-  .user-filter {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-  gap: 12px;
-  background-color: var(--card-bg);
-  padding: 16px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+/* User Filter Section - Enhanced */
+.user-filter {
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: transparent;
+  padding: 16px 0;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  position: relative;
 }
 
 .user-filter label {
-  font-weight: 500;
-  color: var(--text-secondary);
-  }
-  
-  .user-dropdown {
-    padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-    min-width: 250px;
-  font-size: 14px;
-  color: var(--text-color);
-  background-color: var(--card-bg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-  
-/* Tabs */
-  .tabs {
-    display: flex;
-    margin: 20px 0;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  }
-  
-  .tab {
-  padding: 16px 24px;
-    cursor: pointer;
-  font-weight: 500;
-  color: var(--text-secondary);
-    transition: all 0.3s ease;
-  position: relative;
-  text-align: center;
-  flex: 1;
-  }
-  
-  .tab:hover {
-  background-color: rgba(24, 144, 255, 0.05);
-  color: var(--primary-color);
-  }
-  
-  .tab.active {
-  color: var(--primary-color);
+  color: var(--sidebar-text);
   font-weight: 600;
+  font-size: 16px;
 }
 
-.tab.active:after {
+.user-dropdown {
+  padding: 10px 15px;
+  border: 2px solid rgba(96, 82, 196, 0.3);
+  border-radius: 8px;
+  min-width: 280px;
+  font-size: 14px;
+  color: #2c3e50;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(96, 82, 196, 0.1);
+}
+
+.user-dropdown:focus, .user-dropdown:hover {
+  outline: none;
+  border-color: var(--sidebar-color);
+  box-shadow: 0 0 0 3px rgba(96, 82, 196, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Tabs - Enhanced */
+.tabs {
+  display: flex;
+  margin: 30px 0 20px 0;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 2px solid #e0e0e0;
+  overflow: visible;
+  position: relative;
+}
+
+.tab {
+  padding: 12px 24px;
+  font-size: 16px;
+  color: #7c6ae6;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-right: 10px;
+}
+
+.tab:hover {
+  color: #4a3f8f;
+  background-color: rgba(96, 82, 196, 0.05);
+}
+
+.tab.active {
+  color: #4a3f8f;
+  border-bottom: 3px solid #7c6ae6;
+  background: none;
+}
+
+.tab.active::before {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -3px;
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: var(--primary-color);
+  background-color: #7c6ae6;
+  border-radius: 3px 3px 0 0;
 }
 
-/* Risk Cards - Enhanced Professional Design */
-  .risk-card {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 25px;
-  padding: 0;
-  border: none;
-    max-width: 800px;
-  position: relative;
+/* Risk Cards - Enhanced Modern Design */
+.risk-card {
+  background-color: transparent !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  margin-bottom: 30px !important;
+  border-left: none !important;
   transition: all 0.3s ease;
   overflow: hidden;
+  width: calc(50% - 15px) !important;
+  display: inline-block !important;
+  vertical-align: top;
+  margin-right: 15px !important;
+  position: relative;
+  border-top: 5px solid #6052c4 !important;
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+}
+
+.risk-card:nth-child(even) {
+  margin-right: 0 !important;
 }
 
 .risk-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-3px);
-  }
-  
-  .risk-card h3 {
-  margin: 0;
-  padding: 20px 24px;
-    font-size: 18px;
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.risk-card h3 {
+  padding: 18px 22px;
+  font-size: 17px;
   font-weight: 600;
-  color: var(--header-color);
-  background-color: #fafbfc;
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
+  color: #4a3f8f;
+  background-color: transparent;
+  border-bottom: 1px solid #f0f0f0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .risk-info {
-  padding: 20px 24px;
+  padding: 20px;
+  background-color: transparent;
 }
 
 .risk-info p {
-  margin: 12px 0;
-    display: flex;
-  align-items: center;
+  margin: 10px 0;
   font-size: 14px;
-  line-height: 1.5;
+  display: flex;
+  align-items: center;
 }
 
 .risk-info p strong {
   min-width: 120px;
   display: inline-block;
-  color: var(--text-secondary);
-  position: relative;
-  padding-left: 24px;
+  font-weight: 600;
+  color: #444;
 }
 
-/* Add icons to risk info labels */
-.risk-info p strong:before {
-  font-family: "Font Awesome 5 Free";
-  position: absolute;
-  left: 0;
-  top: 0;
-  font-weight: 900;
-  color: var(--primary-color);
-  opacity: 0.8;
+/* Card status-specific styling */
+.risk-card.completed-card {
+  border-top-color: var(--success-color) !important;
 }
 
-.risk-info p strong:nth-child(1):before { content: "\f02b"; } /* ID */
-.risk-info p:nth-child(2) strong:before { content: "\f07c"; } /* Category */
-.risk-info p:nth-child(3) strong:before { content: "\f06a"; } /* Criticality */
-.risk-info p:nth-child(4) strong:before { content: "\f058"; } /* Status */
-.risk-info p:nth-child(5) strong:before { content: "\f0e7"; } /* Priority */
-.risk-info p:nth-child(6) strong:before { content: "\f007"; } /* Submitted By */
-
-/* Card status indicator strip */
-.risk-card:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 5px;
+.risk-card.revision-card {
+  border-top-color: var(--danger-color) !important;
 }
 
-.risk-card.reviewer-card:before {
-  background-color: var(--primary-color);
+.risk-card.reviewer-card {
+  border-top-color: var(--warning-color) !important;
 }
 
-.risk-card.completed-card:before {
+/* Action Buttons Area - Enhanced */
+.action-buttons {
+  padding: 15px 20px;
+  background-color: #fafafa;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.action-buttons button {
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.25s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+}
+
+.start-btn {
+  background-color: #6052c4;
+  color: white;
+}
+
+.start-btn:hover {
+  background-color: #7b6fd3;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(96, 82, 196, 0.25);
+}
+
+.view-btn {
+  background-color: #9689de;
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: #aca2e3;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(150, 137, 222, 0.25);
+}
+
+.review-btn {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.review-btn:hover {
+  background-color: #ffc53d;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(250, 173, 20, 0.25);
+}
+
+.complete-btn {
   background-color: var(--success-color);
+  color: white;
 }
 
-.risk-card.revision-card:before {
-  background-color: var(--danger-color);
+.complete-btn:hover {
+  background-color: #73d13d;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(82, 196, 26, 0.25);
+}
+
+/* Status styles */
+.status-approved, .status-revision-required, .status-under-review, .status-work-in-progress, .status-open {
+  display: inline;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  color: #2c3e50; /* Normal black text color */
+  font-weight: normal;
+  font-size: inherit;
+}
+
+.status-approved {
+  color: #52c41a;
+}
+
+.status-revision-required {
+  color: #f5222d;
+}
+
+.status-under-review {
+  color: var(--warning-color);
+}
+
+.status-work-in-progress {
+  color: var(--primary-color);
+}
+
+.status-open {
+  color: #2c3e50;
+}
+
+/* Enhanced notifications */
+.rejection-notice, .approval-notice {
+  margin: 15px 0 5px;
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.rejection-notice {
+  background-color: rgba(245, 34, 45, 0.05);
+  border-left: 4px solid var(--danger-color);
+}
+
+.approval-notice {
+  background-color: rgba(82, 196, 26, 0.05);
+  border-left: 4px solid var(--success-color);
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 1200px) {
+  .risk-card {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
 }
 
 /* Status indicator at top right */
@@ -219,81 +729,124 @@ h3 {
   font-weight: 900;
 }
 
-.status-badge.status-approved {
-  background-color: #f6ffed;
-  color: var(--success-color);
-  border: 1px solid #b7eb8f;
+.status-badge {
+  background: none;
+  border: none;
+  color: #2c3e50;
+  padding: 0;
 }
-.status-badge.status-approved:before { content: "\f00c"; }
+
+/* Remove all :before content from status badges */
+.status-badge:before,
+.status-badge.status-approved:before,
+.status-badge.status-review:before,
+.status-badge.status-progress:before,
+.status-badge.status-revision:before {
+  content: none !important;
+  display: none !important;
+}
+
+.status-badge.status-approved {
+  background: none !important;
+  border: none !important;
+  color: #2c3e50 !important;
+  padding: 0 !important;
+  font-weight: normal !important;
+}
 
 .status-badge.status-review {
-  background-color: #fff7e6;
-  color: var(--warning-color);
-  border: 1px solid #ffd591;
+  background: none !important;
+  color: var(--warning-color) !important;
+  border: none !important;
 }
-.status-badge.status-review:before { content: "\f128"; }
 
 .status-badge.status-progress {
-  background-color: #e6f7ff;
-  color: var(--primary-color);
-  border: 1px solid #91d5ff;
+  background: none !important;
+  color: var(--primary-color) !important;
+  border: none !important;
 }
-.status-badge.status-progress:before { content: "\f085"; }
 
 .status-badge.status-revision {
-  background-color: #fff1f0;
-  color: var(--danger-color);
-  border: 1px solid #ffa39e;
+  background: none !important;
+  color: var(--danger-color) !important;
+  border: none !important;
 }
+
+/* NEW: Remove check icon from approved status badge */
+.status-badge.status-approved:before,
+.status-badge:before {
+  content: none !important;
+  display: none !important;
+}
+
+.status-badge.status-review {
+  background: none !important;
+  color: var(--warning-color) !important;
+  border: none !important;
+}
+
+.status-badge.status-progress {
+  background: none !important;
+  color: var(--primary-color) !important;
+  border: none !important;
+}
+
+.status-badge.status-revision {
+  background: none !important;
+  color: var(--danger-color) !important;
+  border: none !important;
+}
+
+.status-badge.status-approved:before { content: "\f00c"; }
+.status-badge.status-review:before { content: "\f128"; }
+.status-badge.status-progress:before { content: "\f085"; }
 .status-badge.status-revision:before { content: "\f071"; }
 
 /* Action Buttons Area */
 .action-buttons {
-  padding: 16px 24px;
-  margin-top: 0;
+  padding: 12px 15px;
+  background-color: #f8f7fe;
+  border-top: 1px solid #e9e6ff;
   display: flex;
   gap: 12px;
-  background-color: #fafbfc;
-  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 6px;
+  padding: 8px 12px;
   font-weight: 500;
+  font-size: 13px;
   transition: all 0.2s;
-    display: flex;
-    align-items: center;
-  justify-content: center;
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
 }
 
 .start-btn {
-  background-color: var(--success-color);
+  background-color: #6052c4;
   color: white;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(96, 82, 196, 0.2);
 }
 
 .start-btn:hover {
-  background-color: #68d030;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #7b6fd3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(96, 82, 196, 0.3);
 }
 
 .view-btn {
-  background-color: var(--primary-color);
+  background-color: #9689de;
   color: white;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(150, 137, 222, 0.2);
 }
 
 .view-btn:hover {
-  background-color: #40a9ff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #aca2e3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(150, 137, 222, 0.3);
 }
 
 .review-btn {
@@ -407,57 +960,57 @@ h3 {
 
 /* Status Badges */
 .status-badge {
-  padding: 4px 12px;
-  border-radius: 15px;
-  font-size: 12px;
-  font-weight: 500;
-  display: inline-block;
-  text-align: center;
+  background: none;
+  border: none;
+  color: #2c3e50;
+  padding: 0;
 }
 
 .status-badge.status-approved {
-  background-color: #f6ffed;
-  color: var(--success-color);
-  border: 1px solid #b7eb8f;
+  background: none !important;
+  border: none !important;
+  color: #2c3e50 !important;
+  padding: 0 !important;
+  font-weight: normal !important;
 }
 
 .status-badge.status-review {
-  background-color: #fff7e6;
-  color: var(--warning-color);
-  border: 1px solid #ffd591;
+  background: none !important;
+  color: var(--warning-color) !important;
+  border: none !important;
 }
 
 .status-badge.status-progress {
-  background-color: #e6f7ff;
-  color: var(--primary-color);
-  border: 1px solid #91d5ff;
+  background: none !important;
+  color: var(--primary-color) !important;
+  border: none !important;
 }
 
 .status-badge.status-revision {
-  background-color: #fff1f0;
-  color: var(--danger-color);
-  border: 1px solid #ffa39e;
+  background: none !important;
+  color: var(--danger-color) !important;
+  border: none !important;
 }
 
 /* Status text styling */
 .status-approved {
-  color: var(--success-color);
-  font-weight: 500;
+  color: #52c41a;
 }
 
 .status-revision-required {
-  color: var(--danger-color);
-  font-weight: 500;
+  color: #f5222d;
 }
 
 .status-under-review {
   color: var(--warning-color);
-  font-weight: 500;
 }
 
 .status-work-in-progress {
   color: var(--primary-color);
-  font-weight: 500;
+}
+
+.status-open {
+  color: #2c3e50;
 }
 
 /* Status Icons */
@@ -465,7 +1018,8 @@ h3 {
   position: absolute;
   top: 15px;
   right: 15px;
-  font-size: 22px;
+  font-size: 24px;
+  z-index: 2;
 }
 
 .status-icon.approved {
@@ -497,7 +1051,7 @@ h3 {
 
 .spinner {
   border: 3px solid #f3f3f3;
-  border-top: 3px solid var(--primary-color);
+  border-top: 3px solid var(--sidebar-color);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -511,9 +1065,14 @@ h3 {
 }
 
 .no-data {
-  background-color: var(--card-bg);
-  color: var(--text-secondary);
-  border: 1px dashed var(--border-color);
+  background-color: white;
+  border: 1px dashed rgba(96, 82, 196, 0.3);
+  color: var(--sidebar-text);
+  padding: 40px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-style: italic;
+  box-shadow: 0 3px 10px rgba(96, 82, 196, 0.05);
 }
 
 /* Enhanced Modal and Mitigation Workflow Styling */
@@ -528,7 +1087,7 @@ h3 {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(5px);
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -538,15 +1097,15 @@ h3 {
 }
 
 .modal-content {
-  background-color: var(--card-bg);
-  border-radius: 8px;
+  background-color: transparent;
+  border-radius: 12px;
   width: 85%;
   max-width: 850px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
   animation: slideIn 0.3s ease-out;
-  border: none;
+  border: 1px solid rgba(96, 82, 196, 0.1);
 }
 
 @keyframes slideIn {
@@ -558,15 +1117,15 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(to right, #f8f9fa, #ffffff);
+  padding: 18px 25px;
+  border-bottom: none;
+  background: linear-gradient(135deg, #6052c4 0%, #9689de 100%);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 22px;
-  color: var(--header-color);
+  color: white;
   font-weight: 600;
   position: relative;
   padding-left: 22px;
@@ -581,26 +1140,20 @@ h3 {
   color: var(--primary-color);
 }
 
+.shield-icon {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 24px;
+  margin-right: 15px;
+}
+
 .close-btn {
-  background: rgba(0, 0, 0, 0.05);
-    border: none;
-  font-size: 22px;
-    cursor: pointer;
-  color: var(--text-secondary);
-  padding: 0;
-    display: flex;
-    align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transition: all 0.3s;
 }
 
 .close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  color: var(--text-color);
-  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .modal-body {
@@ -881,30 +1434,38 @@ h3 {
 }
 
 .submit-btn {
-  padding: 14px 20px;
-  border: none;
-  background: linear-gradient(to right, var(--success-color), #68d030);
+  background-color: #6052c4;
   color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
   font-weight: 500;
-  width: 100%;
-  font-size: 15px;
-  border-radius: 6px;
+  border: none;
   cursor: pointer;
   transition: all 0.3s;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 6px rgba(82, 196, 26, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 300px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(96, 82, 196, 0.2);
 }
 
-.submit-btn:hover:not(.disabled) {
+.submit-btn:hover:not(:disabled) {
+  background-color: #7b6fd3;
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(82, 196, 26, 0.3);
+  box-shadow: 0 6px 16px rgba(96, 82, 196, 0.3);
 }
 
-.submit-btn.disabled {
-  background: #d9f7be;
+.submit-btn i {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.submit-btn:disabled {
+  background-color: #bfbfbf;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .assigned-reviewer-note {
@@ -935,254 +1496,557 @@ h3 {
 
 /* Reviewer Modal */
 .reviewer-modal {
-  width: 85%;
-  max-width: 900px;
-}
-
-.risk-summary {
-  margin-bottom: 25px;
-  padding: 16px;
-  background-color: #f9f9f9;
-  border-radius: var(--radius);
-  border-left: 4px solid var(--primary-color);
-}
-
-.mitigation-review-item {
-  margin-bottom: 20px;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  max-width: 950px;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 20px 50px rgba(96, 82, 196, 0.25);
+  border: none;
 }
 
-.mitigation-description {
-  padding: 16px;
-  border-bottom: 1px solid var(--border-color);
+.reviewer-modal .modal-header {
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, #6052c4 0%, #9689de 100%);
+  padding: 22px 30px;
+  position: relative;
+  overflow: visible;
 }
 
-.mitigation-description h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  color: var(--header-color);
-  font-size: 16px;
-}
-
-.approval-controls {
-  padding: 16px;
-  background-color: #f9f9f9;
-}
-
-.approval-buttons {
+.reviewer-modal .modal-header .close-btn {
+  position: relative;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: 20px;
 }
 
-.approve-btn, .reject-btn {
-  padding: 8px 16px;
-  font-weight: 500;
+.reviewer-modal .modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 
-.approve-btn {
-  background-color: var(--success-color);
+.reviewer-modal .modal-header h2 {
   color: white;
+  font-size: 24px;
+  font-weight: 600;
+  padding-left: 36px;
+  position: relative;
+  margin: 0;
 }
 
-.approve-btn:hover {
-  background-color: #68d030;
+.reviewer-modal .modal-header h2::before {
+  content: '\f5b0'; /* Shield icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.reject-btn {
-  background-color: var(--danger-color);
-  color: white;
+.reviewer-modal .modal-body {
+  padding: 30px;
+  background-color: transparent;
 }
 
-.reject-btn:hover {
-  background-color: #ff4d4f;
+.reviewer-modal .risk-summary {
+  background: transparent;
+  border-radius: 12px;
+  padding: 20px 25px;
+  margin-bottom: 30px;
+  border-top: 5px solid #6052c4;
+  position: relative;
+  box-shadow: none;
 }
 
-.remarks-field {
-  margin-top: 15px;
-  width: 100%;
-}
-
-.remarks-input {
-  width: 100%;
-  min-height: 100px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  font-family: inherit;
-  font-size: 14px;
-  resize: vertical;
-}
-
-.save-remarks-btn {
-  margin-top: 10px;
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.change-decision-btn {
-  background-color: #f5f5f5;
-  color: var(--text-secondary);
-  border: 1px solid #ddd;
-  font-size: 13px;
-  margin-top: 8px;
-}
-
-.change-decision-btn:hover {
-  background-color: #e6e6e6;
-}
-
-.review-actions {
-  margin-top: 30px;
-    display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-    align-items: center;
-  }
-  
-.submit-review-btn, .reject-review-btn {
-  padding: 12px 24px;
-  font-weight: 500;
-  flex: 1;
-  min-width: 180px;
-}
-
-.submit-review-btn {
-  background-color: var(--success-color);
-    color: white;
-}
-
-.reject-review-btn {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.review-warning {
-  flex-basis: 100%;
-  margin-top: 15px;
-  color: var(--danger-color);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-  gap: 8px;
-}
-
-.review-complete-notice {
-  flex-basis: 100%;
-  margin-top: 15px;
-  font-style: italic;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-/* Step Approval Indicators */
-.step-approval {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-  gap: 10px;
-  font-weight: 500;
+.reviewer-modal .risk-summary h3 {
+  color: #4a3f8f;
+  font-size: 18px;
+  margin-top: 0;
   margin-bottom: 15px;
+  font-weight: 600;
 }
 
-.step-approval.approved {
+.reviewer-modal .risk-summary p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #606266;
+  position: relative;
+  padding-left: 22px;
+}
+
+.reviewer-modal .risk-summary p strong {
+  color: #4a3f8f;
+  font-weight: 600;
+}
+
+.reviewer-modal .risk-summary p:nth-child(2)::before {
+  content: '\f02b'; /* Tag icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+  color: #6052c4;
+}
+
+.reviewer-modal .risk-summary p:nth-child(3)::before {
+  content: '\f007'; /* User icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+  color: #6052c4;
+}
+
+.reviewer-modal .review-status-banner {
+  text-align: center;
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.reviewer-modal .review-status-banner.approved {
   background-color: #f6ffed;
-  color: var(--success-color);
+  color: #52c41a;
   border: 1px solid #b7eb8f;
 }
 
-.step-approval.rejected {
+.reviewer-modal .review-status-banner.rejected {
   background-color: #fff1f0;
-  color: var(--danger-color);
+  color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
-.step-approval.pending {
-  background-color: #fff7e6;
-  color: var(--warning-color);
-  border: 1px solid #ffd591;
+.reviewer-modal .status-message i {
+  font-size: 20px;
+  margin-right: 10px;
 }
 
-.reviewer-remarks {
-  margin-top: 10px;
-  font-size: 14px;
-  padding: 12px;
-  background-color: #fff9f9;
-  border-radius: var(--radius);
-  color: var(--text-color);
-  border: 1px solid #ffa39e;
+.reviewer-modal .mitigation-review-item {
+  margin-bottom: 25px;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
 }
 
-/* User comments and evidence sections */
-.user-comments, .uploaded-evidence {
-    margin-top: 15px;
-  padding: 12px;
-  border-radius: var(--radius);
+.reviewer-modal .mitigation-review-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
 
-.user-comments {
-  background-color: #f0f8ff;
-  border-left: 3px solid var(--primary-color);
+.reviewer-modal .mitigation-description {
+  padding: 20px 25px;
+  background-color: transparent;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.uploaded-evidence {
+.reviewer-modal .user-comments,
+.reviewer-modal .uploaded-evidence {
+  margin-top: 15px;
+  padding: 15px 18px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+.reviewer-modal .user-comments {
+  border-left: 4px solid #1890ff;
+  background-color: #f0f7ff;
+}
+
+.reviewer-modal .uploaded-evidence {
+  border-left: 4px solid #52c41a;
   background-color: #f6ffed;
-  border-left: 3px solid var(--success-color);
 }
 
-.user-comments h5, .uploaded-evidence h5 {
+.reviewer-modal .user-comments h5,
+.reviewer-modal .uploaded-evidence h5 {
   margin-top: 0;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  padding-left: 25px;
+}
+
+.reviewer-modal .user-comments h5 {
+  color: #1890ff;
+}
+
+.reviewer-modal .user-comments h5::before {
+  content: '\f075'; /* Comment icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+}
+
+.reviewer-modal .uploaded-evidence h5 {
+  color: #52c41a;
+}
+
+.reviewer-modal .uploaded-evidence h5::before {
+  content: '\f56e'; /* File upload icon */
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+}
+
+.reviewer-modal .comment-text {
+  margin: 0;
+  font-size: 14px;
+  color: #4c4c4c;
+  line-height: 1.5;
+}
+
+.reviewer-modal .evidence-link {
+  display: inline-flex;
+  align-items: center;
+  color: #52c41a;
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 14px;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.reviewer-modal .evidence-link:hover {
+  color: #68d030;
+  text-decoration: underline;
+}
+
+.reviewer-modal .approval-controls {
+  padding: 18px 25px;
+  background-color: #fafafa;
+}
+
+.reviewer-modal .approval-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.reviewer-modal .approve-btn,
+.reviewer-modal .reject-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s;
+  min-width: 120px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+}
+
+.reviewer-modal .approve-btn {
+  background-color: #52c41a;
+  color: white;
+  box-shadow: 0 4px 8px rgba(82, 196, 26, 0.2);
+}
+
+.reviewer-modal .approve-btn:hover {
+  background-color: #68d030;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(82, 196, 26, 0.25);
+}
+
+.reviewer-modal .reject-btn {
+  background-color: #f5222d;
+  color: white;
+  box-shadow: 0 4px 8px rgba(245, 34, 45, 0.2);
+}
+
+.reviewer-modal .reject-btn:hover {
+  background-color: #ff4d4f;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(245, 34, 45, 0.25);
+}
+
+.reviewer-modal .remarks-field {
+  margin-top: 18px;
+}
+
+.reviewer-modal .remarks-field label {
+  display: block;
+  margin-bottom: 10px;
+  color: #606266;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.reviewer-modal .remarks-input {
+  width: 100%;
+  min-height: 100px;
+  padding: 15px;
+  border: 1px solid #e9e6ff;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s;
+  background-color: white;
+}
+
+.reviewer-modal .remarks-input:focus {
+  outline: none;
+  border-color: #6052c4;
+  box-shadow: 0 0 0 3px rgba(96, 82, 196, 0.2);
+}
+
+.reviewer-modal .save-remarks-btn {
+  margin-top: 12px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-modal .save-remarks-btn:hover {
+  background-color: #40a9ff;
+  transform: translateY(-2px);
+}
+
+.reviewer-modal .change-decision-btn {
+  margin-top: 10px;
+  background-color: #f5f5f5;
+  color: #606266;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reviewer-modal .change-decision-btn:hover {
+  background-color: #e6e6e6;
+  color: #1890ff;
+  border-color: #1890ff;
+}
+
+.reviewer-modal .form-details-review {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: transparent;
+  border-radius: 8px;
+  border: 1px solid #eaecef;
+}
+
+.reviewer-modal .form-details-review h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #4a3f8f;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eaecef;
+}
+
+.reviewer-modal .form-review-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #eaecef;
+}
+
+.reviewer-modal .form-review-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.reviewer-modal .form-review-item h5 {
+  margin: 0 0 8px 0;
+  color: #606266;
   font-size: 14px;
   font-weight: 600;
 }
 
-.user-comments h5 {
-  color: var(--primary-color);
+.reviewer-modal .form-review-item p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: white;
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
 }
 
-.uploaded-evidence h5 {
-  color: var(--success-color);
+.reviewer-modal .questionnaire-approval {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eaecef;
 }
 
-.evidence-link {
+.reviewer-modal .review-actions {
+  margin-top: 30px;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.reviewer-modal .submit-review-btn,
+.reviewer-modal .reject-review-btn {
+  padding: 14px 28px;
+  font-weight: 600;
+  font-size: 16px;
+  width: 180px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s;
   display: inline-flex;
   align-items: center;
-  color: var(--success-color);
-  text-decoration: none;
-  gap: 8px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
 }
 
-.evidence-link:hover {
-  text-decoration: underline;
+.reviewer-modal .submit-review-btn {
+  background: linear-gradient(135deg, #52c41a 0%, #68d030 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(82, 196, 26, 0.25);
 }
 
-/* Status banner for reviews */
-  .review-status-banner {
-    width: 100%;
-  padding: 16px;
-  margin-bottom: 25px;
-  border-radius: var(--radius);
+.reviewer-modal .submit-review-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(82, 196, 26, 0.25);
+}
+
+.reviewer-modal .reject-review-btn {
+  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(245, 34, 45, 0.25);
+}
+
+.reviewer-modal .reject-review-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(245, 34, 45, 0.25);
+}
+
+.reviewer-modal .submit-review-btn:disabled,
+.reviewer-modal .reject-review-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.reviewer-modal .review-warning {
+  flex-basis: 100%;
+  margin-top: 15px;
+  color: #fa8c16;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background-color: #fff7e6;
+  border-radius: 8px;
+  border-left: 4px solid #fa8c16;
+}
+
+.reviewer-modal .review-complete-notice {
+  flex-basis: 100%;
+  margin-top: 15px;
+  font-style: italic;
+  color: #4a3f8f;
+  text-align: center;
+  padding: 12px;
+  background-color: #f8f7fe;
+  border-radius: 8px;
+  border: 1px dashed rgba(96, 82, 196, 0.3);
+}
+
+.reviewer-modal .approval-status {
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 500;
-    text-align: center;
-  font-size: 16px;
-  }
-  
-  .review-status-banner.approved {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.reviewer-modal .approval-status.approved {
   background-color: #f6ffed;
-  color: var(--success-color);
+  color: #52c41a;
   border: 1px solid #b7eb8f;
-  }
-  
-  .review-status-banner.rejected {
+}
+
+.reviewer-modal .approval-status.rejected {
   background-color: #fff1f0;
-  color: var(--danger-color);
+  color: #f5222d;
   border: 1px solid #ffa39e;
+}
+
+.reviewer-modal .approval-status i {
+  font-size: 18px;
+}
+
+/* Status update confirmation styling */
+.reviewer-modal .status-update-confirmation {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 13px;
+  margin-left: 10px;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+.reviewer-modal .status-update-confirmation.approved {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.reviewer-modal .status-update-confirmation.rejected {
+  background-color: #fff1f0;
+  color: #f5222d;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Animation */
@@ -1192,33 +2056,20 @@ h3 {
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
-  .workflow-container {
-    margin-left: 0;
-    padding: 15px;
+@media (max-width: 1200px) {
+  .risk-card {
+    width: 100% !important;
+    margin-right: 0 !important;
   }
-  
-  .tabs {
-    flex-direction: column;
-  }
-  
-  .approval-buttons,
-  .review-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .modal-content {
-    width: 95%;
-    max-height: 95vh;
-  }
-  }
+}
 
 /* Simplified timeline styles */
 .simplified-workflow {
   max-width: 700px;
   margin: 0 auto;
   padding: 20px 0;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .timeline {
@@ -1235,7 +2086,7 @@ h3 {
   left: 30px;
   height: 100%;
   width: 4px;
-  background-color: #e0e0e0;
+  background-color: #e9e6ff;
   border-radius: 2px;
 }
 
@@ -1251,7 +2102,7 @@ h3 {
   top: 0;
   left: 30px;
   width: 4px;
-  background: linear-gradient(to bottom, #52c41a 0%, #1890ff 100%);
+  background: linear-gradient(to bottom, #6052c4 0%, #9689de 100%);
   border-radius: 2px;
   height: 0;
   z-index: 1;
@@ -1278,22 +2129,22 @@ h3 {
   height: 40px;
   border-radius: 50%;
   background-color: white;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #9689de;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #606266;
+  color: #6052c4;
   z-index: 2;
   transition: all 0.3s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .step-box {
-  background-color: white;
+  background-color: transparent;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: none;
   border-left: 4px solid transparent;
   transition: all 0.3s ease;
 }
@@ -1306,22 +2157,21 @@ h3 {
 
 /* Step status styling */
 .timeline-step.active .step-circle {
-  border-color: #1890ff;
-  background-color: #e6f7ff;
-  color: #1890ff;
+  border-color: #6052c4;
+  background-color: #f8f7fe;
+  color: #6052c4;
   transform: scale(1.1);
-  box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 0 0 5px rgba(96, 82, 196, 0.2);
 }
 
 .timeline-step.active .step-box {
-  border-left-color: #1890ff;
-  background-color: #fafffe;
+  border-left-color: #6052c4;
+  background-color: transparent;
 }
 
 .timeline-step.completed .step-circle {
-  border-color: #52c41a;
-  background-color: #52c41a;
-  color: white;
+  border-color: #6052c4;
+  background-color: #6052c4;
 }
 
 .timeline-step.locked .step-circle {
@@ -1336,7 +2186,7 @@ h3 {
 }
 
 .timeline-step.approved .step-box {
-  border-left-color: #52c41a;
+  border-left-color: #6052c4;
 }
 
 .timeline-step.rejected .step-box {
@@ -1372,15 +2222,15 @@ h3 {
 }
 
 .status-tag.completed {
-  background-color: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
+  background-color: #f8f7fe;
+  color: #6052c4;
+  border: 1px solid #d3cdf7;
 }
 
 .status-tag.active {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
+  background-color: #f3f0ff;
+  color: #6052c4;
+  border: 1px solid #d3cdf7;
 }
 
 .status-tag.locked {
@@ -1430,8 +2280,8 @@ h3 {
 
 .input-group textarea:focus {
   outline: none;
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  border-color: #6052c4;
+  box-shadow: 0 0 0 2px rgba(96, 82, 196, 0.2);
 }
 
 .file-upload {
@@ -1451,20 +2301,20 @@ h3 {
 }
 
 .upload-btn {
-  background-color: #f7f7f7;
-  color: #606266;
+  background-color: #f8f7fe;
+  color: #6052c4;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #d9d9d9;
+  border: 1px solid #d3cdf7;
 }
 
 .upload-btn:hover {
-  background-color: #f1f1f1;
-  color: #1890ff;
+  background-color: #f3f0ff;
+  color: #6052c4;
 }
 
 .file-name {
@@ -1494,15 +2344,14 @@ h3 {
 }
 
 .complete-btn {
-  background-color: #52c41a;
+  background-color: #6052c4;
   color: white;
-  border: none;
+  box-shadow: 0 4px 8px rgba(96, 82, 196, 0.2);
 }
 
 .complete-btn:hover {
-  background-color: #73d13d;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #7b6fd3;
+  box-shadow: 0 6px 12px rgba(96, 82, 196, 0.3);
 }
 
 .reset-btn {
@@ -1520,8 +2369,8 @@ h3 {
 .step-info {
   margin-top: 20px;
   padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
+  background-color: #f8f7fe;
+  border-radius: 8px;
 }
 
 .comments-display h4, .file-display h4 {
@@ -1534,7 +2383,7 @@ h3 {
 
 .comments-display h4 i, .file-display h4 i {
   margin-right: 8px;
-  color: #1890ff;
+  color: #6052c4;
 }
 
 .comments-display p {
@@ -1546,7 +2395,7 @@ h3 {
 .file-display a {
   display: inline-flex;
   align-items: center;
-  color: #1890ff;
+  color: #6052c4;
   text-decoration: none;
   font-size: 14px;
 }
@@ -1563,23 +2412,24 @@ h3 {
 .submission-area {
   margin-top: 40px;
   padding: 25px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
+  border-radius: 12px;
+  background-color: #f8f7fe;
+  border: 1px solid #e9e6ff;
   text-align: center;
   transition: all 0.3s ease;
 }
 
 .submission-area.ready {
-  background-color: #f6ffed;
-  border-color: #b7eb8f;
-  transform: scale(1.02);
+  background-color: #f3f0ff;
+  border-color: #d3cdf7;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(96, 82, 196, 0.15);
 }
 
 .submission-area h3 {
   margin-top: 0;
   font-size: 18px;
-  color: #2c3e50;
+  color: #4a3f8f;
 }
 
 .reviewer-select {
@@ -1603,35 +2453,6 @@ h3 {
   font-size: 14px;
 }
 
-.submit-btn {
-  background-color: #1890ff;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: inline-flex;
-  align-items: center;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #40a9ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.submit-btn:disabled {
-  background-color: #bfbfbf;
-  cursor: not-allowed;
-}
-
-.submit-btn i {
-  margin-right: 8px;
-}
-
 .submit-message {
   margin-top: 15px;
   color: #faad14;
@@ -1645,225 +2466,19 @@ h3 {
   margin-right: 8px;
 }
 
-/* Modal styling */
-.modal-header {
-  display: flex;
-  align-items: center;
-  padding: 15px 25px;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-  color: white;
-  border-radius: 8px 8px 0 0;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.shield-icon {
-  margin-right: 15px;
-  font-size: 22px;
-}
-
-.close-btn {
-  margin-left: auto;
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.close-btn:hover {
-  background: rgba(255,255,255,0.3);
-  transform: rotate(90deg);
-}
-
-.spinner {
-  border: 3px solid rgba(0,0,0,0.1);
-  border-top: 3px solid #1890ff;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-  margin-right: 10px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  color: #606266;
-}
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #606266;
-  font-style: italic;
-}
-
-/* Due Date Styling */
-.due-status {
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.due-status.overdue {
-  background-color: #fff1f0;
-  color: var(--danger-color);
-  border: 1px solid #ffa39e;
-}
-
-.due-status.urgent {
-  background-color: #fff7e6;
-  color: #fa8c16;
-  border: 1px solid #ffd591;
-}
-
-.due-status.warning {
-  background-color: #fffbe6;
-  color: var(--warning-color);
-  border: 1px solid #ffe58f;
-}
-
-.due-status.on-track {
-  background-color: #f6ffed;
-  color: var(--success-color);
-  border: 1px solid #b7eb8f;
-}
-
-.mitigation-status {
-  margin-left: 10px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  padding: 2px 8px;
-  background-color: #f5f5f5;
-  border-radius: 10px;
-}
-
-/* Status styles for risk status */
-.status-approved {
-  color: var(--success-color);
-  font-weight: 500;
-}
-
-.status-assigned {
-  color: var(--primary-color);
-  font-weight: 500;
-}
-
-.status-rejected {
-  color: var(--danger-color);
-  font-weight: 500;
-}
-
-.status-not-assigned {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* Mitigation status badges */
-.mitigation-status {
-  margin-left: 10px;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-.mitigation-status.status-completed {
-  background-color: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
-}
-
-.mitigation-status.status-progress {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
-}
-
-.mitigation-status.status-revision {
-  background-color: #fff1f0;
-  color: #f5222d;
-  border: 1px solid #ffa39e;
-}
-
-.mitigation-status.status-not-started {
-  background-color: #f5f5f5;
-  color: #8c8c8c;
-  border: 1px solid #d9d9d9;
-}
-
-.complete-btn {
-  background-color: #52c41a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.complete-btn:hover {
-  background-color: #73d13d;
-}
-
-.disabled-btn {
-  background-color: #f5f5f5 !important;
-  color: #bfbfbf !important;
-  cursor: not-allowed !important;
-  box-shadow: none !important;
-  border: 1px solid #d9d9d9 !important;
-  opacity: 0.7;
-}
-
-.disabled-btn:hover {
-  background-color: #f5f5f5 !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Also apply to review-btn when disabled */
-.review-btn.disabled-btn {
-  background-color: #f5f5f5 !important;
-  color: #bfbfbf !important;
-}
-
 /* Questionnaire styling */
 .mitigation-questionnaire {
-  margin-top: 30px;
+  margin-top: 40px;
   padding: 25px;
-  background-color: #f6f8fa;
-  border-radius: 8px;
-  border: 1px solid #e6ebf1;
+  background-color: #f8f7fe;
+  border-radius: 12px;
+  border: 1px solid #e9e6ff;
 }
 
 .mitigation-questionnaire h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #2c3e50;
+  color: #4a3f8f;
   font-weight: 600;
   font-size: 18px;
 }
@@ -1882,7 +2497,7 @@ h3 {
   font-weight: 900;
   position: absolute;
   left: 0;
-  color: #1890ff;
+  color: #6052c4;
 }
 
 .question-group {
@@ -1899,7 +2514,7 @@ h3 {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #2c3e50;
+  color: #4a3f8f;
   font-size: 15px;
 }
 
@@ -1917,8 +2532,8 @@ h3 {
 
 .question-group textarea:focus {
   outline: none;
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  border-color: #6052c4;
+  box-shadow: 0 0 0 2px rgba(96, 82, 196, 0.2);
 }
 
 .question-group textarea::placeholder {
@@ -1930,17 +2545,11 @@ h3 {
   cursor: not-allowed;
 }
 
-/* Update the submission area to show when questionnaire is complete */
-.submission-area.ready {
-  transform: translateY(-10px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
 /* Add these styles for the form details review */
 .form-details-review {
   margin: 30px 0;
   padding: 20px;
-  background-color: #f6f8fa;
+  background-color: transparent;
   border-radius: 8px;
   border: 1px solid #eaecef;
 }
@@ -2037,7 +2646,7 @@ h3 {
   padding: 15px;
   background-color: #fff2f0;
   border-radius: 6px;
-  border-left: 4px solid #ff4d4f;
+  border-left: 4px solid #f5222d;
 }
 
 .questionnaire-feedback h4 {
@@ -2055,4 +2664,312 @@ h3 {
   font-size: 14px;
   color: #434343;
   line-height: 1.5;
+}
+
+.user-tasks-container {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tabs-container {
+  /* Keep tabs styling */
+}
+
+/* Remove blue dots from left corner */
+.risk-card > div > span:first-child,
+div[class^="risk-card"] > span:first-child,
+.risk-card > span:first-child,
+div[class*="risk-card"] > span:first-child {
+  display: none !important;
+}
+
+/* Also try these selectors if the above doesn't work */
+div[class*="risk-card"] span[style*="background-color: rgb(96, 82, 196)"],
+div[class*="risk-card"] span[style*="background: rgb(96, 82, 196)"],
+div[class*="risk-card"] > span:first-of-type,
+span[style*="background-color: rgb(96, 82, 196)"],
+span[style*="background: rgb(96, 82, 196)"],
+.risk-card::before {
+  display: none !important;
+}
+
+/* Override any blue colored indicators that might appear in the corner */
+.risk-card > *:first-child[style*="background"],
+.risk-card > *:first-child > *:first-child[style*="background"] {
+  display: none !important;
+}
+
+/* Additional rules to ensure no blue dots appear */
+.risk-card::before,
+.risk-card::after,
+.risk-card > span,
+.risk-card > div > span,
+.risk-card [style*="background-color"],
+.risk-card [style*="background: rgb(96, 82, 196)"],
+.risk-card > div > [style*="border-radius: 50%"],
+.risk-card > [style*="border-radius: 50%"] {
+  display: none !important;
+}
+
+/* NEW: Strong selectors to remove all tick marks on right corner of cards */
+.status-icon, 
+.status-icon.approved, 
+.status-icon.rejected,
+i.fa-check-circle,
+i.fas.fa-check-circle,
+.risk-card .status-icon {
+  display: none !important;
+}
+
+/* NEW: Target all checkmark icons in the risk cards */
+.risk-card i.fas.fa-check-circle,
+.risk-card i.fa-check-circle,
+.risk-card .fa-check-circle,
+.risk-card .status-icon i {
+  display: none !important;
+}
+
+/* NEW: Specifically target check circle icons on right corner */
+.risk-card > div.status-icon,
+.risk-card > div > i.fa-check-circle,
+.risk-card > div > i.fas.fa-check-circle {
+  display: none !important;
+}
+
+/* NEW: Extra selector for the status icon container */
+div.status-icon, 
+div.status-icon.approved {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* NEW: This specifically targets the tick mark in the image */
+.status-badge.status-approved:before,
+.status-approved:before {
+  display: none !important;
+}
+
+/* Completed classification step styling */
+.workflow-container .step-circle {
+  position: relative;
+  background-color: #6052c4;
+  color: white;
+  border-color: #6052c4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workflow-container .step-circle::before {
+  content: '\f00c';
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 16px;
+}
+
+/* Fix horizontal scrolling in the reviewer modal */
+.reviewer-modal .modal-content {
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 950px;
+}
+
+.reviewer-modal .modal-header {
+  flex: 0 0 auto;
+}
+
+.reviewer-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(85vh - 70px);
+  scrollbar-width: thin;
+  scrollbar-color: #6052c4 rgba(0, 0, 0, 0.1);
+  padding: 30px 30px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Custom scrollbar styling for Webkit browsers (Chrome, Safari, Edge) */
+.reviewer-modal .modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reviewer-modal .modal-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.reviewer-modal .modal-body::-webkit-scrollbar-thumb {
+  background-color: #9689de;
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.reviewer-modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background-color: #6052c4;
+}
+
+/* Ensure mitigation list has proper spacing and scrolls correctly */
+.reviewer-modal .mitigation-review-list {
+  width: 100%;
+  padding-right: 5px;
+}
+
+/* Make sure the form details review section is visible */
+.reviewer-modal .form-details-review {
+  width: 100%;
+}
+
+/* Ensure the review actions stay visible at the bottom */
+.reviewer-modal .review-actions {
+  padding-bottom: 10px;
+  margin-bottom: 0;
+}
+
+/* Fix questionnaire approval buttons */
+.reviewer-modal .questionnaire-approval .approval-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.reviewer-modal .questionnaire-approval .approve-btn,
+.reviewer-modal .questionnaire-approval .reject-btn {
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 180px;
+  height: 45px;
+  text-align: center;
+}
+
+/* Specific styling for the questionnaire buttons */
+.reviewer-modal .questionnaire-approval .approve-btn {
+  background-color: #52c41a;
+  color: white;
+  box-shadow: 0 4px 8px rgba(82, 196, 26, 0.2);
+}
+
+.reviewer-modal .questionnaire-approval .approve-btn:hover {
+  background-color: #68d030;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(82, 196, 26, 0.3);
+}
+
+.reviewer-modal .questionnaire-approval .reject-btn {
+  background-color: #f5222d;
+  color: white;
+  box-shadow: 0 4px 8px rgba(245, 34, 45, 0.2);
+}
+
+.reviewer-modal .questionnaire-approval .reject-btn:hover {
+  background-color: #ff4d4f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(245, 34, 45, 0.3);
+}
+
+/* Ensure content stays within bounds */
+.reviewer-modal .mitigation-review-list,
+.reviewer-modal .form-details-review,
+.reviewer-modal .review-actions,
+.reviewer-modal .risk-summary,
+.reviewer-modal .review-status-banner {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent content overflow */
+.reviewer-modal .mitigation-description p,
+.reviewer-modal .form-review-item p,
+.reviewer-modal .comment-text,
+.reviewer-modal .user-comments,
+.reviewer-modal .uploaded-evidence {
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Ensure the warning message doesn't overflow */
+.reviewer-modal .review-warning {
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+/* Add gradient effect to modal header while preserving functionality */
+.reviewer-modal .modal-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 250px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 100%);
+  transform: skewX(-30deg);
+  pointer-events: none; /* This ensures clicks pass through to elements behind it */
+}
+
+/* NEW: Hide all checkmarks in risk cards, including dynamically added ones */
+.risk-card .fa-check-circle,
+.risk-card .fa-check,
+.risk-card .status-icon,
+.risk-card .green-check i.fas.fa-check-circle,
+div.approval-notice .green-check i.fas.fa-check-circle,
+.risk-card [class*="checkmark"],
+.risk-card [class*="tick"],
+div.approval-notice div.green-check {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Remove all dots and indicators from risk cards */
+.risk-card::before,
+.risk-card::after,
+.risk-card > span:first-child,
+.risk-card > div > span:first-child,
+.risk-card [style*="background-color"],
+.risk-card [style*="background: rgb(96, 82, 196)"],
+.risk-card > div > [style*="border-radius: 50%"],
+.risk-card > [style*="border-radius: 50%"],
+div[class^="risk-card"] > span:first-child,
+div[class*="risk-card"] > span:first-child,
+.risk-card > span:first-child,
+div[class*="risk-card"] span[style*="background-color: rgb(96, 82, 196)"],
+div[class*="risk-card"] span[style*="background: rgb(96, 82, 196)"],
+div[class*="risk-card"] > span:first-of-type,
+span[style*="background-color: rgb(96, 82, 196)"],
+span[style*="background: rgb(96, 82, 196)"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Ensure no blue dots appear in any corner */
+.risk-card > *:first-child[style*="background"],
+.risk-card > *:first-child > *:first-child[style*="background"] {
+  display: none !important;
+}
+
+/* Remove any remaining indicators */
+.risk-card {
+  border-left: 4px solid #6052c4 !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
 }

@@ -38,7 +38,7 @@
       {{ error }}
     </div>
     
-    <!-- User Tasks Section -->
+    <!-- User Tasks Section with Table -->
     <div v-if="activeTab === 'user'">
       <div v-if="!selectedUserId" class="no-data">
         <p>Please select a user to view their assigned risks.</p>
@@ -46,66 +46,59 @@
       <div v-else-if="userRisks.length === 0" class="no-data">
         <p>No risks assigned to this user.</p>
       </div>
-      <div v-else>
-        <!-- Match the card layout in the screenshot -->
-        <div v-for="risk in userRisks" :key="risk.RiskInstanceId" class="risk-card">
-          <h3>{{ risk.RiskDescription || 'Risk #' + risk.RiskInstanceId }}</h3>
-          
-          <!-- Add status icon - green check for approved, red exclamation for rejected -->
-          <div class="status-icon" :class="{
-            'approved': risk.RiskStatus === 'Approved', 
-            'rejected': risk.RiskStatus === 'Revision Required'
-          }">
-            <i class="fas" :class="{
-              'fa-check-circle': risk.RiskStatus === 'Approved', 
-              'fa-exclamation-circle': risk.RiskStatus === 'Revision Required'
-            }"></i>
-          </div>
-          
-          <div class="risk-info">
-            <p><strong>ID:</strong> {{ risk.RiskInstanceId }}</p>
-            <p><strong>Category:</strong> {{ risk.Category }}</p>
-            <p><strong>Criticality:</strong> {{ risk.Criticality }}</p>
-            <p><strong>Due Date:</strong> 
-              <template v-if="risk.MitigationDueDate">
-                {{ formatDate(risk.MitigationDueDate) }}
-                <span class="due-status" :class="getDueStatusClass(risk.MitigationDueDate)">
-                  {{ getDueStatusText(risk.MitigationDueDate) }}
+      <div v-else class="table-container">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>RiskID</th>
+              <th>Origin</th>
+              <th>Category</th>
+              <th>Criticality</th>
+              <th>Risk Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="risk in userRisks" :key="risk.RiskInstanceId">
+              <td>{{ risk.RiskInstanceId }}</td>
+              <td>{{ risk.Origin || 'MANUAL' }}</td>
+              <td>{{ risk.Category }}</td>
+              <td>
+                <span 
+                  class="criticality-badge"
+                  :class="{
+                    'criticality-critical': risk.Criticality && risk.Criticality.toLowerCase() === 'critical',
+                    'criticality-high': risk.Criticality && risk.Criticality.toLowerCase() === 'high',
+                    'criticality-medium': risk.Criticality && risk.Criticality.toLowerCase() === 'medium',
+                    'criticality-low': risk.Criticality && risk.Criticality.toLowerCase() === 'low'
+                  }"
+                >
+                  {{ risk.Criticality }}
                 </span>
-              </template>
-              <template v-else>Not set</template>
-            </p>
-            <p><strong>Status:</strong> 
+              </td>
+              <td class="risk-description">{{ risk.RiskDescription }}</td>
+              <td>
+                <div class="status-wrapper">
+                  <div class="status-line">
               <span :class="'status-' + risk.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">
                 {{ risk.RiskStatus || 'Not Assigned' }}
               </span>
               <span class="mitigation-status" :class="getMitigationStatusClass(risk.MitigationStatus)">
                 {{ risk.MitigationStatus || 'Yet to Start' }}
               </span>
-            </p>
-            <p><strong>Priority:</strong> {{ risk.RiskPriority }}</p>
-            <p><strong>Assigned To:</strong> {{ getUserName(risk.UserId) }}</p>
-            
-            <!-- Show rejection message if applicable -->
-            <div v-if="risk.RiskStatus === 'Revision Required'" class="rejection-notice">
-              <p><strong>Your submission requires revision.</strong></p>
-              <div class="reviewer-feedback">
-                <h5>Check the mitigations for specific feedback</h5>
-                <button @click="viewMitigations(risk.RiskInstanceId)" class="view-feedback-btn">
-                  <i class="fas fa-eye"></i> View Reviewer Feedback
-                </button>
-              </div>
             </div>
             
-            <div v-else-if="risk.RiskStatus === 'Approved'" class="approval-notice">
-              <p><strong>Your submission has been approved!</strong></p>
-              <div class="green-check">
-                <i class="fas fa-check-circle"></i>
+                  <!-- Due date info -->
+                  <div v-if="risk.MitigationDueDate" class="due-date">
+                    {{ formatDate(risk.MitigationDueDate) }}
+                    <span class="due-status" :class="getDueStatusClass(risk.MitigationDueDate)">
+                      {{ getDueStatusText(risk.MitigationDueDate) }}
+                    </span>
               </div>
             </div>
-          </div>
-          
-          <div class="action-buttons">
+              </td>
+              <td class="actions-column">
             <button 
               v-if="risk.MitigationStatus === 'Revision Required by User'" 
               @click="startWork(risk.RiskInstanceId)" 
@@ -119,24 +112,27 @@
               Start Work
             </button>
             <button 
-              v-if="risk.MitigationStatus === 'Work In Progress'" 
-              @click="completeMitigation(risk.RiskInstanceId)" 
-              class="complete-btn">
-              Mark as Completed
-            </button>
-            <button 
               @click="viewMitigations(risk.RiskInstanceId)" 
               class="view-btn"
               :disabled="risk.MitigationStatus === 'Yet to Start'"
               :class="{'disabled-btn': risk.MitigationStatus === 'Yet to Start'}">
-              <i class="fas fa-eye"></i> View Mitigations
+                  <i class="fas fa-eye"></i> View
+                </button>
+                
+                <!-- Show revision notice if applicable -->
+                <div v-if="risk.RiskStatus === 'Revision Required'" class="revision-notice">
+                  <button @click="viewMitigations(risk.RiskInstanceId)" class="view-feedback-btn">
+                    <i class="fas fa-eye"></i> View Feedback
             </button>
           </div>
-        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     
-    <!-- Reviewer Tasks Section -->
+    <!-- Reviewer Tasks Section with Table -->
     <div v-if="activeTab === 'reviewer'">
       <div v-if="!selectedUserId" class="no-data">
         <p>Please select a user to view their reviewer tasks.</p>
@@ -144,271 +140,76 @@
       <div v-else-if="reviewerTasks.length === 0" class="no-data">
         <p>No review tasks assigned to this user.</p>
       </div>
-      <div v-else>
-        <!-- Reviewer task cards with same layout as user tasks -->
-        <div v-for="task in reviewerTasks" :key="task.RiskInstanceId" 
-             class="risk-card reviewer-card"
+      <div v-else class="table-container">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>RiskID</th>
+              <th>Origin</th>
+              <th>Category</th>
+              <th>Criticality</th>
+              <th>Risk Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="task in reviewerTasks" :key="task.RiskInstanceId"
              :class="{
-               'completed-card': task.RiskStatus === 'Approved',
-               'revision-card': task.RiskStatus === 'Revision Required'
+                  'completed-row': task.RiskStatus === 'Approved',
+                  'revision-row': task.RiskStatus === 'Revision Required'
              }">
-          <h3>{{ task.RiskDescription || 'Risk #' + task.RiskInstanceId }}</h3>
-          
-          <!-- Add status badge -->
-          <div class="status-badge" :class="getStatusClass(task.RiskStatus)">
-            {{ task.RiskStatus }}
+              <td>{{ task.RiskInstanceId }}</td>
+              <td>{{ task.Origin || 'MANUAL' }}</td>
+              <td>{{ task.Category }}</td>
+              <td>
+                <span 
+                  class="criticality-badge"
+                  :class="{
+                    'criticality-critical': task.Criticality && task.Criticality.toLowerCase() === 'critical',
+                    'criticality-high': task.Criticality && task.Criticality.toLowerCase() === 'high',
+                    'criticality-medium': task.Criticality && task.Criticality.toLowerCase() === 'medium',
+                    'criticality-low': task.Criticality && task.Criticality.toLowerCase() === 'low'
+                  }"
+                >
+                  {{ task.Criticality }}
+                </span>
+              </td>
+              <td class="risk-description">{{ task.RiskDescription }}</td>
+              <td>
+                <div class="status-wrapper">
+                  <div class="status-line">
+                    <span :class="'status-' + task.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">
+                      {{ task.RiskStatus || 'Not Started' }}
+                    </span>
+                    <span class="mitigation-status">{{ task.MitigationStatus || 'Yet to Start' }}</span>
           </div>
           
-          <div class="risk-info">
-            <p><strong>ID:</strong> {{ task.RiskInstanceId }}</p>
-            <p><strong>Category:</strong> {{ task.Category }}</p>
-            <p><strong>Criticality:</strong> {{ task.Criticality }}</p>
-            <p><strong>Due Date:</strong> 
-              <template v-if="task.MitigationDueDate">
+                  <!-- Due date info -->
+                  <div v-if="task.MitigationDueDate" class="due-date">
                 {{ formatDate(task.MitigationDueDate) }}
                 <span class="due-status" :class="getDueStatusClass(task.MitigationDueDate)">
                   {{ getDueStatusText(task.MitigationDueDate) }}
                 </span>
-              </template>
-              <template v-else>Not set</template>
-            </p>
-            <p><strong>Status:</strong> 
-              <span :class="'status-' + task.RiskStatus?.toLowerCase().replace(/\s+/g, '-')">
-                {{ task.RiskStatus || 'Not Started' }}
-              </span>
-              <span class="mitigation-status">{{ task.MitigationStatus || 'Yet to Start' }}</span>
-            </p>
-            <p><strong>Priority:</strong> {{ task.RiskPriority }}</p>
-            <p><strong>Submitted By:</strong> {{ getUserName(task.UserId) }}</p>
           </div>
           
-          <div class="action-buttons">
+                  <div class="submitted-by">
+                    By: {{ getUserName(task.UserId) }}
+                  </div>
+                </div>
+              </td>
+              <td class="actions-column">
             <button 
               @click="reviewMitigations(task)" 
               class="review-btn"
               :disabled="!hasApprovalVersion(task)"
               :class="{'disabled-btn': !hasApprovalVersion(task)}">
-              <i class="fas fa-tasks"></i> {{ task.RiskStatus === 'Under Review' ? 'Review Mitigations' : 'View Mitigations' }}
+                  <i class="fas fa-tasks"></i> Review
             </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Mitigation Workflow Modal -->
-    <div v-if="showMitigationModal" class="modal-overlay" @click.self="closeMitigationModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="shield-icon"><i class="fas fa-shield-alt"></i></div>
-          <h2>Risk Mitigation Workflow</h2>
-          <button class="close-btn" @click="closeMitigationModal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div v-if="loadingMitigations" class="loading">
-            <div class="spinner"></div>
-            <span>Loading mitigation steps...</span>
-          </div>
-          <div v-else-if="!mitigationSteps.length" class="no-data">
-            No mitigation steps found for this risk.
-          </div>
-          <div v-else class="simplified-workflow">
-            <!-- Vertical timeline with connected steps -->
-            <div class="timeline">
-              <div 
-                v-for="(step, index) in mitigationSteps" 
-                :key="index" 
-                class="timeline-step"
-                :class="{
-                  'completed': step.status === 'Completed',
-                  'active': isStepActive(index),
-                  'locked': isStepLocked(index),
-                  'approved': step.approved === true,
-                  'rejected': step.approved === false
-                }"
-              >
-                <!-- Step circle with number -->
-                <div class="step-circle">
-                  <span v-if="step.status === 'Completed'"><i class="fas fa-check"></i></span>
-                  <span v-else>{{ step.title.replace('Step ', '') }}</span>
-                </div>
-                
-                <!-- Step content -->
-                <div class="step-box">
-                  <h3>{{ step.description }}</h3>
-                  
-                  <!-- Status indicators -->
-                  <div v-if="step.approved === true" class="status-tag approved">
-                    <i class="fas fa-check-circle"></i> Approved
-                  </div>
-                  <div v-else-if="step.approved === false" class="status-tag rejected">
-                    <i class="fas fa-times-circle"></i> Rejected
-                    <div v-if="step.remarks" class="remarks">
-                      <strong>Feedback:</strong> {{ step.remarks }}
-                    </div>
-                  </div>
-                  <div v-else-if="step.status === 'Completed'" class="status-tag completed">
-                    <i class="fas fa-check"></i> Completed
-                  </div>
-                  <div v-else-if="isStepActive(index)" class="status-tag active">
-                    <i class="fas fa-circle-notch fa-spin"></i> In Progress
-                  </div>
-                  <div v-else class="status-tag locked">
-                    <i class="fas fa-lock"></i> Locked
-                  </div>
-                  
-                  <!-- Only show editable fields for active steps or rejected steps -->
-                  <div v-if="isStepActive(index) || step.approved === false" class="step-inputs">
-                    <div class="input-group">
-                      <label>Your Comments:</label>
-                      <textarea 
-                        v-model="step.comments" 
-                        placeholder="Add any notes or comments about this step..."
-                        :disabled="isStepLocked(index)"
-                      ></textarea>
-                    </div>
-                    
-                    <div class="input-group">
-                      <label>Upload Evidence:</label>
-                      <div class="file-upload">
-                        <input 
-                          type="file" 
-                          @change="handleFileUpload($event, index)" 
-                          :disabled="isStepLocked(index)"
-                          :id="`file-upload-${index}`"
-                        />
-                        <label :for="`file-upload-${index}`" class="upload-btn">
-                          <i class="fas fa-upload"></i> Select File
-                        </label>
-                        <span v-if="step.fileName" class="file-name">{{ step.fileName }}</span>
-                      </div>
-                    </div>
-                    
-                    <div class="status-control">
-                      <button 
-                        v-if="step.status !== 'Completed'" 
-                        @click="completeStep(index)" 
-                        class="complete-btn"
-                        :disabled="isStepLocked(index)"
-                      >
-                        <i class="fas fa-check-circle"></i> Mark as Completed
-                      </button>
-                      <button 
-                        v-else 
-                        @click="resetStep(index)" 
-                        class="reset-btn"
-                      >
-                        <i class="fas fa-undo"></i> Reset
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <!-- For non-editable steps, just show the available info -->
-                  <div v-else-if="step.comments || step.fileData" class="step-info">
-                    <div v-if="step.comments" class="comments-display">
-                      <h4><i class="fas fa-comment"></i> Your Comments</h4>
-                      <p>{{ step.comments }}</p>
-                    </div>
-                    
-                    <div v-if="step.fileData" class="file-display">
-                      <h4><i class="fas fa-file-alt"></i> Uploaded Evidence</h4>
-                      <a :href="step.fileData" download :filename="step.fileName">
-                        <i class="fas fa-download"></i> {{ step.fileName }}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Add this after the timeline and before the submission area -->
-            <div class="mitigation-questionnaire" v-if="allStepsCompleted">
-              <h3>Risk Mitigation Questionnaire</h3>
-              <p class="questionnaire-note">Please complete all fields to proceed with submission</p>
-              
-              <div class="question-group">
-                <label for="cost-input">What is the cost for this mitigation?</label>
-                <textarea 
-                  id="cost-input" 
-                  v-model="formDetails.cost" 
-                  placeholder="Describe the cost..."
-                  :disabled="!allStepsCompleted"
-                  @input="validateQuestionnaire"
-                ></textarea>
-              </div>
-              
-              <div class="question-group" :class="{ 'disabled': !formDetails.cost }">
-                <label for="impact-input">What is the impact for this mitigation?</label>
-                <textarea 
-                  id="impact-input" 
-                  v-model="formDetails.impact" 
-                  placeholder="Describe the impact..."
-                  :disabled="!formDetails.cost"
-                  @input="validateQuestionnaire"
-                ></textarea>
-              </div>
-              
-              <div class="question-group" :class="{ 'disabled': !formDetails.impact }">
-                <label for="financial-impact-input">What is the financial impact for this mitigation?</label>
-                <textarea 
-                  id="financial-impact-input" 
-                  v-model="formDetails.financialImpact" 
-                  placeholder="Describe the financial impact..."
-                  :disabled="!formDetails.impact"
-                  @input="validateQuestionnaire"
-                ></textarea>
-              </div>
-              
-              <div class="question-group" :class="{ 'disabled': !formDetails.financialImpact }">
-                <label for="reputational-impact-input">What is the reputational impact for this mitigation?</label>
-                <textarea 
-                  id="reputational-impact-input" 
-                  v-model="formDetails.reputationalImpact" 
-                  placeholder="Describe the reputational impact..."
-                  :disabled="!formDetails.financialImpact"
-                  @input="validateQuestionnaire"
-                ></textarea>
-              </div>
-            </div>
-            
-            <!-- Add to the mitigation-questionnaire div, after the questionnaire fields -->
-            <div v-if="questionnaireRejected" class="questionnaire-feedback">
-              <h4><i class="fas fa-exclamation-circle"></i> Reviewer Feedback</h4>
-              <p>{{ questionnaireRemarks }}</p>
-            </div>
-            
-            <!-- Update the submission-area div to check for questionnaire completion -->
-            <div class="submission-area" :class="{ 'ready': canSubmit }">
-              <h3>Review Assignment</h3>
-              
-              <div class="reviewer-select">
-                <label for="reviewer-select">Select a Reviewer:</label>
-                <select 
-                  id="reviewer-select" 
-                  v-model="selectedReviewer" 
-                  :disabled="!allStepsCompleted || !!selectedReviewer"
-                >
-                  <option value="">Select Reviewer...</option>
-                  <option v-for="user in users" :key="user.user_id" :value="user.user_id">
-                    {{ user.user_name }} ({{ user.department }})
-                  </option>
-                </select>
-              </div>
-              
-              <button 
-                @click="submitForReview" 
-                class="submit-btn" 
-                :disabled="!canSubmit"
-              >
-                <i class="fas fa-paper-plane"></i> Submit for Review
-              </button>
-              
-              <div v-if="!allStepsCompleted" class="submit-message">
-                <i class="fas fa-info-circle"></i>
-                Complete all mitigation steps before submitting
-              </div>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     
@@ -632,13 +433,8 @@ export default {
       selectedUserId: '',
       loading: true,
       error: null,
-      showMitigationModal: false,
-      loadingMitigations: false,
-      mitigationSteps: [],
-      selectedRiskId: null,
-      selectedReviewer: '',
-      activeTab: 'user',
       showReviewerModal: false,
+      loadingMitigations: false,
       mitigationReviewData: {},
       currentReviewTask: null,
       userNotifications: [],
@@ -650,20 +446,11 @@ export default {
         financialImpact: '',
         reputationalImpact: ''
       },
-      latestReview: null
+      latestReview: null,
+      activeTab: 'user'
     }
   },
   computed: {
-    allStepsCompleted() {
-      const stepsToCheck = this.mitigationSteps.filter(step => Boolean(step.approved) !== true);
-      return stepsToCheck.length > 0 && 
-             stepsToCheck.every(step => step.status === 'Completed');
-    },
-    canSubmit() {
-      const hasRejectedOrNewSteps = this.mitigationSteps.some(step => Boolean(step.approved) !== true);
-      const formCompleted = this.isQuestionnaireComplete();
-      return this.allStepsCompleted && this.selectedReviewer && hasRejectedOrNewSteps && formCompleted;
-    },
     canSubmitReview() {
       const allMitigationsReviewed = Object.values(this.mitigationReviewData).every(m => 
         m.approved === true || (m.approved === false && m.remarks && m.remarks.trim() !== '')
@@ -675,19 +462,6 @@ export default {
         (this.formDetails.approved === false && this.formDetails.remarks && this.formDetails.remarks.trim() !== '');
       
       return allMitigationsReviewed && questionnaireReviewed;
-    },
-    questionnaireRejected() {
-      return this.latestReview && 
-             this.latestReview.risk_form_details && 
-             this.latestReview.risk_form_details.approved === false;
-    },
-    questionnaireRemarks() {
-      if (this.latestReview && 
-          this.latestReview.risk_form_details && 
-          this.latestReview.risk_form_details.remarks) {
-        return this.latestReview.risk_form_details.remarks;
-      }
-      return '';
     }
   },
   mounted() {
@@ -805,95 +579,9 @@ export default {
       });
     },
     viewMitigations(riskId) {
-      this.selectedRiskId = riskId;
-      this.loadingMitigations = true;
-      this.showMitigationModal = true;
-      
-      // First, get the basic mitigation steps
-      axios.get(`http://localhost:8000/api/risk-mitigations/${riskId}/`)
-        .then(response => {
-          console.log('Mitigations received:', response.data);
-          this.mitigationSteps = this.parseMitigations(response.data);
-          
-          // Get the risk form details
-          axios.get(`http://localhost:8000/api/risk-form-details/${riskId}/`)
-            .then(formResponse => {
-              console.log('Form details received:', formResponse.data);
-              this.formDetails = formResponse.data;
-              
-              // Get the latest R version from risk_approval table to get approval status
-              axios.get(`http://localhost:8000/api/latest-review/${riskId}/`)
-                .then(reviewResponse => {
-                  const reviewData = reviewResponse.data;
-                  console.log('Latest review data:', reviewData);
-                  
-                  // Store the latest review
-                  this.latestReview = reviewData;
-                  
-                  if (reviewData && reviewData.mitigations) {
-                    // Create new steps array with proper boolean values for approved
-                    const updatedSteps = [];
-                    
-                    // Process each mitigation from the review data
-                    Object.keys(reviewData.mitigations).forEach(stepId => {
-                      const mitigation = reviewData.mitigations[stepId];
-                      
-                      // Ensure approved is a proper boolean value if it exists, otherwise leave it undefined
-                      let isApproved = undefined;
-                      if ('approved' in mitigation) {
-                        isApproved = mitigation.approved === true || mitigation.approved === "true";
-                      }
-                      
-                      updatedSteps.push({
-                        title: `Step ${stepId}`,
-                        description: mitigation.description,
-                        status: mitigation.status || 'Completed',
-                        approved: isApproved,  // This could be undefined, true, or false
-                        remarks: mitigation.remarks || '',
-                        comments: mitigation.comments || '',
-                        fileData: mitigation.fileData,
-                        fileName: mitigation.fileName
-                      });
-                    });
-                    
-                    // Replace the mitigation steps with the properly formatted data
-                    this.mitigationSteps = updatedSteps;
-                  }
-                  
-                  // Check if a reviewer is already assigned
-                  axios.get(`http://localhost:8000/api/get-assigned-reviewer/${riskId}/`)
-                    .then(reviewerResponse => {
-                      if (reviewerResponse.data && reviewerResponse.data.reviewer_id) {
-                        this.selectedReviewer = reviewerResponse.data.reviewer_id;
-                      }
-                      this.loadingMitigations = false;
-                    })
-                    .catch(error => {
-                      console.error('Error fetching assigned reviewer:', error);
-                      this.loadingMitigations = false;
-                    });
-                })
-                .catch(error => {
-                  console.error('Error fetching latest review:', error);
-                  this.loadingMitigations = false;
-                });
-            })
-            .catch(error => {
-              console.error('Error fetching form details:', error);
-              // Continue with default empty form details
-              this.formDetails = {
-                cost: '',
-                impact: '',
-                financialImpact: '',
-                reputationalImpact: ''
-              };
-              this.loadingMitigations = false;
-            });
-        })
-        .catch(error => {
-          console.error('Error fetching mitigations:', error);
-          this.mitigationSteps = [];
-          this.loadingMitigations = false;
+      this.$router.push({ 
+        name: 'MitigationWorkflow', 
+        params: { riskId: riskId } 
         });
     },
     fetchLatestReviewerData(riskId) {
@@ -979,98 +667,6 @@ export default {
       
       // Default fallback - create a single step with the data
       return [{ title: 'Mitigation', description: 'No detailed mitigation steps available' }];
-    },
-    closeMitigationModal() {
-      this.showMitigationModal = false;
-      this.mitigationSteps = [];
-      this.selectedRiskId = null;
-    },
-    updateStepStatus(index, status) {
-      console.log(`Updating step ${index + 1} status to ${status}`);
-      
-      // Update the step status locally
-      this.mitigationSteps[index].status = status;
-      
-      // If all steps are completed, we don't need to update the backend yet
-      // It will be sent when the user submits for review
-    },
-    submitForReview() {
-      if (!this.canSubmit) return;
-      
-      this.loading = true;
-      
-      // Prepare the mitigation data
-      const mitigationData = {};
-      this.mitigationSteps.forEach((step, index) => {
-        // Extract step number from title or use index+1
-        const stepNumber = step.title.replace('Step ', '') || (index + 1).toString();
-        
-        // If this step was previously approved, keep its approval
-        if (step.approved === true) {
-          mitigationData[stepNumber] = {
-            description: step.description,
-            status: step.status || 'Completed',
-            approved: true,
-            remarks: "",
-            comments: step.comments || "",
-            fileData: step.fileData,
-            fileName: step.fileName
-          };
-        } else {
-          // For rejected or new mitigations, include the updated data
-          // but don't set 'approved' for new submissions
-          const mitigationInfo = {
-            description: step.description,
-            status: step.status || 'Completed',
-            comments: step.comments || "",
-            fileData: step.fileData,
-            fileName: step.fileName
-          };
-          
-          // Only include approved and remarks if they were previously set
-          if (step.approved === false) {
-            mitigationInfo.approved = false;
-            mitigationInfo.remarks = step.remarks || "";
-          }
-          
-          mitigationData[stepNumber] = mitigationInfo;
-        }
-      });
-      
-      axios.post('http://localhost:8000/api/assign-reviewer/', {
-        risk_id: this.selectedRiskId,
-        reviewer_id: this.selectedReviewer,
-        user_id: this.selectedUserId,
-        mitigations: mitigationData,
-        risk_form_details: this.formDetails  // Add the form details here
-      })
-      .then(response => {
-        console.log('Reviewer assigned:', response.data);
-        // Update the risk mitigation status to indicate it's under review
-        return axios.post('http://localhost:8000/api/update-mitigation-status/', {
-          risk_id: this.selectedRiskId,
-          status: 'Revision Required by Reviewer'
-        });
-      })
-      .then(response => {
-        console.log('Status updated to under review:', response.data);
-        // Update the local risk data to show the new status
-        const index = this.userRisks.findIndex(r => r.RiskInstanceId === this.selectedRiskId);
-        if (index !== -1) {
-          this.userRisks[index].MitigationStatus = 'Revision Required by Reviewer';
-          // Keep RiskStatus as 'Assigned'
-        }
-        this.loading = false;
-        // Close the modal
-        this.closeMitigationModal();
-        // Show success message
-        alert('Risk submitted for review successfully!');
-      })
-      .catch(error => {
-        console.error('Error assigning reviewer:', error);
-        this.loading = false;
-        alert('Failed to submit for review. Please try again.');
-      });
     },
     closeReviewerModal() {
       this.showReviewerModal = false;
@@ -1189,31 +785,6 @@ export default {
         }, 2000);
       }
     },
-    handleFileUpload(event, index) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit');
-        event.target.value = '';
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // Store file data as base64 string
-        this.mitigationSteps[index].fileData = e.target.result;
-        this.mitigationSteps[index].fileName = file.name;
-      };
-      reader.readAsDataURL(file);
-    },
-    removeFile(index) {
-      this.mitigationSteps[index].fileData = null;
-      this.mitigationSteps[index].fileName = null;
-      // Reset the file input
-      document.getElementById(`file-upload-${index}`).value = '';
-    },
     fetchReviewerComments(riskId) {
       axios.get(`http://localhost:8000/api/reviewer-comments/${riskId}/`)
         .then(response => {
@@ -1233,54 +804,6 @@ export default {
       if (status === 'Under Review') return 'status-review';
       if (status === 'Work In Progress') return 'status-progress';
       return '';
-    },
-    // Complete a step
-    completeStep(index) {
-      // Only allow completing if previous steps are completed
-      if (this.isStepLocked(index)) return;
-      
-      this.mitigationSteps[index].status = 'Completed';
-      
-      // Animate the timeline progress
-      this.$nextTick(() => {
-        // Use setTimeout to ensure the DOM has updated
-        setTimeout(() => {
-          const timelineEl = document.querySelector('.timeline');
-          if (timelineEl) {
-            timelineEl.classList.add('step-completed');
-            setTimeout(() => {
-              timelineEl.classList.remove('step-completed');
-            }, 1000);
-          }
-        }, 50);
-      });
-    },
-    
-    // Reset a step to not completed
-    resetStep(index) {
-      this.mitigationSteps[index].status = 'In Progress';
-    },
-    isStepActive(index) {
-      // A step is active if all previous steps are completed
-      // and this step is not completed or is rejected
-      if (this.mitigationSteps[index].approved === false) return true;
-      
-      for (let i = 0; i < index; i++) {
-        if (this.mitigationSteps[i].status !== 'Completed') return false;
-      }
-      
-      return this.mitigationSteps[index].status !== 'Completed';
-    },
-    
-    isStepLocked(index) {
-      // A step is locked if any previous step is not completed
-      if (index === 0) return false; // First step is never locked
-      
-      for (let i = 0; i < index; i++) {
-        if (this.mitigationSteps[i].status !== 'Completed') return true;
-      }
-      
-      return false;
     },
     formatDate(dateString) {
       if (!dateString) return 'Not set';
@@ -1344,69 +867,11 @@ export default {
       }
       return false;
     },
-    isQuestionnaireComplete() {
-      return (
-        this.formDetails.cost.trim() !== '' &&
-        this.formDetails.impact.trim() !== '' &&
-        this.formDetails.financialImpact.trim() !== '' &&
-        this.formDetails.reputationalImpact.trim() !== ''
-      );
-    },
-    validateQuestionnaire() {
-      // This will be called on each input to ensure sequential completion
-    },
     reviewMitigations(task) {
-      this.currentReviewTask = task;
-      this.selectedRiskId = task.RiskInstanceId;
-      this.loadingMitigations = true;
-      this.showReviewerModal = true;
-      
-      try {
-        // Extract the mitigations from the ExtractedInfo JSON
-        const extractedInfo = JSON.parse(task.ExtractedInfo);
-        console.log('Extracted info:', extractedInfo);
-        
-        if (extractedInfo && extractedInfo.mitigations) {
-          this.mitigationReviewData = extractedInfo.mitigations;
-          
-          // Also get form details if available
-          if (extractedInfo.risk_form_details) {
-            // Preserve approval status and remarks if they exist
-            this.formDetails = {
-              cost: extractedInfo.risk_form_details.cost || '',
-              impact: extractedInfo.risk_form_details.impact || '',
-              financialImpact: extractedInfo.risk_form_details.financialImpact || '',
-              reputationalImpact: extractedInfo.risk_form_details.reputationalImpact || '',
-              approved: extractedInfo.risk_form_details.approved,
-              remarks: extractedInfo.risk_form_details.remarks || ''
-            };
-          } else {
-            // Reset form details to empty
-            this.formDetails = {
-              cost: '',
-              impact: '',
-              financialImpact: '',
-              reputationalImpact: '',
-              approved: undefined,
-              remarks: ''
-            };
-          }
-          
-          // Add task status info for completed tasks
-          const isCompleted = task.RiskStatus === 'Approved' || task.RiskStatus === 'Revision Required';
-          this.reviewCompleted = isCompleted;
-          this.reviewApproved = task.RiskStatus === 'Approved';
-        } else {
-          this.mitigationReviewData = {};
-          console.error('No mitigations found in ExtractedInfo');
-        }
-        
-        this.loadingMitigations = false;
-      } catch (error) {
-        console.error('Error parsing ExtractedInfo:', error);
-        this.mitigationReviewData = {};
-        this.loadingMitigations = false;
-      }
+      this.$router.push({
+        name: 'ReviewerWorkflow',
+        params: { riskId: task.RiskInstanceId }
+      });
     },
     approveQuestionnaire(approved) {
       // Don't use this.$set directly, just update the property
@@ -1450,25 +915,25 @@ export default {
 }
 
 .due-status.overdue {
-  background-color: #fff1f0;
+  background-color: transparent;
   color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
 .due-status.urgent {
-  background-color: #fff7e6;
+  background-color: transparent;
   color: #fa8c16;
   border: 1px solid #ffd591;
 }
 
 .due-status.warning {
-  background-color: #fffbe6;
+  background-color: transparent;
   color: #faad14;
   border: 1px solid #ffe58f;
 }
 
 .due-status.on-track {
-  background-color: #f6ffed;
+  background-color: transparent;
   color: #52c41a;
   border: 1px solid #b7eb8f;
 }
@@ -1478,31 +943,31 @@ export default {
   font-size: 12px;
   color: #606266;
   padding: 2px 8px;
-  background-color: #f5f5f5;
+  background-color: transparent;
   border-radius: 10px;
 }
 
 /* Add styles for mitigation status badges */
 .mitigation-status.status-completed {
-  background-color: #f6ffed;
+  background-color: transparent;
   color: #52c41a;
   border: 1px solid #b7eb8f;
 }
 
 .mitigation-status.status-progress {
-  background-color: #e6f7ff;
+  background-color: transparent;
   color: #1890ff;
   border: 1px solid #91d5ff;
 }
 
 .mitigation-status.status-revision {
-  background-color: #fff1f0;
+  background-color: transparent;
   color: #f5222d;
   border: 1px solid #ffa39e;
 }
 
 .mitigation-status.status-not-started {
-  background-color: #f5f5f5;
+  background-color: transparent;
   color: #8c8c8c;
   border: 1px solid #d9d9d9;
 }

@@ -21,8 +21,11 @@ export default {
 </script>
 
 <style>
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -31,16 +34,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+  height: 100%;
 }
 
 .app-container {
   display: flex;
   min-height: 100vh;
+  overflow-y: auto; /* Single scrollbar for the entire app */
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
   padding: 20px;
   background-color: #f5f5f5;
+  overflow: hidden; /* Prevent additional scrollbars */
 }
 </style>

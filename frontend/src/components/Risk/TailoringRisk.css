@@ -1,0 +1,263 @@
+/* Modern UI Variables for Tailoring Risk Form */
+:root {
+  --form-primary: #6a5acd;
+  --form-primary-light: #8677dd;
+  --form-primary-dark: #483d8b;
+  --form-secondary: #5a4ccd;
+  --form-success: #4cc9f0;
+  --form-warning: #f8961e;
+  --form-danger: #e63946;
+  --form-light: #f8f9fa;
+  --form-dark: #212529;
+  --form-gray-100: #f8f9fa;
+  --form-gray-200: #e9ecef;
+  --form-gray-300: #dee2e6;
+  --form-gray-400: #ced4da;
+  --form-gray-500: #adb5bd;
+  --form-gray-600: #6c757d;
+  --form-gray-700: #495057;
+  --form-gray-800: #343a40;
+  --form-gray-900: #212529;
+  --form-border-radius: 8px;
+  --form-box-shadow: 0 4px 6px rgba(106, 90, 205, 0.1), 0 1px 3px rgba(106, 90, 205, 0.08);
+  --form-transition: all 0.3s ease;
+}
+
+/* Global Styles */
+.tailoring-risk-container {
+  padding: 16px 16px 16px 220px;
+  background: none;
+  min-height: 100vh;
+  height: 100vh;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--form-gray-800);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Styles */
+.tailoring-risk-container h1 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: black;
+  margin: 0 0 24px 0;
+  padding-bottom: 8px;
+  position: relative;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+}
+
+.tailoring-risk-container h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 60px;
+  background-color: #6a5acd;
+  border-radius: 2px;
+}
+
+/* Form Container Styles */
+.risk-form {
+  padding: 0;
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 0;
+}
+
+.form-group.full {
+  grid-column: 1 / 5;
+}
+
+.form-group.half {
+  grid-column: span 2;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--form-gray-700);
+  margin-bottom: 2px;
+}
+
+.form-group label::before {
+  display: none !important;
+  content: none !important;
+}
+
+.form-group label i {
+  color: #6a5acd !important;
+  font-size: 0.8rem;
+  width: 14px;
+  text-align: center;
+}
+
+.form-group label i.fas.fa-user,
+.form-group label i.far.fa-user,
+.form-group label i.fa-user,
+.form-group label i.fas.fa-user-alt,
+.form-group label i.fa-user-alt {
+  display: none !important;
+}
+
+.form-control {
+  padding: 8px 10px;
+  border: 1px solid var(--form-gray-300);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: none;
+  transition: var(--form-transition);
+  background-color: var(--form-gray-100);
+  width: 100%;
+  box-sizing: border-box;
+  height: 34px;
+  border-left: none;
+}
+
+select.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a5acd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  padding-right: 28px;
+  background-color: white;
+  border-color: rgba(106, 90, 205, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #6a5acd !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+}
+
+textarea.form-control {
+  min-height: 60px;
+  height: 60px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--form-primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+  background-color: white;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  grid-column: 1 / -1;
+  margin-top: 40px;
+  width: 100%;
+}
+
+.submit-btn {
+  background: var(--form-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--form-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 38px;
+}
+
+.submit-btn:hover {
+  background: var(--form-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+}
+
+.clear-btn {
+  background: white;
+  color: var(--form-gray-700);
+  border: 1px solid var(--form-gray-300);
+  border-radius: 6px;
+  padding: 6px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--form-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 38px;
+}
+
+.clear-btn:hover {
+  background: var(--form-gray-200);
+  color: var(--form-gray-900);
+}
+
+.message {
+  margin-top: 20px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.success {
+  background-color: var(--form-primary);
+  color: white;
+  box-shadow: 0 4px 20px rgba(106, 90, 205, 0.15);
+}
+
+.error {
+  background-color: var(--form-danger);
+  color: white;
+  box-shadow: 0 4px 20px rgba(230, 57, 70, 0.15);
+}
+
+/* Fix for smaller screens */
+@media (max-width: 1200px) {
+  .risk-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .form-group.full {
+    grid-column: 1 / 3;
+  }
+  
+  .form-group.half {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .tailoring-risk-container {
+    padding: 12px;
+  }
+  
+  .risk-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-group.full,
+  .form-group.half {
+    grid-column: 1;
+  }
+} 

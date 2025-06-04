@@ -1,0 +1,473 @@
+/* ReviewerWorkflow.css */
+.reviewer-workflow-container {
+  padding: 20px;
+  margin-left: 196px; /* Space for sidebar */
+  background: none;
+  min-height: 100vh;
+  color: #2c3e50;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #6052c4;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.risk-summary {
+  background: none;
+  margin-bottom: 30px;
+  padding: 0;
+}
+
+.risk-summary h3 {
+  color: #4a3f8f;
+  font-size: 22px;
+  margin: 0 0 10px 0;
+}
+
+.risk-summary p {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.mitigation-review-list {
+  margin-bottom: 30px;
+}
+
+.mitigation-review-item {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mitigation-description h4 {
+  margin: 0 0 10px 0;
+  color: #6052c4;
+  font-size: 16px;
+}
+
+.mitigation-description p {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.user-comments, .uploaded-evidence {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.user-comments {
+  border-left: 4px solid #1890ff;
+}
+.uploaded-evidence {
+  border-left: 4px solid #52c41a;
+}
+
+.user-comments h5, .uploaded-evidence h5 {
+  margin: 0 0 5px 0;
+  font-size: 13px;
+  color: #6052c4;
+}
+
+.comment-text {
+  margin: 0;
+  font-size: 13px;
+  color: #4c4c4c;
+}
+
+.evidence-link {
+  color: #52c41a;
+  text-decoration: none;
+  font-size: 13px;
+}
+.evidence-link:hover {
+  text-decoration: underline;
+}
+
+.approval-status {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approval-status.approved {
+  background: linear-gradient(90deg, #f8f7fe 0%, #e9e6ff 100%);
+  color: #6052c4;
+  border: 1.5px solid #9689de;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(96, 82, 196, 0.07);
+  margin: 0 auto 18px auto;
+  padding: 18px 0 14px 0;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.approval-status.approved i {
+  color: #52c41a;
+  font-size: 24px;
+  margin-right: 8px;
+}
+.approval-status.approved button.change-decision-btn {
+  background: #f8f7fe;
+  color: #6052c4;
+  border: 1.5px solid #9689de;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 22px;
+  margin-top: 6px;
+  box-shadow: 0 2px 8px rgba(150, 137, 222, 0.08);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approval-status.approved button.change-decision-btn:hover {
+  background: #ece7ff;
+  color: #4a3f8f;
+  box-shadow: 0 4px 16px rgba(96, 82, 196, 0.13);
+}
+.approval-status.approved button.change-decision-btn i {
+  color: #f5222d !important;
+}
+.approval-status.rejected {
+  background: linear-gradient(90deg, #fff1f0 0%, #ffeaea 100%);
+  color: #f5222d;
+  border: 1.5px solid #ffa39e;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(245, 34, 45, 0.07);
+  margin: 0 auto 18px auto;
+  padding: 18px 0 14px 0;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.approval-status.rejected i {
+  color: #f5222d;
+  font-size: 24px;
+  margin-right: 8px;
+}
+.approval-status.rejected .remarks-field {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.approval-status.rejected .remarks-field label {
+  font-size: 15px;
+  color: #f5222d;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.approval-status.rejected .remarks-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px;
+  border: 1.5px solid #ffa39e;
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 8px;
+  background: #fffafa;
+  color: #a8071a;
+  resize: vertical;
+}
+.approval-status.rejected .approval-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  margin-top: 0;
+}
+.approval-status.rejected .save-remarks-btn,
+.approval-status.rejected .change-decision-btn {
+  margin-top: 0 !important;
+  vertical-align: middle;
+}
+.approval-status.rejected .change-decision-btn {
+  background: #fff1f0;
+  color: #222 !important;
+  border: 1.5px solid #ffa39e;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 22px;
+  box-shadow: 0 2px 8px rgba(245, 34, 45, 0.08);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approval-status.rejected .change-decision-btn i {
+  color: #52c41a !important;
+}
+.approval-status.rejected .change-decision-btn:hover {
+  background: #ffeaea;
+  color: #111 !important;
+  box-shadow: 0 4px 16px rgba(245, 34, 45, 0.13);
+}
+
+.approval-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  width: 100%;
+}
+.approve-btn, .reject-btn {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  height: 48px;
+  padding: 0;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: none;
+}
+.approve-btn {
+  background-color: #52c41a;
+  color: white;
+}
+.approve-btn:hover {
+  background-color: #68d030;
+}
+.reject-btn {
+  background-color: #f5222d;
+  color: white;
+}
+.reject-btn:hover {
+  background-color: #ff4d4f;
+}
+
+.remarks-field {
+  margin-top: 10px;
+}
+.remarks-field label {
+  font-size: 13px;
+  color: #606266;
+}
+.remarks-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #e9e6ff;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 5px;
+}
+.save-remarks-btn {
+  margin-top: 8px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.save-remarks-btn:hover {
+  background-color: #40a9ff;
+}
+.change-decision-btn {
+  margin-top: 8px;
+  background-color: #f5f5f5;
+  color: #606266;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.change-decision-btn:hover {
+  background-color: #e6e6e6;
+  color: #1890ff;
+  border-color: #1890ff;
+}
+
+.form-details-review {
+  margin: 30px 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  border: none;
+}
+.form-details-review h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #4a3f8f;
+  font-size: 16px;
+  font-weight: 600;
+}
+.form-review-item {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #eaecef;
+}
+.form-review-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.form-review-item h5 {
+  margin: 0 0 5px 0;
+  color: #606266;
+  font-size: 14px;
+  font-weight: 600;
+}
+.form-review-item p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 13px;
+  background-color: white;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #6052c4;
+}
+
+.questionnaire-approval {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #e9e6ff;
+}
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.review-actions {
+  margin-top: 30px;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+.submit-review-btn, .reject-review-btn {
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.submit-review-btn {
+  background: linear-gradient(135deg, #52c41a 0%, #68d030 100%);
+  color: white;
+}
+.submit-review-btn:hover:not(:disabled) {
+  background: #68d030;
+}
+.reject-review-btn {
+  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%);
+  color: white;
+}
+.reject-review-btn:hover:not(:disabled) {
+  background: #ff4d4f;
+}
+.submit-review-btn:disabled, .reject-review-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.review-warning {
+  flex-basis: 100%;
+  margin-top: 15px;
+  color: #faad14;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: none;
+  border-radius: 0;
+  border: none;
+  padding: 0;
+}
+.review-complete-notice {
+  flex-basis: 100%;
+  margin-top: 15px;
+  font-style: italic;
+  color: #4a3f8f;
+  text-align: center;
+  padding: 12px;
+  background: none;
+  border-radius: 0;
+  border: none;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .reviewer-workflow-container {
+    margin-left: 0;
+    padding: 10px;
+  }
+}
+
+.approval-status.rejected .save-remarks-btn,
+.approval-status.rejected .change-decision-btn {
+  width: 170px;
+  min-width: 170px;
+  max-width: 170px;
+  height: 40px;
+  font-size: 15px;
+}
+.approval-status.rejected .save-remarks-btn i {
+  color: #fff !important;
+} 

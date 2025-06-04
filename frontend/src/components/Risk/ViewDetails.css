@@ -1,0 +1,341 @@
+/* Container Layout */
+.view-details-container {
+  padding: 0.75rem 1.25rem;
+  margin-left: 250px;
+  width: calc(100% - 250px);
+  height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+/* Compact Header */
+.view-details-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding-bottom: 0.2rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  position: relative;
+}
+
+/* Back Button */
+.back-btn {
+  padding: 0.35rem 0.7rem;
+  background: #6366f1;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #4f46e5;
+}
+
+/* Title styling */
+.view-details-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  padding-left: 0.1rem;
+  /* No border, no extra margin */
+}
+
+/* Modern Dashboard Layout */
+.details-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 70px);
+  gap: 1rem;
+}
+
+/* Horizontal Info Band */
+.general-info-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: linear-gradient(to right, rgba(99, 102, 241, 0.05), rgba(99, 102, 241, 0.1));
+  border-radius: 8px;
+}
+
+/* Compact Info Pills */
+.info-field {
+  flex: 1 1 auto;
+  min-width: 120px;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Title gets more space */
+.info-field:nth-child(5), .info-field:nth-child(6) {
+  flex: 2 1 auto;
+  max-width: 300px;
+}
+
+/* Label Styling */
+.info-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+}
+
+/* Value Styling */
+.info-value {
+  font-size: 0.9rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Content Panel Layout */
+.details-panel-layout {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1rem;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Left content area */
+.details-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Timeline-like sections */
+.details-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Modern Section Design */
+.description-section {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.description-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: #6366f1;
+  border-radius: 3px;
+}
+
+/* Section Headers with icons */
+.section-header {
+  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-header i {
+  color: #6366f1;
+  font-size: 0.9rem;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 0.35rem;
+  border-radius: 50%;
+}
+
+/* Description Text */
+.description-text {
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  background: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Right Side Info Panel */
+.risk-info-section {
+  background: white;
+  border-radius: 8px;
+  padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-left: 1.5px solid #ef4444;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+/* Info Section Title */
+.risk-info-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.risk-info-title i {
+  color: #ef4444;
+}
+
+/* Risk Items */
+.risk-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed #e2e8f0;
+  font-size: 0.95em;
+}
+
+.risk-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.status-scheduled {
+  background: #f59e0b;
+}
+
+.status-active {
+  background: #3b82f6;
+}
+
+.status-resolved {
+  background: #22c55e;
+}
+
+.status-rejected {
+  background: #ef4444;
+}
+
+.status-default {
+  background: #6b7280;
+}
+
+/* Priority Badge */
+.priority-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.priority-critical {
+  color: #990000; /* Dark red text */
+  background: rgba(153, 0, 0, 0.1); /* Transparent dark red background */
+}
+
+.priority-high {
+  color: #e57373; /* Light red text */
+  background: rgba(229, 115, 115, 0.1); /* Transparent light red background */
+}
+
+.priority-medium {
+  color: #f9a825; /* Dark yellow text */
+  background: rgba(249, 168, 37, 0.1); /* Transparent light yellow background */
+}
+
+.priority-low {
+  color: #1976d2; /* Light blue text */
+  background: rgba(25, 118, 210, 0.1); /* Transparent light blue background */
+}
+
+/* DateTime Values */
+.datetime-value {
+  font-family: 'SF Mono', monospace;
+  background: rgba(241, 245, 249, 0.7);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .details-panel-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .risk-info-section {
+    border-left: none;
+    border-top: 3px solid #ef4444;
+  }
+}
+
+/* Reduce font and padding for info-label and info-value in risk-info-section */
+.risk-info-section .info-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 700;
+  margin-bottom: 0.05rem;
+  letter-spacing: 0.04em;
+}
+
+.risk-info-section .info-value,
+.risk-info-section .priority-indicator {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+} 

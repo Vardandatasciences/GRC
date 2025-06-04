@@ -89,4 +89,27 @@
     cursor: pointer;
     gap: 20px;
 }
+
+/* Nested submenu styles */
+.submenu .nested-submenu {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.submenu .menu-item {
+  position: relative;
+}
+
+.nested-submenu .menu-item {
+  padding-left: 1.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.nested-submenu .menu-item:before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+}
   

@@ -44,6 +44,11 @@ class ComplianceSerializer(serializers.ModelSerializer):
 class RiskInstanceSerializer(serializers.ModelSerializer):
     # Add this custom field to handle any format of RiskMitigation
     RiskMitigation = serializers.JSONField(required=False, allow_null=True)
+    # Use DateField for MitigationDueDate instead of relying on auto-conversion
+    MitigationDueDate = serializers.DateField(required=False, allow_null=True, format="%Y-%m-%d")
+    # Handle other date/datetime fields to prevent conversion issues
+    Date = serializers.DateTimeField(required=False, allow_null=True, format="%Y-%m-%d %H:%M:%S")
+    MitigationCompletedDate = serializers.DateTimeField(required=False, allow_null=True, format="%Y-%m-%d %H:%M:%S")
     
     class Meta:
         model = RiskInstance
@@ -65,6 +70,29 @@ class RiskInstanceSerializer(serializers.ModelSerializer):
             mutable_data['RiskMitigation'] = {}
         
         return super().to_internal_value(mutable_data)
+        
+    def to_representation(self, instance):
+        """
+        Override to ensure date fields are properly serialized
+        """
+        # First get the default representation
+        representation = super().to_representation(instance)
+        
+        # Handle each date field to ensure it's properly formatted
+        for field in ['MitigationDueDate', 'Date', 'MitigationCompletedDate']:
+            # If the field exists and has a value
+            if field in representation and representation[field] is not None:
+                # Convert date objects to strings to avoid serialization issues
+                if hasattr(instance, field):
+                    value = getattr(instance, field)
+                    if hasattr(value, 'isoformat'):
+                        try:
+                            representation[field] = value.isoformat()
+                        except:
+                            # If conversion fails, keep as is
+                            pass
+        
+        return representation
 
 
 class RiskAssignmentSerializer(serializers.ModelSerializer):
