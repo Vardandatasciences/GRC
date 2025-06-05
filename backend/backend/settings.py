@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-%@4hoxv^4aj(ul6t3=i_iu%)*il^l&tc!38jrqb%g(td^lls$k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -78,9 +78,13 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'grc',         # <-- your MySQL database name
+        'USER': 'root',         # <-- your MySQL username
+        'PASSWORD': 'root', # <-- your MySQL password
+        'HOST': 'localhost',            # or your MySQL host
+        'PORT': '3306',                 # default MySQL port
     }
 }
 
@@ -128,8 +132,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",  # Vue.js default port
+    "http://localhost:8081",  # Vue.js development server
+]
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8081",  # Vue.js development server
 ]
 
 # Rest Framework settings
