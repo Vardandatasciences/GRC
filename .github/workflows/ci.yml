@@ -22,11 +22,13 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        working-directory: GRC/frontend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/frontend/
+
         run: npm ci
 
       - name: Start frontend dev server
-        working-directory: GRC/frontend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/frontend/
+
         run: npm run serve &
 
       - name: Wait for frontend to be ready
@@ -36,7 +38,8 @@ jobs:
           timeout: 60
 
       - name: Run Cypress tests
-        working-directory: GRC/frontend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/frontend/
+
         run: npx cypress run
 
 
@@ -55,18 +58,19 @@ jobs:
           python-version: 3.11
 
       - name: Install dependencies
-        working-directory: GRC/backend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/backend/
+
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install bandit pytest
 
       - name: Run Bandit Security Scan
-        working-directory: GRC/backend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/backend/
         run: bandit -r . -c .bandit
 
       - name: Run Unit Tests (unittest & pytest)
-        working-directory: GRC/backend
+        working-directory: GRC_Cypress_Full_CI_Snyk1/backend/
         run: |
           python -m unittest discover -s tests
           pytest tests
